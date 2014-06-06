@@ -147,7 +147,7 @@ fi
 
 if [ -n "$STEP" ]; then
     STEP_LIST="$JOB_DIRECTORY/step_list"
-    echo "" > "$STEP_LIST"
+    echo -n "" > "$STEP_LIST"
     BEGIN=0
     END=0
     while [ "$END" -lt "$N_FILES" ]; do
