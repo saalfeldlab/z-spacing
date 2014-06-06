@@ -150,14 +150,13 @@ if [ -n "$STEP" ]; then
     echo "" > "$STEP_LIST"
     BEGIN=0
     END=0
-    while [ "$END" -le "$N_FILES" ]; do
+    while [ "$END" -lt "$N_FILES" ]; do
         END="$(( $END + $STEP ))"
-        
-        echo "$BEGIN,$(($END > $N_FILES ? $N_FILES : $END))" >> "$STEP_LIST"
+        REAL_END="$(($END > $N_FILES ? $N_FILES : $END))"
+        echo "$BEGIN,$REAL_END,$(( $REAL_END - $BEGIN ))" >> "$STEP_LIST"
         BEGIN=$END
     done
 fi
-
 
 
 COUNT=0
