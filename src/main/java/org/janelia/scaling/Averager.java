@@ -20,5 +20,5 @@ public interface Averager< T extends NativeType<T> & RealType< T > > {
 	 * @param input list of {@link RandomAccessibleInterval}s that should be averaged.
 	 * @return Average of input, potentially scaled in its dimensions.
 	 */
-	public RandomAccessibleInterval< T > average(final ArrayList< RandomAccessibleInterval< T > >input);
+	public RandomAccessibleInterval< T > average(final ArrayList< RandomAccessibleInterval< T > >input) throws IllegalArgumentException;
 }
