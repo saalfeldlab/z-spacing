@@ -58,7 +58,11 @@ public class BinaryAverager<T extends NativeType<T> & RealType< T> > implements 
 	 * @param input {@link ArrayList} of {@link RandomAccessibleInterval}
 	 */
 	public RandomAccessibleInterval<T> average(
-			ArrayList<RandomAccessibleInterval<T>> input) {
+			ArrayList<RandomAccessibleInterval<T>> input) throws IllegalArgumentException {
+		
+		if ( input.size() < 1 ) {
+			throw new IllegalArgumentException( "Cannot average empty list!" );
+		}
 		
 		// generate ExecutorService for parallel computation
 		ExecutorService executorService = Executors.newFixedThreadPool( this.nCores );
