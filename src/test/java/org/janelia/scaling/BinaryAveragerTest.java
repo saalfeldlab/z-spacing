@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Random;
 
 import net.imglib2.Cursor;
-import net.imglib2.FlatIterationOrder;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayCursor;
 import net.imglib2.img.array.ArrayImg;
@@ -44,7 +43,6 @@ public class BinaryAveragerTest {
 	
 	private ArrayImg< LongType, LongArray > integerComparison;
 	private ArrayImg< FloatType, FloatArray > floatComparison;
-	
 	
 	
 
@@ -100,8 +98,8 @@ public class BinaryAveragerTest {
 	 */
 	@Test
 	public void testAverage() {
-		BinaryAverager<LongType> longAverager = new BinaryAverager<LongType>(1);
-		Averager<FloatType> floatAverager     = new BinaryAverager<FloatType>(1);
+		Averager<LongType> longAverager   = new BinaryAverager<LongType>(1);
+		Averager<FloatType> floatAverager = new BinaryAverager<FloatType>(1);
 		
 		RandomAccessibleInterval<LongType> longResult   = longAverager.average( this.integerImages );
 		RandomAccessibleInterval<FloatType> floatResult = floatAverager.average( this.floatImages );
@@ -115,7 +113,7 @@ public class BinaryAveragerTest {
 			assertEquals( "Dimensions must be of equal size", floatResult.dimension(d), floatComparison.dimension(d) );
 		}
 		
-//		Due to rounding errors, this method is hard to test for integers, that's why this is only comments
+//		Due to rounding errors and intermediate float/int conversion, this method is hard to test for integers, that's why this is only comments
 //		FIXME come up with a better idea for a test!
 //		Cursor<LongType> longResultCursor = Views.flatIterable(longResult).cursor();
 //		ArrayCursor<LongType> longComparisonCursor = this.integerComparison.cursor();
