@@ -9,9 +9,7 @@ import java.util.concurrent.Executors;
 
 import org.janelia.waves.thickness.ConstantPair;
 
-import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.array.ArrayCursor;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.array.ArrayRandomAccess;
@@ -66,14 +64,14 @@ public class SingleImageBinaryAverager<T extends NativeType<T> & RealType<T>>
 		
 		long[] dimensions = new long[]{ xIntervals.size(), yIntervals.size() };
 		
-		ArrayImg<T, ?> result                   = new ArrayImgFactory< T >().create( dimensions, input.get( 0 ).randomAccess().get().copy() );
+		final ArrayImg<T, ?> result             = new ArrayImgFactory< T >().create( dimensions, input.get( 0 ).randomAccess().get().copy() );
 		ArrayRandomAccess<T> resultRandomAccess = result.randomAccess();
 		
 		// generate ExecutorService for parallel computation
 		ExecutorService executorService = Executors.newFixedThreadPool( this.nCores );
 		ArrayList<Callable<Void>> callables = new ArrayList<Callable<Void>>();
 				
-		for ( int x = 0; x < dimensions[0]; ++x) {
+		for ( int x = 0; x < dimensions[0]; ++x ) {
 			
 			resultRandomAccess.setPosition(x, 0);
 			
@@ -82,40 +80,39 @@ public class SingleImageBinaryAverager<T extends NativeType<T> & RealType<T>>
 			
 			for ( int y = 0; y < dimensions[1]; ++y ) {
 				
-				// System.out.println( x +"," + y);
-				
 				resultRandomAccess.setPosition(y, 1);
 				
 				Long yMin = yIntervals.get( y ).getA();
 				Long yMax = yIntervals.get( y ).getB();
 				
-				final T resultPixel = resultRandomAccess.get();
+				final int finalX = x;
+				final int finalY = y;
 				
 				final IntervalView<T> interval = Views.interval( input.get( 0 ), new long[]{ xMin, yMin }, new long[]{ xMax - 1, yMax - 1 } );
-				resultPixel.set( binarySumAverage( interval));
-//				callables.add( new Callable<Void>() {
-//
-//					public Void call() throws Exception {
-//						for ( T f : Views.flatIterable(interval) ) {
-//							System.out.print(f.getRealFloat() + " ");
-//						}
-//						System.out.println();
-//						resultPixel.set( binarySumAverage( interval ) );
-//						return null;
-//					}
-//					
-//				});
+				callables.add( new Callable<Void>() {
+					
+					
+
+					public Void call() throws Exception {
+						
+						ArrayRandomAccess<T> ra = result.randomAccess();
+						ra.setPosition( new long[]{ finalX, finalY } );
+						ra.get().set( binarySumAverage( interval ) );
+						return null;
+						
+					}
+					
+				} );
 			}
 		}
 		
-		// System.out.println( callables.size() );
 		
-//		try {
-//			executorService.invokeAll( callables );
-//		} catch (InterruptedException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
+		try {
+			executorService.invokeAll( callables );
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 		return result;
 	}

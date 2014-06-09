@@ -110,8 +110,6 @@ public class SingleImageBinaryAveragerTest {
 		
 		RandomAccessibleInterval<FloatType> resultImage = floatAverager.average( validInputList );
 		
-		System.out.println("Finished averaging");
-		
 		assertEquals( resultImageReference.numDimensions(), resultImage.numDimensions());
 		
 		for ( int d = 0; d < resultImage.numDimensions(); ++d ) {
@@ -123,8 +121,7 @@ public class SingleImageBinaryAveragerTest {
 		ArrayCursor<FloatType> referenceCursor = resultImageReference.cursor();
 		
 		while ( resultCursor.hasNext() ) {
-			 System.out.println(referenceCursor.next().getRealFloat() + "," + resultCursor.next().getRealFloat());
-			 // assertEquals( referenceCursor.next().getRealFloat(), resultCursor.next().getRealFloat(), 1);
+			 assertEquals( referenceCursor.next().getRealFloat(), resultCursor.next().getRealFloat(), 1);
 		}
 	}
 	
