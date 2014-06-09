@@ -63,6 +63,9 @@ def createDrawer( drawer, parameters ):
         return UniformNumberDrawer( **parameterDict )
     elif drawer.lower() == "normal":
         return NormalNumberDrawer( **parameterDict )
+    elif drawer.lower() == "number":
+        return ConstantStepDrawer( **parameterDict )
+        
     else:
         raise Exception( "No rule for drawer %s!" %  drawer )
 
