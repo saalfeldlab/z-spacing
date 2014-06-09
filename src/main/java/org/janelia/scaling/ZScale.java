@@ -7,7 +7,6 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 
-
 import ij.IJ;
 import ij.ImagePlus;
 import ij.process.ImageProcessor;
@@ -46,16 +45,18 @@ public class ZScale< T extends NativeType<T> & RealType<T> > {
 	
 	private final ArrayList<String> filenames;
 	private final Averager< T > averager;
+	private final T dummy;
 
 	/**
 	 * Constructor
 	 * @param filenames Compute the average of the image files in filenames.
 	 * @param averager A class that implements the {@link Averager} interface
 	 */
-	public ZScale(final ArrayList<String> filenames, final Averager< T > averager) {
+	public ZScale(final ArrayList<String> filenames, final Averager< T > averager, T dummy ) {
 		super();
 		this.filenames = filenames;
 		this.averager  = averager;
+		this.dummy     = dummy;
 	}
 	
 	/**
@@ -65,7 +66,7 @@ public class ZScale< T extends NativeType<T> & RealType<T> > {
 	 * @param dummy A dummy variable of type T whose only purpose is determining the class of T.
 	 * @return The average as a @{link RandomAccessibleInterval}.
 	 */
-	public RandomAccessibleInterval< T > average(T dummy) {
+	public RandomAccessibleInterval< T > average(  ) {
 		assert filenames.size() > 0: "Need at least one image for averaging";
 		
 		ArrayList<RandomAccessibleInterval< T> > images = new ArrayList< RandomAccessibleInterval< T > >();
@@ -151,10 +152,15 @@ public class ZScale< T extends NativeType<T> & RealType<T> > {
 	 * @throws IOException
 	 */
 	public static void main( final String[] args ) throws IOException {
-		assert args.length == 3: "Accepts exactly four arguments.";
+		assert args.length == 5: "Accepts exactly five arguments.";
+		if ( args.length != 5 ) throw new RuntimeException( "Must have five arguments!" );
 		String fileList  = args[0]; // List of files for averaging.
 		String writeName = args[1]; // Where to store the output.
 		int nCores       = Integer.parseInt(args[2]); // Use nCores cores for calculations.
+		String averaging = args[3];
+		long step        = Long.parseLong( args[4] );
+		
+		
 		
 		// Read image file names into ArrayList. 
 		ArrayList<String> fileNames = new ArrayList<String>();
@@ -167,11 +173,19 @@ public class ZScale< T extends NativeType<T> & RealType<T> > {
 		br.close();
 		
 		// Create ZScale object and average.
-		ZScale<FloatType> zScale = new ZScale< FloatType >( fileNames, new BinaryAverager< FloatType >( nCores ));
-		RandomAccessibleInterval< FloatType > res = zScale.average( new FloatType( 0.0f ) );
+		ZScale< FloatType > zScale;
+		
+		if ( averaging.equalsIgnoreCase( "binaryz" )  ) {
+			zScale = new ZScale< FloatType >( fileNames, new BinaryAverager< FloatType >( nCores ), new FloatType(1.0f) );
+		} else if ( averaging.equalsIgnoreCase( "binaryxy" ) ) {
+			zScale = new ZScale< FloatType >( fileNames, new SingleImageBinaryAverager< FloatType >(step, nCores), new FloatType(1.0f) );
+		} else {
+			throw new RuntimeException( "Do not understand averaging method " + averaging);
+		}
+		RandomAccessibleInterval< FloatType > res = zScale.average(  );
 		
 		// Write result to file.
-		ImagePlus writableImage = ImageJFunctions.wrapUnsignedShort( res, "TEST" );
+		ImagePlus writableImage = ImageJFunctions.wrapFloat( res, "TEST" );
 		IJ.save( writableImage, writeName );
 		
 		// Exit with 0 (no errors).
