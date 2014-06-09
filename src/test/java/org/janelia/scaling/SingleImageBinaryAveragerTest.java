@@ -21,7 +21,6 @@ import org.junit.Test;
 
 public class SingleImageBinaryAveragerTest {
 	
-	private final SingleImageBinaryAverager<LongType> longAverager;
 	private final SingleImageBinaryAverager<FloatType> floatAverager;
 	
 	private final ArrayImg<LongType, LongArray > longImage;
@@ -41,7 +40,7 @@ public class SingleImageBinaryAveragerTest {
 
 	public SingleImageBinaryAveragerTest() {
 		super();
-		longAverager  = new SingleImageBinaryAverager<LongType>( step, 1 );
+		new SingleImageBinaryAverager<LongType>( step, 1 );
 		floatAverager = new SingleImageBinaryAverager<FloatType>( step, 1 );
 		
 		longImage  = ArrayImgs.longs( 4, 6);
