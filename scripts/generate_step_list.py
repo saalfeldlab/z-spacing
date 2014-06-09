@@ -82,7 +82,11 @@ if __name__ == "__main__":
 
     np.random.seed( args.random_seed )
 
-    print args.drawer_parameters
     drawer = createDrawer( args.drawer, args.drawer_parameters )
     
-    print createSteps( args.start, args.end, drawer )
+    # print createSteps( args.start, args.end, drawer )
+
+    stepsString = createSteps( args.start, args.end, drawer )
+
+    with open(args.output, "w") as f:
+        f.write( stepsString ) 
