@@ -52,9 +52,7 @@ def createSteps( startFrame, endFrame, numberDrawer ):
         
         lower = upper
 
-    return resultString[:-1]
-
-
+    return resultString # [:-1] # Need new line at eof? it seems, we do!
 def createDrawer( drawer, parameters ):
     parameterDict = { line.split('=')[0] : float( line.split('=')[1] ) for line in parameters.split(',') }
 
