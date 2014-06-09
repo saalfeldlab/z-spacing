@@ -37,7 +37,6 @@ class NormalNumberDrawer( NumberDrawer ):
 
     def __call__( self ):
         return int( self.mean + self.stdev *  np.random.randn( 1 ) )
-            
 
         
 def createSteps( startFrame, endFrame, numberDrawer ):
