@@ -6,7 +6,7 @@ set -e
 
 COMMAND="$(basename $0)"
 
-HELP="[VARIABLES=<values>] $COMMAND [-h] {-p PATTERN | -f FILE_LIST} -s STEP [-j JOB_DIRECTORY] [-c COMMAND_FILE_DIR]-- do some crazy averaging in z
+HELP="[VARIABLES=<values>] $COMMAND [-h] {-p PATTERN | -f FILE_LIST} -s STEP [-j JOB_DIRECTORY] [-c COMMAND_FILE_DIR] [-b BATCH_SIZE] -- do some crazy averaging in z
 
 where:
     -c COMMAND_FILE_DIR   specify directory for .cmd files generated in the process. defaults to $PWD
@@ -17,6 +17,7 @@ where:
     -s STEP               step in x and y direction
     -n CORES              number of cores (default=$(( $(lscpu -p | tail -n1 | cut -f1 -d,) + 1)))
     -o OUTPUT_DIRECTORY   specify output directory
+    -b BATCH_SIZE         instead of one java call per job, submit the calls in batches (Default: 1)
 
 VARIABLES:
     CLASSPATH\t\t\tAdjust classpath to your system.
@@ -33,8 +34,11 @@ Specify CLASSPATH to adjust the script to your machine or CONVENIENCE_JAR_PATH, 
 "
 
 unset VARIABLE_STEP
-while getopts ":c:f:ho:p:n:s:v:j:" option; do
+while getopts ":b:c:f:ho:p:n:s:v:j:" option; do
     case $option in
+        b)
+            BATCH_SIZE="$OPTARG"
+            ;;
         c)
             COMMAND_FILE_DIR="$OPTARG"
             ;;
@@ -76,6 +80,7 @@ CLASSPATH="${CLASSPATH:-$DEFAULT_CLASSPATH}"
 N_CORES="${N_CORES:-$(( $(lscpu -p | tail -n1 | cut -f1 -d,) + 1))}"
 OUTPUT_DIRECTORY="${OUTPUT_DIRECTORY:-$PWD}"
 COMMAND_FILE_DIR="${COMMAND_FILE_DIR:-$PWD}"
+BATCH_SIZE="${BATCH_SIZE:-1}"
 
 
 N_SLOTS="${N_CORES:-16}"
@@ -129,6 +134,8 @@ N_FILES="$(cat $FILE_LIST | wc -l )"
 
 
 COUNT=0
+CMD_FILE_COUNT=0
+JAVA_CMD=":" # no-op
 while read line; do
     if [[ -n "$VERBOSE" ]]; then
         echo "$COUNT  --  $line"
@@ -136,16 +143,31 @@ while read line; do
     CURR_FILE_LIST="$(printf $JOB_DIRECTORY/%06d $COUNT)"
     echo "$line" > "$CURR_FILE_LIST"
     CURR_OUT_FILE="$(printf $OUTPUT_DIRECTORY/result_%06d.tif $COUNT)"
-    CURR_CMD_FILE="$(printf $COMMAND_FILE_DIR/command_%06d.cmd $COUNT)"
-    JAVA_CMD="java -cp \"$CLASSPATH\" \"org.janelia.scaling.ZScale\" \"$CURR_FILE_LIST\" \"$CURR_OUT_FILE\" \"$N_CORES\" \"binaryXY\" \"$STEP\""
-    echo "$JAVA_CMD" > "$CURR_CMD_FILE"
+    JAVA_CMD="$JAVA_CMD &&\njava -cp \"$CLASSPATH\" \"org.janelia.scaling.ZScale\" \"$CURR_FILE_LIST\" \"$CURR_OUT_FILE\" \"$N_CORES\" \"binaryXY\" \"$STEP\""
+    COUNT="$(( $COUNT + 1 ))"
+    # reset JAVA_CMD if batch is full
+    if [ "$(( $COUNT % $BATCH_SIZE ))" -eq "0" ]; then
+        CURR_CMD_FILE="$(printf $COMMAND_FILE_DIR/command_%06d.cmd $CMD_FILE_COUNT)"
+        echo -e "$JAVA_CMD" > "$CURR_CMD_FILE"
+        chmod +x "$CURR_CMD_FILE"
+        $EXEC_COMMAND $CURR_CMD_FILE
+        JAVA_CMD=":"
+        CMD_FILE_COUNT="$(( $CMD_FILE_COUNT + 1))"
+        if [[ -n "$VERBOSE" ]]; then
+            echo "    running   '$EXEC_COMMAND $CURR_CMD_FILE'"
+        fi
+    fi
+done < $FILE_LIST
+
+if  [ "$(( $COUNT % $BATCH_SIZE ))" -ne "0" ]; then
+    CURR_CMD_FILE="$(printf $COMMAND_FILE_DIR/command_%06d.cmd $CMD_FILE_COUNT)"
+    echo -e "$JAVA_CMD" > "$CURR_CMD_FILE"
     chmod +x "$CURR_CMD_FILE"
+    $EXEC_COMMAND $CURR_CMD_FILE
     if [[ -n "$VERBOSE" ]]; then
         echo "    running   '$EXEC_COMMAND $CURR_CMD_FILE'"
     fi
-    $EXEC_COMMAND $CURR_CMD_FILE
-    COUNT="$(( $COUNT + 1 ))"
-done < $FILE_LIST
+fi
 
 if [[ -n "$VERBOSE" ]]; then
     echo -e "TMP_DIR:\t\t$TMP_DIR"
