@@ -177,7 +177,7 @@ while read line; do
     echo "$FILES" > "$CURR_FILE_LIST"
     CURR_OUT_FILE="$(printf $OUTPUT_DIRECTORY/result_%06d.tif $COUNT)"
     CURR_CMD_FILE="$(printf $COMMAND_FILE_DIR/command_%06d.cmd $COUNT)"
-    JAVA_CMD="java -cp \"$CLASSPATH\" \"org.janelia.scaling.ZScale\" \"$CURR_FILE_LIST\" \"$CURR_OUT_FILE\" \"$N_CORES\""
+    JAVA_CMD="java -cp \"$CLASSPATH\" \"org.janelia.scaling.ZScale\" \"$CURR_FILE_LIST\" \"$CURR_OUT_FILE\" \"$N_CORES\" \"binaryz\" \"0\""
     echo "$JAVA_CMD" > "$CURR_CMD_FILE"
     chmod +x "$CURR_CMD_FILE"
     if [[ -n "$VERBOSE" ]]; then
