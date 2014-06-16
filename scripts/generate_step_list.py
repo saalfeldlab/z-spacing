@@ -37,7 +37,6 @@ class NormalNumberDrawer( NumberDrawer ):
 
     def __call__( self ):
         return int( self.mean + self.stdev *  np.random.randn( 1 ) )
-            
 
         
 def createSteps( startFrame, endFrame, numberDrawer ):
@@ -53,9 +52,7 @@ def createSteps( startFrame, endFrame, numberDrawer ):
         
         lower = upper
 
-    return resultString[:-1]
-
-
+    return resultString # [:-1] # Need new line at eof? it seems, we do!
 def createDrawer( drawer, parameters ):
     parameterDict = { line.split('=')[0] : float( line.split('=')[1] ) for line in parameters.split(',') }
 
@@ -63,6 +60,9 @@ def createDrawer( drawer, parameters ):
         return UniformNumberDrawer( **parameterDict )
     elif drawer.lower() == "normal":
         return NormalNumberDrawer( **parameterDict )
+    elif drawer.lower() == "number":
+        return ConstantStepDrawer( **parameterDict )
+        
     else:
         raise Exception( "No rule for drawer %s!" %  drawer )
 

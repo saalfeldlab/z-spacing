@@ -109,7 +109,7 @@ if [ -z "$FILE_LIST" -a -z "$PATTERN" ]; then
 fi
 
 if [ -z "$STEP" ]; then
-    echo "Need to specify either -s (step)!"
+    echo "Need to specify -s (step)!"
     echo
     echo -e "$HELP"
     exit 1

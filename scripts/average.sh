@@ -134,8 +134,9 @@ fi
 N_FILES="$(cat $FILE_LIST | wc -l )"
 
 
+
 if [ -n "$VARIABLE_STEP_LIST" ]; then
-    MAX_END_STEP="$(tail -f $VARIABLE_STEP_LIST | cut -f2 -d',')"
+    MAX_END_STEP="$(tail -n1 $VARIABLE_STEP_LIST | cut -f2 -d',')"
     if [ "$MAX_END_STEP" -gt "$N_FILES" ]; then
         echo "Steps and file list are not compatible!"
         echo
@@ -157,7 +158,6 @@ if [ -n "$STEP" ]; then
         BEGIN=$END
     done
 fi
-
 
 COUNT=0
 while read line; do
