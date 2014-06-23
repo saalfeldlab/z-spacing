@@ -121,7 +121,6 @@ public class BinaryAveragerTest {
 //		while (longResultCursor.hasNext() ) {
 //			long rValue = longResultCursor.next().get();
 //			long cValue = longComparisonCursor.next().get();
-//			System.out.println("" + rValue + " vs " + cValue);
 //			assertEquals( "Integral (LongType) values should be the same!", rValue, cValue );
 //		}
 		

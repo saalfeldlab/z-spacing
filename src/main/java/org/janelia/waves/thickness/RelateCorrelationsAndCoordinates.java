@@ -17,25 +17,25 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
 public class RelateCorrelationsAndCoordinates {
-	public static ConstantTriple<RandomAccessibleInterval<FloatType>, RandomAccessibleInterval<LongType>, RandomAccessibleInterval<LongType>> createTriple(
+	public static ConstantTriple<RandomAccessibleInterval<FloatType>, RandomAccessibleInterval<FloatType>, RandomAccessibleInterval<FloatType>> createTriple(
 			CorrelationsObject co, 
 			long x, 
 			long y, 
 			long z,
 			String filename ) throws IOException 
 	{
-		ConstantPair<RandomAccessibleInterval<FloatType>, RandomAccessibleInterval<LongType>> correlationsAndCoordinates = co.extractCorrelationsAt(x, y, z);
+		ConstantPair<RandomAccessibleInterval<FloatType>, RandomAccessibleInterval<FloatType>> correlationsAndCoordinates = co.extractCorrelationsAt(x, y, z);
 		
 		BufferedReader br = new BufferedReader(new FileReader( filename) );
 		String line = null;
 		
-		long start = Views.flatIterable(correlationsAndCoordinates.getB()).firstElement().get();
+		long start = (long) Views.flatIterable(correlationsAndCoordinates.getB()).firstElement().get();
 		for ( int i = 0; i < start; ++i ) {
 			br.readLine();
 		}
 		
-		ArrayImg<LongType, LongArray> realWorldCoordinates = ArrayImgs.longs( correlationsAndCoordinates.getB().dimension(0) );
-		ArrayCursor<LongType> cursor = realWorldCoordinates.cursor();
+		ArrayImg<FloatType, FloatArray> realWorldCoordinates = ArrayImgs.floats( correlationsAndCoordinates.getB().dimension(0) );
+		ArrayCursor<FloatType> cursor = realWorldCoordinates.cursor();
 		long count = 0;
 		while( count < correlationsAndCoordinates.getB().dimension(0) ) {
 			line = br.readLine();
@@ -50,13 +50,13 @@ public class RelateCorrelationsAndCoordinates {
 		br.close();
 		
 		
-		return new ConstantTriple<RandomAccessibleInterval<FloatType>, RandomAccessibleInterval<LongType>, RandomAccessibleInterval<LongType>>(
+		return new ConstantTriple<RandomAccessibleInterval<FloatType>, RandomAccessibleInterval<FloatType>, RandomAccessibleInterval<FloatType>>(
 				correlationsAndCoordinates.getA(), correlationsAndCoordinates.getB(), realWorldCoordinates);
 	}
 	
 	
 	public static void writeToFile(
-			ConstantTriple<RandomAccessibleInterval<FloatType>, RandomAccessibleInterval<LongType>, RandomAccessibleInterval<LongType>> triple,
+			ConstantTriple<RandomAccessibleInterval<FloatType>, RandomAccessibleInterval<FloatType>, RandomAccessibleInterval<FloatType>> triple,
 			String filename, boolean with_header, String sep ) throws IOException {
 		
 		assert ( triple.getA().numDimensions() == triple.getB().numDimensions() ) &&
@@ -72,8 +72,8 @@ public class RelateCorrelationsAndCoordinates {
 	       }
 	
 	       Cursor<FloatType> cursorA = Views.flatIterable( triple.getA() ).cursor();
-	       Cursor<LongType> cursorB   = Views.flatIterable( triple.getB() ).cursor();
-	       Cursor<LongType> cursorC   = Views.flatIterable( triple.getC() ).cursor();
+	       Cursor<FloatType> cursorB   = Views.flatIterable( triple.getB() ).cursor();
+	       Cursor<FloatType> cursorC   = Views.flatIterable( triple.getC() ).cursor();
 	       
 	       while ( cursorA.hasNext() ) {
 	    	   String currentLine = "" + cursorA.next().get() + sep + cursorB.next().get() + sep + cursorC.next().get();
@@ -86,11 +86,11 @@ public class RelateCorrelationsAndCoordinates {
 		
 		long N = 10;
 		
-		ArrayImg<FloatType, FloatArray> corr   = ArrayImgs.floats( N );
-		ArrayImg<LongType, LongArray> coord    = ArrayImgs.longs( N );
+		ArrayImg<FloatType, FloatArray> corr     = ArrayImgs.floats( N );
+		ArrayImg<FloatType, FloatArray> coord    = ArrayImgs.floats( N );
 		
 		ArrayCursor<FloatType> c1 = corr.cursor();
-		ArrayCursor<LongType> c2   = coord.cursor();
+		ArrayCursor<FloatType> c2   = coord.cursor();
 		
 		int i = 0;
 		while (c1.hasNext()) {
@@ -99,7 +99,7 @@ public class RelateCorrelationsAndCoordinates {
 			++i;
 		}
 		
-		ConstantTriple<RandomAccessibleInterval<FloatType>, RandomAccessibleInterval<LongType>, RandomAccessibleInterval<LongType>> triple = new ConstantTriple<RandomAccessibleInterval<FloatType>, RandomAccessibleInterval<LongType>, RandomAccessibleInterval<LongType>>(
+		ConstantTriple<RandomAccessibleInterval<FloatType>, RandomAccessibleInterval<FloatType>, RandomAccessibleInterval<FloatType>> triple = new ConstantTriple<RandomAccessibleInterval<FloatType>, RandomAccessibleInterval<FloatType>, RandomAccessibleInterval<FloatType>>(
 				corr, coord, coord);
 		
 		String filename     = "/groups/saalfeld/home/hanslovskyp/local/tmp/triple_test.dat";

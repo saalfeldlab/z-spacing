@@ -15,21 +15,34 @@ import mpicbg.models.TranslationModel1D;
 import org.janelia.exception.InconsistencyError;
 import org.janelia.waves.thickness.ConstantTriple;
 
-public class OpinionMediator {
+public class OpinionMediatorModel implements OpinionMediatorInterface {
 	
 	private final double lambda;
 	private final TreeMap< ConstantTriple<Long, Long, Long>, Tile< TranslationModel1D > > tileMap;
+	private final TreeMap< ConstantTriple<Long, Long, Long>, Double> shiftMap;
 	
 	
-	public OpinionMediator(double lambda) {
-		this( lambda, new TreeMap<ConstantTriple<Long, Long, Long>, Tile< TranslationModel1D > >() );
+	public OpinionMediatorModel(double lambda) {
+		this( lambda, 
+				new TreeMap<ConstantTriple<Long, Long, Long>, Tile< TranslationModel1D > >());
 	}
 
-	public OpinionMediator(double lambda,
+	public OpinionMediatorModel(double lambda,
 			TreeMap<ConstantTriple<Long, Long, Long>, Tile<TranslationModel1D>> tileMap) {
 		super();
 		this.lambda = lambda;
 		this.tileMap = tileMap;
+		this.shiftMap = new TreeMap< ConstantTriple<Long, Long, Long>, Double>();
+		
+		for ( Entry<ConstantTriple<Long, Long, Long>, Tile<TranslationModel1D>> entry : tileMap.entrySet() ) {
+			this.shiftMap.put( entry.getKey(), (double) entry.getValue().getModel().apply( new float[]{0.0f} )[0] );
+		}
+	}
+	
+	public void clearOpinions() {
+		for ( Entry<ConstantTriple<Long, Long, Long>, Tile<TranslationModel1D>> entry : this.tileMap.entrySet() ) {
+			entry.getValue().getMatches().clear();
+		}
 	}
 
 	public void addOpinions( long x, long y, long zMin, long zMax, long zReference, double[] opinions, double[] weights ) throws InconsistencyError {
@@ -61,7 +74,7 @@ public class OpinionMediator {
 			// apply shift to p1 (which is at 0), thus strength must be 1.0f
 			Point p1 = new Point( new float[] { 0.0f } );
 			Point p2 = new Point( new float[] { (float) opinions[i] } );
-			tile.addMatch( new PointMatch(p1, p2, (float) weights[i], 1.0f ) ); 
+			tile.addMatch( new PointMatch(p1, p2, (float) weights[i], (float) this.lambda ) ); 
 			// 
 			
 			++zMin;
@@ -80,14 +93,16 @@ public class OpinionMediator {
 		this.addOpinions(x, y, zMin, zMax, zReference, opinions, weights);
 	}
 	
-	public TreeMap< ConstantTriple<Long, Long, Long>, Tile< TranslationModel1D > > fit() throws InterruptedException {
+	public TreeMap<ConstantTriple<Long, Long, Long>, Double> fit() throws InterruptedException {
 		
 		return this.fit( Runtime.getRuntime().availableProcessors() );
 		
 	}
 	
 	
-	public TreeMap< ConstantTriple<Long, Long, Long>, Tile< TranslationModel1D > > fit( int nCores ) throws InterruptedException {
+	
+	
+	public TreeMap<ConstantTriple<Long, Long, Long>, Double> fit( int nCores ) throws InterruptedException {
 		
 		if ( nCores <= 0 ) {
 			nCores = Runtime.getRuntime().availableProcessors();
@@ -112,8 +127,14 @@ public class OpinionMediator {
 		
 		es.invokeAll( callables );
 		
-		return this.tileMap;
+		for ( Entry<ConstantTriple<Long, Long, Long>, Tile<TranslationModel1D>> entry : tileMap.entrySet() ) {
+			this.shiftMap.put( entry.getKey(), (double) entry.getValue().getModel().apply( new float[]{0.0f} )[0] );
+		}
+		
+		return this.shiftMap;
 	}
+	
+	
 }
 
 

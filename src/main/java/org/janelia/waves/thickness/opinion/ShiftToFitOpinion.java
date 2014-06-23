@@ -85,4 +85,8 @@ public class ShiftToFitOpinion implements Opinion {
 		return null;
 	}
 
+	public double[] express(double[] coordinates) {
+		return this.express();
+	}
+
 }

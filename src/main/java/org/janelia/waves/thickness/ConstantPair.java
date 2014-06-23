@@ -2,7 +2,7 @@ package org.janelia.waves.thickness;
 
 import net.imglib2.Pair;
 
-public class ConstantPair<A, B> implements Pair<A, B> {
+public class ConstantPair<A, B> implements Pair<A, B>, Comparable< ConstantPair< A, B> > {
 
 	private final A entryA;
 	private final B entryB;
@@ -50,6 +50,19 @@ public class ConstantPair<A, B> implements Pair<A, B> {
 	@Override
 	public int hashCode() {
 		return entryA.hashCode() + entryB.hashCode();
+	}
+
+	@SuppressWarnings("unchecked")
+	public int compareTo(ConstantPair<A, B> o) {
+		if ( !( entryA instanceof Comparable<?> ) || 
+		     !( entryB instanceof Comparable<?> )) {
+				return 0;
+			}
+			if ( ( (Comparable<A>) entryA ).compareTo( o.entryA ) == 0 ) {
+				return ( (Comparable<B>) entryB ).compareTo( o.entryB );
+			} else { 
+				return ( (Comparable<A>) entryA ).compareTo( o.entryA ); 
+			}
 	}
 	
 	
