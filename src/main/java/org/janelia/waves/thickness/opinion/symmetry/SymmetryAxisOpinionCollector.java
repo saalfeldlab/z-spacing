@@ -1,10 +1,9 @@
 package org.janelia.waves.thickness.opinion.symmetry;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.TreeMap;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
@@ -257,8 +256,8 @@ public class SymmetryAxisOpinionCollector {
 					
 					// use opinion to get shift for the current z bin
 					double[] weights = new double[ localCoordinates.length ];
-					ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType>> c = this.correlations.extractDoubleCorrelationsAt(xy.getKey().getA(), xy.getKey().getB(), zBin);
-					Cursor<DoubleType> cursor = Views.iterable( c.getA() ).cursor();
+//					ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType>> c = this.correlations.extractDoubleCorrelationsAt(xy.getKey().getA(), xy.getKey().getB(), zBin);
+//					Cursor<DoubleType> cursor = Views.iterable( c.getA() ).cursor();
 					for ( int idx = 0; idx < localCoordinates.length; ++idx ) {
 						weights[idx] = this.weightGenerator.getWeightFor( xy.getKey().getA(), xy.getKey().getB(), meta.zCoordinateMin + idx );
 

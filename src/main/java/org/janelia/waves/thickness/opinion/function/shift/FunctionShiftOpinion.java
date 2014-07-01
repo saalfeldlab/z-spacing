@@ -1,6 +1,4 @@
-package org.janelia.waves.thickness.opinion;
-
-import java.util.Arrays;
+package org.janelia.waves.thickness.opinion.function.shift;
 
 import org.apache.commons.math.FunctionEvaluationException;
 import org.apache.commons.math.optimization.DifferentiableMultivariateVectorialOptimizer;
@@ -8,6 +6,7 @@ import org.apache.commons.math.optimization.OptimizationException;
 import org.apache.commons.math.optimization.fitting.CurveFitter;
 import org.janelia.waves.thickness.functions.DifferentiableParameterizedFunction;
 import org.janelia.waves.thickness.functions.DomainError;
+import org.janelia.waves.thickness.opinion.Opinion;
 
 @SuppressWarnings("deprecation")
 public class FunctionShiftOpinion implements Opinion {

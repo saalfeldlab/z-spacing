@@ -3,12 +3,9 @@
  */
 package org.janelia.waves.thickness.opinion;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.util.TreeMap;
-
-import mpicbg.models.Tile;
-import mpicbg.models.TranslationModel1D;
 
 import org.janelia.exception.InconsistencyError;
 import org.janelia.utility.ConstantTriple;

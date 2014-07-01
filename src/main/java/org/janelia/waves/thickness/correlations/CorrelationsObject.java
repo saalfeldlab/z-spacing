@@ -2,8 +2,6 @@ package org.janelia.waves.thickness.correlations;
 
 import java.util.HashMap;
 
-import org.janelia.utility.ConstantPair;
-
 import net.imglib2.Cursor;
 import net.imglib2.Pair;
 import net.imglib2.RandomAccessibleInterval;
@@ -12,12 +10,12 @@ import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.img.basictypeaccess.array.FloatArray;
-import net.imglib2.img.basictypeaccess.array.LongArray;
-import net.imglib2.type.numeric.integer.LongType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
+
+import org.janelia.utility.ConstantPair;
 
 
 

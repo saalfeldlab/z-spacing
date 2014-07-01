@@ -6,11 +6,8 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
-import mpicbg.models.Tile;
-import mpicbg.models.TranslationModel1D;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.numeric.real.DoubleType;
-import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
 import org.janelia.exception.InconsistencyError;

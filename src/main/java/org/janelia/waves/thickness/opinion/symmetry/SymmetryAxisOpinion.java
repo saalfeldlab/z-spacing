@@ -1,7 +1,5 @@
 package org.janelia.waves.thickness.opinion.symmetry;
 
-import java.util.Arrays;
-
 import org.apache.commons.math.FunctionEvaluationException;
 import org.apache.commons.math.optimization.OptimizationException;
 import org.apache.commons.math.optimization.fitting.CurveFitter;

@@ -5,20 +5,18 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import org.janelia.utility.ConstantPair;
-import org.janelia.utility.ConstantTriple;
-import org.janelia.waves.thickness.correlations.CorrelationsObject;
-
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayCursor;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.FloatArray;
-import net.imglib2.img.basictypeaccess.array.LongArray;
-import net.imglib2.type.numeric.integer.LongType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
+
+import org.janelia.utility.ConstantPair;
+import org.janelia.utility.ConstantTriple;
+import org.janelia.waves.thickness.correlations.CorrelationsObject;
 
 public class RelateCorrelationsAndCoordinates {
 	public static ConstantTriple<RandomAccessibleInterval<FloatType>, RandomAccessibleInterval<FloatType>, RandomAccessibleInterval<FloatType>> createTriple(

@@ -1,7 +1,6 @@
 package org.janelia.waves.thickness.functions;
 
 import org.apache.commons.math.FunctionEvaluationException;
-import org.apache.commons.math.optimization.fitting.ParametricRealFunction;
 
 public class FixedMeanOneIntersectBellCurve implements DifferentiableParameterizedFunction {
 	

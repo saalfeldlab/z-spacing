@@ -1,9 +1,7 @@
 package org.janelia.waves.thickness.opinion;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
 
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -11,7 +9,6 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.TreeMap;
 
-import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayCursor;
 import net.imglib2.img.array.ArrayImg;
@@ -20,19 +17,16 @@ import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.view.Views;
 
 import org.apache.commons.math.FunctionEvaluationException;
 import org.apache.commons.math.optimization.general.GaussNewtonOptimizer;
-import org.apache.commons.math.optimization.general.LevenbergMarquardtOptimizer;
 import org.janelia.exception.InconsistencyError;
 import org.janelia.utility.ConstantPair;
 import org.janelia.waves.thickness.correlations.CorrelationsObjectInterface;
-import org.janelia.waves.thickness.functions.FixedMeanOneIntersectBellCurve;
-import org.janelia.waves.thickness.functions.FixedMeanOneIntersectBellCurveFactory;
 import org.janelia.waves.thickness.functions.OneIntersectBellCurve;
 import org.janelia.waves.thickness.functions.OneIntersectBellCurveFactory;
 import org.janelia.waves.thickness.opinion.OpinionCollector.Visitor;
+import org.janelia.waves.thickness.opinion.function.shift.FunctionShiftOpinionFactory;
 import org.janelia.waves.thickness.opinion.weights.WeightGenerator;
 import org.junit.Before;
 import org.junit.Test;

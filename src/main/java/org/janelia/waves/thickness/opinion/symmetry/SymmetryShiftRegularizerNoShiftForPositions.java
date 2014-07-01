@@ -1,7 +1,6 @@
 package org.janelia.waves.thickness.opinion.symmetry;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class SymmetryShiftRegularizerNoShiftForPositions implements
 		SymmetryShiftRegularizer {

@@ -1,10 +1,10 @@
 package org.janelia.waves.thickness.functions.symmetric;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
 import org.apache.commons.math.FunctionEvaluationException;
 import org.janelia.waves.thickness.functions.DomainError;
-import org.janelia.waves.thickness.functions.FixedMeanOneIntersectBellCurve;
 import org.junit.Before;
 import org.junit.Test;
 

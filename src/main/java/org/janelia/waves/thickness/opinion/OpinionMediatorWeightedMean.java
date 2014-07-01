@@ -2,15 +2,10 @@ package org.janelia.waves.thickness.opinion;
 
 import java.util.ArrayList;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.TreeMap;
-
-import mpicbg.models.Point;
-import mpicbg.models.PointMatch;
-import mpicbg.models.Tile;
-import mpicbg.models.TranslationModel1D;
 
 import org.janelia.exception.InconsistencyError;
 import org.janelia.utility.ConstantPair;

@@ -1,6 +1,6 @@
 package org.janelia.waves.thickness.opinion.symmetry;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -9,9 +9,9 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.TreeMap;
-import java.util.Map.Entry;
 
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayCursor;
@@ -32,13 +32,11 @@ import org.janelia.utility.ConstantPair;
 import org.janelia.utility.ConstantTriple;
 import org.janelia.waves.thickness.correlations.CorrelationsObjectInterface;
 import org.janelia.waves.thickness.functions.symmetric.BellCurve;
-import org.janelia.waves.thickness.functions.symmetric.BellCurveVariableIntersect;
 import org.janelia.waves.thickness.opinion.symmetry.SymmetryAxisOpinionCollector.Visitor;
 import org.janelia.waves.thickness.opinion.weights.DataBasedWeightGenerator;
 import org.janelia.waves.thickness.opinion.weights.FitWeightGenerator;
 import org.janelia.waves.thickness.opinion.weights.FunctionFitRansacWeightGenerator;
 import org.janelia.waves.thickness.opinion.weights.IterativeFitWeightGenerator;
-import org.janelia.waves.thickness.opinion.weights.SingleFitWeightGenerator;
 import org.janelia.waves.thickness.opinion.weights.TwoFitsWeightGenerator;
 import org.janelia.waves.thickness.opinion.weights.WeightGenerator;
 import org.junit.Before;

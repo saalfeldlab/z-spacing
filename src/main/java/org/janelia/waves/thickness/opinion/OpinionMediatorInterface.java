@@ -2,9 +2,6 @@ package org.janelia.waves.thickness.opinion;
 
 import java.util.TreeMap;
 
-import mpicbg.models.Tile;
-import mpicbg.models.TranslationModel1D;
-
 import org.janelia.exception.InconsistencyError;
 import org.janelia.utility.ConstantTriple;
 
