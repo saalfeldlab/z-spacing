@@ -32,8 +32,6 @@ public class SymmetryShiftRegularizerNoShiftForPositions implements
 			coordinates[idx] += currShift;
 			
 		}
-		System.out.print( "\t" + Arrays.toString( weights ) );
-		System.out.println();
 		
 		return change;
 	}

@@ -362,32 +362,32 @@ public class SymmetryAxisOpinionCollectorTest {
 			visitor = new PrintVisitor();
 		}
 		
-//		TreeMap< ConstantPair<Long, Long>, double[]> shifted = oc.shiftCoordinates( positions, // xy positions
-//				1.0,           // shift lambda
-//				1,             // nCores
-//				100,             // nIterations
-//				0.001,   // maximum allowed change
-//				visitor        // visitor
-//				);
-//		
-//		if ( doPrint || showResult ) {
-//			System.out.println();
-//		
-//			for ( Entry<ConstantPair<Long, Long>, double[]> entry : shifted.entrySet() ) {
-//				System.out.print( entry.getKey() + ": ");
-//				System.out.println( Arrays.toString( entry.getValue() ) );
-//			}
-//		}
-//			
-//		
-//		double[] coordinatesReference = new double[ coordinateBase.size() ];
-//		for ( int i = 0; i < coordinateBase.size(); ++i ) {
-//			coordinatesReference[i] = coordinateBase.get( i );
-//		}
-//		
-//		System.out.println( visitor );
-//		
-//		assertArrayEquals( coordinatesReference, shifted.get( new ConstantPair<Long, Long>( 0l, 0l ) ), 0.01 );
+		TreeMap< ConstantPair<Long, Long>, double[]> shifted = oc.shiftCoordinates( positions, // xy positions
+				1.0,           // shift lambda
+				1,             // nCores
+				100,             // nIterations
+				0.001,   // maximum allowed change
+				visitor        // visitor
+				);
+		
+		if ( doPrint || showResult ) {
+			System.out.println();
+		
+			for ( Entry<ConstantPair<Long, Long>, double[]> entry : shifted.entrySet() ) {
+				System.out.print( entry.getKey() + ": ");
+				System.out.println( Arrays.toString( entry.getValue() ) );
+			}
+		}
+			
+		
+		double[] coordinatesReference = new double[ coordinateBase.size() ];
+		for ( int i = 0; i < coordinateBase.size(); ++i ) {
+			coordinatesReference[i] = coordinateBase.get( i );
+		}
+		
+		System.out.println( visitor );
+		
+		assertArrayEquals( coordinatesReference, shifted.get( new ConstantPair<Long, Long>( 0l, 0l ) ), 0.01 );
 	}
 	
 	
@@ -533,23 +533,23 @@ WeightGenerator wg = new IgnoreIdentityWeightGenerator();
 			visitor = new PrintVisitor();
 		}
 		
-//		TreeMap< ConstantPair<Long, Long>, double[]> shifted = oc.shiftCoordinates( positions, // xy positions
-//				1.0,           // shift lambda
-//				1,             // nCores
-//				100,             // nIterations
-//				0.0000000,   // maximum allowed error
-//				visitor        // visitor
-//				);
-//		
-//		if ( doPrint || showResult ) {
-//			System.out.println();
-//		
-//			for ( Entry<ConstantPair<Long, Long>, double[]> entry : shifted.entrySet() ) {
-//				System.out.print( entry.getKey() + ": ");
-//				System.out.println( Arrays.toString( entry.getValue() ) );
-//			}
-//			System.out.println();
-//		}
+		TreeMap< ConstantPair<Long, Long>, double[]> shifted = oc.shiftCoordinates( positions, // xy positions
+				1.0,           // shift lambda
+				1,             // nCores
+				100,             // nIterations
+				0.0000000,   // maximum allowed error
+				visitor        // visitor
+				);
+		
+		if ( doPrint || showResult ) {
+			System.out.println();
+		
+			for ( Entry<ConstantPair<Long, Long>, double[]> entry : shifted.entrySet() ) {
+				System.out.print( entry.getKey() + ": ");
+				System.out.println( Arrays.toString( entry.getValue() ) );
+			}
+			System.out.println();
+		}
 	}
 	
 	

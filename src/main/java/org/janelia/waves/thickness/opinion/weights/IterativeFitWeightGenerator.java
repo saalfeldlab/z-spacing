@@ -1,18 +1,11 @@
 package org.janelia.waves.thickness.opinion.weights;
 
-import java.util.Arrays;
 import java.util.TreeMap;
-
-import net.imglib2.Cursor;
-import net.imglib2.type.numeric.real.DoubleType;
-import net.imglib2.view.Views;
 
 import org.apache.commons.math.FunctionEvaluationException;
 import org.apache.commons.math.optimization.OptimizationException;
 import org.apache.commons.math.optimization.fitting.CurveFitter;
 import org.janelia.utility.ConstantPair;
-import org.janelia.waves.thickness.correlations.CorrelationsObjectInterface;
-import org.janelia.waves.thickness.correlations.CorrelationsObjectInterface.Meta;
 import org.janelia.waves.thickness.functions.symmetric.SymmetricDifferentiableParameterizedFunction;
 
 @SuppressWarnings("deprecation")
@@ -69,7 +62,6 @@ public class IterativeFitWeightGenerator extends FitWeightGenerator {
 				e.printStackTrace();
 			}
 		
-//			System.out.print( "iteration " + iteration + ": ");
 			
 			for (int i = 0; i < measurements.length; ++i ) {
 
@@ -102,7 +94,6 @@ public class IterativeFitWeightGenerator extends FitWeightGenerator {
 //					sum /= ( measurements.length - 1 );
 					
 					double val = this.func.value( coordinates[i], this.initialGuess ) - measurements[i];
-//					System.out.print( String.format( "%f ", val));
 					opinion.put( currPos, Math.abs(  val ) / sum );
 					currentChange += Math.abs( val );
 					
@@ -113,7 +104,6 @@ public class IterativeFitWeightGenerator extends FitWeightGenerator {
 				}
 				
 			}
-//			System.out.println();
 		}
 		
 

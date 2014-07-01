@@ -210,7 +210,6 @@ public class SymmetryAxisOpinionCollector {
 				// specify both the overall range of coordinates as well as the range of coordinates that we look at
 				// also needs xy information for caching
 				// range is set to -1 so that the range is determined by the function
-				System.out.println( iteration + ":\n\t" + Arrays.toString( zAxis ) );
 				this.weightGenerator.generateAtXY( zAxis, 
 						                           this.correlations, 
 						                           this.zBinMinimum, 
@@ -226,7 +225,6 @@ public class SymmetryAxisOpinionCollector {
 				for ( int index = 0; index < weightsPrint.length; ++ index ) {
 					weightsPrint[index] = this.weightGenerator.getWeightFor( xy.getKey().getA(), xy.getKey().getB(), index + this.zBinMinimum );
 				}
-				System.out.println( "\t" + Arrays.toString( weightsPrint) );
 				
 				double[] shifts = new double[ zAxis.length ]; // initialized to zero by default: http://docs.oracle.com/javase/specs/jls/se7/html/jls-4.html#jls-4.12.5
 				
@@ -259,26 +257,13 @@ public class SymmetryAxisOpinionCollector {
 					
 					// use opinion to get shift for the current z bin
 					double[] weights = new double[ localCoordinates.length ];
-					System.out.print( "\t\t" );
 					ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType>> c = this.correlations.extractDoubleCorrelationsAt(xy.getKey().getA(), xy.getKey().getB(), zBin);
 					Cursor<DoubleType> cursor = Views.iterable( c.getA() ).cursor();
 					for ( int idx = 0; idx < localCoordinates.length; ++idx ) {
 						weights[idx] = this.weightGenerator.getWeightFor( xy.getKey().getA(), xy.getKey().getB(), meta.zCoordinateMin + idx );
 
-						System.out.print( "(b=" + ( meta.zCoordinateMin + idx ) + "," + String.format("w=%.3f,z=%.3f,c=%.3f) ", weights[idx], localCoordinates[idx], cursor.next().getRealDouble() ) );
 					}
-					System.out.println();
-//					System.out.println( meta.zPosition );
-//					for ( int i = 0; i < localCoordinates.length; ++ i) {
-//						System.out.print( String.format( "%.03f", localCoordinates[i] ) + "\t");
-//					}
-//					System.out.println();
-					
-//					for ( double w : weights ) {
-//						System.out.print( String.format( "%.03f\t", w ) );
-//					}
-//					System.out.println();
-//					System.out.println();
+
 					
 					shifts[ localReferenceBin ] = opinion.getA().express( localCoordinates, weights )[0];
 					nPoints += 1;

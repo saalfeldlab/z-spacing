@@ -3,16 +3,10 @@ package org.janelia.waves.thickness.opinion.weights;
 import java.util.ArrayList;
 import java.util.TreeMap;
 
-import net.imglib2.Cursor;
-import net.imglib2.type.numeric.real.DoubleType;
-import net.imglib2.view.Views;
-
 import org.apache.commons.math.FunctionEvaluationException;
 import org.apache.commons.math.optimization.OptimizationException;
 import org.apache.commons.math.optimization.fitting.CurveFitter;
 import org.janelia.utility.ConstantPair;
-import org.janelia.waves.thickness.correlations.CorrelationsObjectInterface;
-import org.janelia.waves.thickness.correlations.CorrelationsObjectInterface.Meta;
 import org.janelia.waves.thickness.functions.symmetric.SymmetricDifferentiableParameterizedFunction;
 
 @SuppressWarnings("deprecation")
@@ -47,7 +41,6 @@ public class TwoFitsWeightGenerator extends FitWeightGenerator {
 			}
 			
 			try {
-//				System.out.println( Arrays.toString( coordinates ) + " " + Arrays.toString( measurements ) + " " + Arrays.toString( this.initialGuess ) + " " + Arrays.toString( weights ) ); 
 				this.initialGuess = this.fitter.fit( this.func, this.initialGuess );
 			} catch (OptimizationException e) {
 				// TODO Auto-generated catch block
@@ -77,7 +70,6 @@ public class TwoFitsWeightGenerator extends FitWeightGenerator {
 			if ( weights.length - zeroCount >= initialGuess.length ) {
 			
 				try {
-//					System.out.println( "weights=" + Arrays.toString( weights ) );
 					secondGuess = this.fitter.fit( this.func, this.initialGuess );
 				} catch (OptimizationException e1) {
 					// TODO Auto-generated catch block
@@ -124,7 +116,6 @@ public class TwoFitsWeightGenerator extends FitWeightGenerator {
 				try {
 					double initialValue = this.func.value( coordinates[currPosCentered], this.initialGuess);
 					double secondValue  = this.func.value( coordinates[currPosCentered], secondGuess );
-//					System.out.println( currPos + ": " + initialValue + "," + secondValue + " " + Arrays.toString( this.initialGuess ) + "," + Arrays.toString( secondGuess ) );
 					opinion.put( currPos, Math.abs( 2.0 * ( initialValue - secondValue ) / ( initialValue + secondValue ) ) );
 				} catch (FunctionEvaluationException e) {
 					// TODO Auto-generated catch block

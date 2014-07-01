@@ -6,17 +6,10 @@ import java.util.TreeMap;
 import mpicbg.models.NotEnoughDataPointsException;
 import mpicbg.models.Point;
 import mpicbg.models.PointMatch;
-import net.imglib2.Cursor;
-import net.imglib2.type.numeric.real.DoubleType;
-import net.imglib2.view.Views;
 
-import org.apache.commons.math.FunctionEvaluationException;
-import org.apache.commons.math.optimization.OptimizationException;
 import org.apache.commons.math.optimization.fitting.CurveFitter;
 import org.janelia.models.FunctionFitModel;
 import org.janelia.utility.ConstantPair;
-import org.janelia.waves.thickness.correlations.CorrelationsObjectInterface;
-import org.janelia.waves.thickness.correlations.CorrelationsObjectInterface.Meta;
 import org.janelia.waves.thickness.functions.symmetric.SymmetricDifferentiableParameterizedFunction;
 
 public class FunctionFitRansacWeightGenerator extends FitWeightGenerator {
@@ -60,7 +53,6 @@ public class FunctionFitRansacWeightGenerator extends FitWeightGenerator {
 			
 		
 			
-//		for ( int iteration = 0; iteration < nIterations && currentChange > threshold; ++iteration ) {
 			
 		FunctionFitModel model = new FunctionFitModel( this.initialGuess, func, fitter);
 		
@@ -98,7 +90,6 @@ public class FunctionFitRansacWeightGenerator extends FitWeightGenerator {
 		this.initialGuess = model.getParameters();
 		
 		
-//			System.out.print( "iteration " + iteration + ": ");
 		
 		for ( int i = 0; i < measurements.length; ++i ) {
 
@@ -130,8 +121,6 @@ public class FunctionFitRansacWeightGenerator extends FitWeightGenerator {
 
 			
 		}
-//			System.out.println();
-//		}
 	}
 	
 
