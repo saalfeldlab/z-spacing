@@ -26,13 +26,14 @@ import org.apache.commons.math.FunctionEvaluationException;
 import org.apache.commons.math.optimization.general.GaussNewtonOptimizer;
 import org.apache.commons.math.optimization.general.LevenbergMarquardtOptimizer;
 import org.janelia.exception.InconsistencyError;
-import org.janelia.waves.thickness.ConstantPair;
-import org.janelia.waves.thickness.CorrelationsObjectInterface;
+import org.janelia.utility.ConstantPair;
+import org.janelia.waves.thickness.correlations.CorrelationsObjectInterface;
 import org.janelia.waves.thickness.functions.FixedMeanOneIntersectBellCurve;
 import org.janelia.waves.thickness.functions.FixedMeanOneIntersectBellCurveFactory;
 import org.janelia.waves.thickness.functions.OneIntersectBellCurve;
 import org.janelia.waves.thickness.functions.OneIntersectBellCurveFactory;
 import org.janelia.waves.thickness.opinion.OpinionCollector.Visitor;
+import org.janelia.waves.thickness.opinion.weights.WeightGenerator;
 import org.junit.Before;
 import org.junit.Test;
 

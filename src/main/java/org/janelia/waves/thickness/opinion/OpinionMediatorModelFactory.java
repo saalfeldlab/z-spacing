@@ -5,7 +5,7 @@ import java.util.TreeMap;
 import mpicbg.models.Tile;
 import mpicbg.models.TranslationModel1D;
 
-import org.janelia.waves.thickness.ConstantTriple;
+import org.janelia.utility.ConstantTriple;
 
 public class OpinionMediatorModelFactory implements
 		OpinionMediatorFactoryInterface {

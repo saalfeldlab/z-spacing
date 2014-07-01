@@ -7,7 +7,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.janelia.waves.thickness.ConstantPair;
+import org.janelia.utility.ConstantPair;
 
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImg;

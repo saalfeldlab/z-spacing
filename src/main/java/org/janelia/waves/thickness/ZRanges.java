@@ -4,6 +4,8 @@ import java.security.InvalidKeyException;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import org.janelia.utility.ConstantPair;
+
 
 public class ZRanges {
 	private final HashMap< ConstantPair<Long, Long>, double[]> zCoordinates;

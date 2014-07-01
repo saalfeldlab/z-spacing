@@ -1,6 +1,8 @@
-package org.janelia.waves.thickness;
+package org.janelia.waves.thickness.correlations;
 
 import java.util.HashMap;
+
+import org.janelia.utility.ConstantPair;
 
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.numeric.real.DoubleType;

@@ -14,7 +14,7 @@ public class ShiftToFitOpinion implements Opinion {
 	private final DifferentiableParameterizedFunction func;
 	private final double[] coordinates;
 	private final double[] values;
-	private final double[] weights;
+	private double[] weights;
 	
 	
 	public ShiftToFitOpinion( CurveFitter fit, 
@@ -87,6 +87,11 @@ public class ShiftToFitOpinion implements Opinion {
 
 	public double[] express(double[] coordinates) {
 		return this.express();
+	}
+
+	public double[] express(double[] coordinates, double[] weights) {
+		this.weights = weights;
+		return express( coordinates );
 	}
 
 }

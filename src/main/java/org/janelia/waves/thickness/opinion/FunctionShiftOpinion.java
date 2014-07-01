@@ -94,4 +94,11 @@ public class FunctionShiftOpinion implements Opinion {
 		return this.express();
 	}
 
+
+
+	public double[] express(double[] coordinates, double[] weights) {
+		this.weights = weights;
+		return express( coordinates );
+	}
+
 }

@@ -7,7 +7,7 @@ import org.apache.commons.math.optimization.OptimizationException;
 import org.apache.commons.math.optimization.fitting.CurveFitter;
 import org.janelia.waves.thickness.functions.symmetric.SymmetricDifferentiableParameterizedFunction;
 import org.janelia.waves.thickness.opinion.Opinion;
-import org.janelia.waves.thickness.opinion.WeightGenerator;
+import org.janelia.waves.thickness.opinion.weights.WeightGenerator;
 
 @SuppressWarnings("deprecation")
 public class SymmetryAxisOpinion implements Opinion {
@@ -81,6 +81,38 @@ public class SymmetryAxisOpinion implements Opinion {
 		}
 		
 		return this.express(coordinates);
+	}
+
+
+
+	public double[] express(double[] coordinates, double[] weights) {
+this.fitter.clearObservations();
+		
+		for ( int i = 0; i < coordinates.length; ++i ) {
+			
+			fitter.addObservedPoint( weights[i], coordinates[i], this.measurements[i] );
+			
+		}
+		
+		try {
+			this.initialGuess = fitter.fit( this.func, this.initialGuess );
+		} catch (OptimizationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (FunctionEvaluationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalArgumentException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		double oldSymmetryAxis = this.symmetryAxis;
+		
+		this.symmetryAxis = this.func.axisOfSymmetry( this.initialGuess );
+		
+		
+		return new double[]{ this.symmetryAxis - oldSymmetryAxis };
 	}
 
 }

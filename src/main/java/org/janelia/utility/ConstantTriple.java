@@ -1,4 +1,4 @@
-package org.janelia.waves.thickness;
+package org.janelia.utility;
 
 public class ConstantTriple<A, B, C> implements Comparable< ConstantTriple< A, B, C> > {
 	private final A entryA;
@@ -36,9 +36,9 @@ public class ConstantTriple<A, B, C> implements Comparable< ConstantTriple< A, B
 	@Override
 	public boolean equals(Object obj) {
 		if ( obj instanceof ConstantPair<?, ?> ) {
-			return ( ( ConstantTriple<A, B, C> ) obj ).entryA.equals( this.entryA ) &&
-				   ( ( ConstantTriple<A, B, C> ) obj ).entryB.equals( this.entryB ) &&
-				   ( ( ConstantTriple<A, B, C> ) obj ).entryC.equals( this.entryC );
+			return ( (org.janelia.utility.ConstantTriple<A, B, C> ) obj ).entryA.equals( this.entryA ) &&
+				   ( (org.janelia.utility.ConstantTriple<A, B, C> ) obj ).entryB.equals( this.entryB ) &&
+				   ( (org.janelia.utility.ConstantTriple<A, B, C> ) obj ).entryC.equals( this.entryC );
 		}
 		return false;
 	}

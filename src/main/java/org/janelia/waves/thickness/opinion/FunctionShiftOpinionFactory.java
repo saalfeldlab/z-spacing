@@ -1,7 +1,7 @@
 package org.janelia.waves.thickness.opinion;
 
 import org.apache.commons.math.optimization.DifferentiableMultivariateVectorialOptimizer;
-import org.janelia.waves.thickness.CorrelationsObjectInterface.Meta;
+import org.janelia.waves.thickness.correlations.CorrelationsObjectInterface.Meta;
 import org.janelia.waves.thickness.functions.DifferentiableParameterizedFunction;
 import org.janelia.waves.thickness.functions.DifferentiableParameterizedFunctionFactory;
 

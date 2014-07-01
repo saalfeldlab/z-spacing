@@ -6,7 +6,7 @@ import mpicbg.models.Tile;
 import mpicbg.models.TranslationModel1D;
 
 import org.janelia.exception.InconsistencyError;
-import org.janelia.waves.thickness.ConstantTriple;
+import org.janelia.utility.ConstantTriple;
 
 public interface OpinionMediatorInterface {
 	

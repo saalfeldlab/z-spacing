@@ -5,6 +5,10 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
+import org.janelia.utility.ConstantPair;
+import org.janelia.utility.ConstantTriple;
+import org.janelia.waves.thickness.correlations.CorrelationsObject;
+
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayCursor;

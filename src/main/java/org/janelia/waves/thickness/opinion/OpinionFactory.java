@@ -1,6 +1,6 @@
 package org.janelia.waves.thickness.opinion;
 
-import org.janelia.waves.thickness.CorrelationsObjectInterface.Meta;
+import org.janelia.waves.thickness.correlations.CorrelationsObjectInterface.Meta;
 
 public interface OpinionFactory {
 

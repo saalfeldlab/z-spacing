@@ -15,7 +15,7 @@ import net.imglib2.type.numeric.integer.LongType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
-import org.janelia.waves.thickness.ConstantPair;
+import org.janelia.utility.ConstantPair;
 import org.junit.Before;
 import org.junit.Test;
 
