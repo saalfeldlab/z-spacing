@@ -1,6 +1,7 @@
 package org.janelia.waves.thickness.correlations;
 
 import java.util.HashMap;
+import java.util.TreeMap;
 
 import org.janelia.utility.ConstantPair;
 
@@ -31,6 +32,6 @@ public interface CorrelationsObjectInterface {
 	
 	public long getzMax();
 	
-	public HashMap<Long, Meta> getMetaMap();
+	public TreeMap<Long, Meta> getMetaMap();
 	
 }

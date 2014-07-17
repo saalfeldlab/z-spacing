@@ -31,18 +31,18 @@ public class ConstantPair<A, B> implements Pair<A, B>, Comparable< ConstantPair<
 		return entryB;
 	}
 
-	/* (non-Javadoc)
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
-	@SuppressWarnings("unchecked")
-	@Override
-	public boolean equals(Object obj) {
-		if ( obj instanceof ConstantPair<?, ?> ) {
-			return ( (org.janelia.utility.ConstantPair<A, B> ) obj ).entryA.equals( this.entryA ) &&
-				   ( (org.janelia.utility.ConstantPair<A, B> ) obj ).entryB.equals( this.entryB );
-		}
-		return false;
-	}
+//	/* (non-Javadoc)
+//	 * @see java.lang.Object#equals(java.lang.Object)
+//	 */
+//	@SuppressWarnings("unchecked")
+//	@Override
+//	public boolean equals(Object obj) {
+//		if ( obj instanceof ConstantPair<?, ?> ) {
+//			return ( (org.janelia.utility.ConstantPair<A, B> ) obj ).entryA.equals( this.entryA ) &&
+//				   ( (org.janelia.utility.ConstantPair<A, B> ) obj ).entryB.equals( this.entryB );
+//		}
+//		return false;
+//	}
 
 	/* (non-Javadoc)
 	 * @see java.lang.Object#hashCode()

@@ -128,7 +128,7 @@ public class OpinionCollector {
 		
 		this.opinions.clear();
 		
-		HashMap<Long, Meta> metaMap = this.correlations.getMetaMap();
+		TreeMap<Long, Meta> metaMap = this.correlations.getMetaMap();
 		
 		OpinionMediatorInterface mediator = this.mediatorFactory.create( lambda );
 		

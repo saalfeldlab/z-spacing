@@ -31,6 +31,7 @@ import org.janelia.exception.InconsistencyError;
 import org.janelia.utility.ConstantPair;
 import org.janelia.utility.ConstantTriple;
 import org.janelia.waves.thickness.correlations.CorrelationsObjectInterface;
+import org.janelia.waves.thickness.correlations.DummyCorrelationsObject;
 import org.janelia.waves.thickness.functions.symmetric.BellCurve;
 import org.janelia.waves.thickness.opinion.symmetry.SymmetryAxisOpinionCollector.Visitor;
 import org.janelia.waves.thickness.opinion.weights.DataBasedWeightGenerator;
@@ -48,65 +49,7 @@ public class SymmetryAxisOpinionCollectorTest {
 	private boolean doPrint    = false;
 	private boolean showResult = true;
 	
-	class DummyCorrelationsObject implements CorrelationsObjectInterface {
-		
-		
-		private final long zMin;
-		private final long zMax;
-		private final int range;
-		private final int nData;
-		private final TreeMap< ConstantTriple<Long, Long, Long>, ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType> > > corrs;
-		
-		
-			
-		public DummyCorrelationsObject(
-				long zMin,
-				long zMax,
-				int range,
-				int nData,
-				TreeMap<ConstantTriple<Long, Long, Long>, ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType>>> corrs) {
-			super();
-			this.zMin  = zMin;
-			this.zMax  = zMax;
-			this.range = range;
-			this.nData = nData;
-			this.corrs = corrs;
-		}
-
-		public long getzMin() {
-			return (long) zMin;
-		}
-		
-		public long getzMax() {
-			return (long) zMax;
-		}
-		
-		public HashMap<Long, Meta> getMetaMap() {
-			HashMap<Long, Meta> res = new HashMap<Long, Meta>();
-			
-			for ( int zBin = 0; zBin < nData; ++zBin ) {
-				Meta m = new Meta();
-				m.zCoordinateMin = (long) Math.max( zBin + 1 - range, 1 );
-				m.zCoordinateMax = (long) Math.min( zBin + 1 + range + 1, nData + 1 ); // max is exclusive
-				m.zPosition      = (long) zBin + 1;
-				res.put( (long) zBin + 1, m );
-			}
-			
-		
-			return res;
-		}
-
-		public ConstantPair<RandomAccessibleInterval<FloatType>, RandomAccessibleInterval<FloatType>> extractCorrelationsAt(
-				long x, long y, long z) {
-			return null;
-		}
-
-
-		public ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType>> extractDoubleCorrelationsAt(
-				long x, long y, long z) {
-			return corrs.get( new ConstantTriple<Long, Long, Long>( x, y, z) );
-		}
-	}
+	
 	
 	
 	class IgnoreIdentityWeightGenerator implements WeightGenerator {
@@ -693,7 +636,7 @@ WeightGenerator wg = new IgnoreIdentityWeightGenerator();
 		TreeMap<ConstantPair<Long, Long>, ArrayList<Long>> positions = new TreeMap< ConstantPair<Long, Long>, ArrayList<Long> >();
 		positions.put( new ConstantPair<Long,Long>( 0l, 0l ), new ArrayList<Long>() );
 		
-		for ( int i = 0; i < nData; ++ i ) {
+		for ( int i = 0; i < nData; ++i ) {
 		
 			positions.get( new ConstantPair<Long,Long>( 0l, 0l ) ).add( (long) i + 1 );
 

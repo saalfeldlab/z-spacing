@@ -29,27 +29,27 @@ public class ConstantTriple<A, B, C> implements Comparable< ConstantTriple< A, B
 		return entryC;
 	}
 	
-	/* (non-Javadoc)
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
-	@SuppressWarnings("unchecked")
-	@Override
-	public boolean equals(Object obj) {
-		if ( obj instanceof ConstantPair<?, ?> ) {
-			return ( (org.janelia.utility.ConstantTriple<A, B, C> ) obj ).entryA.equals( this.entryA ) &&
-				   ( (org.janelia.utility.ConstantTriple<A, B, C> ) obj ).entryB.equals( this.entryB ) &&
-				   ( (org.janelia.utility.ConstantTriple<A, B, C> ) obj ).entryC.equals( this.entryC );
-		}
-		return false;
-	}
-
-	/* (non-Javadoc)
-	 * @see java.lang.Object#hashCode()
-	 */
-	@Override
-	public int hashCode() {
-		return entryA.hashCode() + entryB.hashCode() + entryC.hashCode();
-	}
+//	/* (non-Javadoc)
+//	 * @see java.lang.Object#equals(java.lang.Object)
+//	 */
+//	@SuppressWarnings("unchecked")
+//	@Override
+//	public boolean equals(Object obj) {
+//		if ( obj instanceof ConstantPair<?, ?> ) {
+//			return ( (org.janelia.utility.ConstantTriple<A, B, C> ) obj ).entryA.equals( this.entryA ) &&
+//				   ( (org.janelia.utility.ConstantTriple<A, B, C> ) obj ).entryB.equals( this.entryB ) &&
+//				   ( (org.janelia.utility.ConstantTriple<A, B, C> ) obj ).entryC.equals( this.entryC );
+//		}
+//		return false;
+//	}
+//
+//	/* (non-Javadoc)
+//	 * @see java.lang.Object#hashCode()
+//	 */
+//	@Override
+//	public int hashCode() {
+//		return entryA.hashCode() + entryB.hashCode() + entryC.hashCode();
+//	}
 
 	@SuppressWarnings("unchecked")
 	public int compareTo(ConstantTriple<A, B, C> o) {

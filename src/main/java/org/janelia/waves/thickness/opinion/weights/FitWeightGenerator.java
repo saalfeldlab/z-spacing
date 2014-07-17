@@ -1,5 +1,6 @@
 package org.janelia.waves.thickness.opinion.weights;
 
+import java.util.Arrays;
 import java.util.TreeMap;
 
 import net.imglib2.Cursor;

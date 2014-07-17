@@ -177,7 +177,7 @@ public class SymmetryAxisOpinionCollector {
 			double threshold, Visitor visitor ) throws InconsistencyError, InterruptedException {
 		
 		
-		HashMap<Long, Meta> metaMap = this.correlations.getMetaMap();
+		TreeMap<Long, Meta> metaMap = this.correlations.getMetaMap();
 		double change = Double.MAX_VALUE;
 		
 		for ( int iteration = 0; iteration < nIterations; ++iteration ) {

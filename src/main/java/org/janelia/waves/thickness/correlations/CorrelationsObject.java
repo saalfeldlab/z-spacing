@@ -1,6 +1,7 @@
 package org.janelia.waves.thickness.correlations;
 
 import java.util.HashMap;
+import java.util.TreeMap;
 
 import net.imglib2.Cursor;
 import net.imglib2.Pair;
@@ -38,7 +39,7 @@ public class CorrelationsObject implements CorrelationsObjectInterface {
 	}
 
 	private final HashMap<Long, RandomAccessibleInterval<FloatType> > correlationsMap;
-	private final HashMap<Long, Meta> metaMap;
+	private final TreeMap<Long, Meta> metaMap;
 	private final HashMap<Long, RandomAccessibleInterval<FloatType> > fitMap;
 	private Options options;
 	private long zMin;
@@ -75,7 +76,7 @@ public class CorrelationsObject implements CorrelationsObjectInterface {
 	/**
 	 * @return the metaMap
 	 */
-	public HashMap<Long, Meta> getMetaMap() {
+	public TreeMap<Long, Meta> getMetaMap() {
 		return metaMap;
 	}
 
@@ -106,7 +107,7 @@ public class CorrelationsObject implements CorrelationsObjectInterface {
 
 	public CorrelationsObject(
 			final HashMap<Long, RandomAccessibleInterval<FloatType>> correlationsMap,
-			final HashMap<Long, Meta> metaMap,
+			final TreeMap<Long, Meta> metaMap,
 			final Options options) {
 		super();
 		this.zMin = 0;
@@ -134,7 +135,7 @@ public class CorrelationsObject implements CorrelationsObjectInterface {
 
 	public CorrelationsObject(Options options) {
 		this(new HashMap<Long, RandomAccessibleInterval<FloatType>>(),
-				new HashMap<Long, Meta>(),
+				new TreeMap<Long, Meta>(),
 				options);
 	}
 	
