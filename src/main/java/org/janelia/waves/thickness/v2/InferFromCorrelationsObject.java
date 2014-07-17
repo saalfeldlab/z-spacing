@@ -97,18 +97,24 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 		double[] lut = startingCoordinates;
 		
 		
-		ArrayImg<DoubleType, DoubleArray> coordinates = ArrayImgs.doubles( lut, startingCoordinates.length );
-//		{ 
-//			int i = 0; 
-//			for ( DoubleType c : coordinates ) {
-//				c.set( startingCoordinates[i]);
-//				++i;
-//			}
-//		}
+		
+		
+		
+		ArrayImg<DoubleType, DoubleArray> coordinates = ArrayImgs.doubles( lut.length );
+		
+		{ 
+			int i = 0; 
+			for ( DoubleType c : coordinates ) {
+				c.set( startingCoordinates[i]);
+				++i;
+			}
+		}
 		
 		LUTRealTransform transform = new LUTRealTransform(lut, this.lutInterpolatorFactory, matrix.numDimensions(), matrix.numDimensions() );
 		
 		ArrayImg<DoubleType, DoubleArray> mediatedShifts = ArrayImgs.doubles( lut.length );
+		
+
 		
 		ArrayCursor<DoubleType> mediatedCursor   = mediatedShifts.cursor();
 		ArrayCursor<DoubleType> coordinateCursor = coordinates.cursor();
@@ -170,7 +176,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			coordinateCursor = coordinates.cursor();
 			
 			
-			int i = 0;
+			int ijk = 0;
 			
 			File file = new File( String.format( "/groups/saalfeld/home/hanslovskyp/shifts_iteration=%d.csv", n ) );
 			try {
@@ -180,10 +186,11 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 				while ( mediatedCursor.hasNext() ) {
 					
 					coordinateCursor.fwd();
-					coordinateCursor.get().setReal( coordinateCursor.get().getRealDouble() - 0.1*mediatedCursor.next().getRealDouble() );
+					coordinateCursor.get().setReal( coordinateCursor.get().getRealDouble() + 0.1*mediatedCursor.next().getRealDouble() );
 					
-					bw.write( String.format( "%d,%f,%f\n", i, mediatedCursor.get().get(), coordinateCursor.get().get() ) );
-					++i;
+					bw.write( String.format( "%d,%f,%f\n", ijk, mediatedCursor.get().get(), coordinateCursor.get().get() ) );
+					lut[ijk] -= 0.1 * mediatedCursor.get().get();
+					++ijk;
 					
 				}
 				
@@ -342,7 +349,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 		CorrelationsObjectInterface dummyCorrelationsObject = new DummyCorrelationsObject( zMin + range, zMax - range, range, nData, corrs, metaMap );
 		
 		InferFromCorrelationsObject<TranslationModel1D, ScaleModel> inf = new InferFromCorrelationsObject<TranslationModel1D, ScaleModel>(dummyCorrelationsObject, 
-				25, 
+				100, 
 				range, 
 				new TranslationModel1D(), 
 				new NLinearInterpolatorFactory<DoubleType>(),

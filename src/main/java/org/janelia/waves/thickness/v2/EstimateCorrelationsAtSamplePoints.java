@@ -86,7 +86,7 @@ public class EstimateCorrelationsAtSamplePoints {
 		
 		RealTransformRandomAccessible<DoubleType, LUTRealTransform> source2 = new RealTransformRandomAccessible<DoubleType, LUTRealTransform >( source, transform );
 		
-		ImageJFunctions.show(Views.interval(Views.offset(source2, -10, -10), new long[]{0,0}, new long[]{correlations.dimension(0) + 20,correlations.dimension(1) + 20}) );
+//		ImageJFunctions.show(Views.interval(Views.offset(source2, -10, -10), new long[]{0,0}, new long[]{correlations.dimension(0) + 20,correlations.dimension(1) + 20}) );
 		
 		RealRandomAccess<DoubleType> access   = source2.realRandomAccess();
 		RealRandomAccess<DoubleType> access2  = source2.realRandomAccess();
