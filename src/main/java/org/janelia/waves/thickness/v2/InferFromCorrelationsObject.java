@@ -97,13 +97,14 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 		double[] lut = startingCoordinates;
 		
 		
-		ArrayImg<DoubleType, DoubleArray> coordinates = ArrayImgs.doubles( startingCoordinates.length );
-		{ 
-			int i = 0; 
-			for ( DoubleType c : coordinates ) {
-				c.set( startingCoordinates[i]);
-			}
-		}
+		ArrayImg<DoubleType, DoubleArray> coordinates = ArrayImgs.doubles( lut, startingCoordinates.length );
+//		{ 
+//			int i = 0; 
+//			for ( DoubleType c : coordinates ) {
+//				c.set( startingCoordinates[i]);
+//				++i;
+//			}
+//		}
 		
 		LUTRealTransform transform = new LUTRealTransform(lut, this.lutInterpolatorFactory, matrix.numDimensions(), matrix.numDimensions() );
 		
@@ -181,7 +182,6 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 					coordinateCursor.fwd();
 					coordinateCursor.get().setReal( coordinateCursor.get().getRealDouble() - 0.1*mediatedCursor.next().getRealDouble() );
 					
-					lut[i] -= 0.1*mediatedCursor.next().getRealDouble();
 					bw.write( String.format( "%d,%f,%f\n", i, mediatedCursor.get().get(), coordinateCursor.get().get() ) );
 					++i;
 					
