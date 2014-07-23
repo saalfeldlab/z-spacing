@@ -22,7 +22,6 @@ import net.imglib2.img.array.ArrayCursor;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
-import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.type.numeric.real.DoubleType;
@@ -36,7 +35,7 @@ import org.janelia.utility.ConstantTriple;
 import org.janelia.waves.thickness.correlations.CorrelationsObjectInterface;
 import org.janelia.waves.thickness.correlations.CorrelationsObjectInterface.Meta;
 import org.janelia.waves.thickness.correlations.DummyCorrelationsObject;
-import org.janelia.waves.thickness.functions.symmetric.AbsoluteLinear;
+import org.janelia.waves.thickness.functions.symmetric.BellCurve;
 import org.janelia.waves.thickness.v2.mediator.OpinionMediator;
 import org.janelia.waves.thickness.v2.mediator.OpinionMediatorModel;
 
@@ -55,15 +54,15 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 	private final long zMax;
 	
 	public InferFromCorrelationsObject(
-			CorrelationsObjectInterface correlationsObject,
-			int nIterations,
-			int comparisonRange,
-			M correlationFitModel,
-			InterpolatorFactory< DoubleType, RandomAccessible< DoubleType>> lutInterpolatorFactory,
-			InterpolatorFactory< DoubleType, RandomAccessible< DoubleType>> fitInterpolatorFactory,
-			L measurementsMultiplierModel,
-			int nThreads,
-			OpinionMediator shiftMediator ) {
+			final CorrelationsObjectInterface correlationsObject,
+			final int nIterations,
+			final int comparisonRange,
+			final M correlationFitModel,
+			final InterpolatorFactory< DoubleType, RandomAccessible< DoubleType>> lutInterpolatorFactory,
+			final InterpolatorFactory< DoubleType, RandomAccessible< DoubleType>> fitInterpolatorFactory,
+			final L measurementsMultiplierModel,
+			final int nThreads,
+			final OpinionMediator shiftMediator ) {
 		super();
 		
 		this.correlationsObject = correlationsObject;
@@ -76,7 +75,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 		this.nThreads = nThreads;
 		this.shiftMediator = shiftMediator;
 		
-		Iterator<Long> iterator = this.correlationsObject.getMetaMap().keySet().iterator();
+		final Iterator<Long> iterator = this.correlationsObject.getMetaMap().keySet().iterator();
 		zMin = iterator.next();
 		long zMaxTmp = zMin;
 		
@@ -85,34 +84,35 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 		zMax = zMaxTmp + 1;
 	}
 	
-	public ArrayImg< DoubleType, DoubleArray > estimateZCoordinates( long x, long y, double[] startingCoordinates ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+	public ArrayImg< DoubleType, DoubleArray > estimateZCoordinates( final long x, final long y, final double[] startingCoordinates ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 		
-		ArrayImg<DoubleType, DoubleArray> matrix = this.correlationsToMatrix( x, y);
-		ArrayImg<DoubleType, DoubleArray> weights = ArrayImgs.doubles( matrix.dimension( 0 ) );
+		final ArrayImg<DoubleType, DoubleArray> matrix = this.correlationsToMatrix( x, y);
+		final ArrayImg<DoubleType, DoubleArray> weights = ArrayImgs.doubles( matrix.dimension( 0 ) );
 		
-		for ( DoubleType w : weights) {
+		for ( final DoubleType w : weights) {
 			w.set( 1.0 );
 		}
 		
-		double[] lut = startingCoordinates;
+		final double[] lut = startingCoordinates;
+		final double[] coordinateArr = lut;
 		
 		
 		
 		
 		
-		ArrayImg<DoubleType, DoubleArray> coordinates = ArrayImgs.doubles( lut.length );
+		final ArrayImg<DoubleType, DoubleArray> coordinates = ArrayImgs.doubles( coordinateArr, coordinateArr.length );
 		
-		{ 
-			int i = 0; 
-			for ( DoubleType c : coordinates ) {
-				c.set( startingCoordinates[i]);
-				++i;
-			}
-		}
+//		{ 
+//			int i = 0; 
+//			for ( final DoubleType c : coordinates ) {
+//				c.set( startingCoordinates[i]);
+//				++i;
+//			}
+//		}
 		
-		LUTRealTransform transform = new LUTRealTransform(lut, this.lutInterpolatorFactory, matrix.numDimensions(), matrix.numDimensions() );
+		final LUTRealTransform transform = new LUTRealTransform(lut, this.lutInterpolatorFactory, matrix.numDimensions(), matrix.numDimensions() );
 		
-		ArrayImg<DoubleType, DoubleArray> mediatedShifts = ArrayImgs.doubles( lut.length );
+		final ArrayImg<DoubleType, DoubleArray> mediatedShifts = ArrayImgs.doubles( lut.length );
 		
 
 		
@@ -121,43 +121,58 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 		
 		
 		for ( int n = 0; n < this.nIterations; ++n ) {
-			double[] vars = new double[ this.comparisonRange ];
+			final double[] vars = new double[ this.comparisonRange ];
 			
 			EstimateCorrelationsAtSamplePoints.t = n;
-			ArrayImg<DoubleType, DoubleArray> estimatedFit = EstimateCorrelationsAtSamplePoints.estimateFromMatrix( matrix, weights, transform, this.comparisonRange, this.correlationFitModel, vars );
+			final ArrayImg<DoubleType, DoubleArray> estimatedFit = EstimateCorrelationsAtSamplePoints.estimateFromMatrix( matrix, weights, transform, coordinateArr, this.comparisonRange, this.correlationFitModel, vars );
 			
 			
-			File f = new File( String.format( "/groups/saalfeld/home/hanslovskyp/fit_iteration=%d.csv", n ) );
+			final File f = new File( String.format( "/groups/saalfeld/home/hanslovskyp/fit_iteration=%d.csv", n ) );
 			try {
 				f.createNewFile();
-				FileWriter fw = new FileWriter( f.getAbsoluteFile() );
-				BufferedWriter bw = new BufferedWriter( fw );
-				ArrayCursor<DoubleType> efCursor = estimatedFit.cursor();
+				final FileWriter fw = new FileWriter( f.getAbsoluteFile() );
+				final BufferedWriter bw = new BufferedWriter( fw );
+				final ArrayCursor<DoubleType> efCursor = estimatedFit.cursor();
 				
 				for (int i = 0; i < vars.length; i++) {
 					bw.write( String.format( "%d,%f,%f\n", i, efCursor.next().get(), vars[i] ) );
 				}
 				
 				bw.close();
-			} catch (IOException e) {
+			} catch (final IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			
-			FitWithGradient fitWithGradient = new FitWithGradient( estimatedFit, new FitWithGradient.SymmetricGradient(), this.fitInterpolatorFactory );
+			final FitWithGradient fitWithGradient = new FitWithGradient( estimatedFit, new FitWithGradient.SymmetricGradient(), this.fitInterpolatorFactory );
 			
 			
-			ArrayImg<DoubleType, DoubleArray> multipliers = EstimateQualityOfSlice.estimateFromMatrix( matrix, 
+			final ArrayImg<DoubleType, DoubleArray> multipliers = EstimateQualityOfSlice.estimateFromMatrix( matrix, 
 					weights, 
 					this.measurementsMultiplierModel, 
 					coordinates, 
 					fitWithGradient.getFit(), 
 					this.nThreads);
 	
+			final File f2 = new File( String.format( "/groups/saalfeld/home/hanslovskyp/mult_iteration=%d.csv", n ) );
+			try {
+				f2.createNewFile();
+				final FileWriter fw = new FileWriter( f2.getAbsoluteFile() );
+				final BufferedWriter bw = new BufferedWriter( fw );
+				final ArrayCursor<DoubleType> mCursor = multipliers.cursor();
+				
+				for (int i = 0; i < multipliers.dimension( 0 ); i++) {
+					bw.write( String.format( "%d,%f\n", i, mCursor.next().get() ) );
+				}
+				
+				bw.close();
+			} catch (final IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			
 			
-			
-			TreeMap<Long, ArrayList<ConstantPair<Double, Double>>> shifts = ShiftCoordinates.collectShiftsFromMatrix(coordinates, 
+			final TreeMap<Long, ArrayList<ConstantPair<Double, Double>>> shifts = ShiftCoordinates.collectShiftsFromMatrix(coordinates, 
 					matrix, 
 					weights, 
 					multipliers, 
@@ -178,28 +193,32 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			
 			int ijk = 0;
 			
-			File file = new File( String.format( "/groups/saalfeld/home/hanslovskyp/shifts_iteration=%d.csv", n ) );
+			final File file = new File( String.format( "/groups/saalfeld/home/hanslovskyp/shifts_iteration=%d.csv", n ) );
 			try {
 				file.createNewFile();
-				FileWriter fw = new FileWriter( file.getAbsoluteFile() );
-				BufferedWriter bw = new BufferedWriter( fw );
+				final FileWriter fw = new FileWriter( file.getAbsoluteFile() );
+				final BufferedWriter bw = new BufferedWriter( fw );
 				while ( mediatedCursor.hasNext() ) {
 					
 					coordinateCursor.fwd();
-					coordinateCursor.get().setReal( coordinateCursor.get().getRealDouble() + 0.1*mediatedCursor.next().getRealDouble() );
+					mediatedCursor.fwd();
+//					coordinateCursor.get().setReal( coordinateCursor.get().getRealDouble() + 0.1*mediatedCursor.get().getRealDouble() );
+					
+					
+					lut[ijk] += 0.1 * mediatedCursor.get().get();
 					
 					bw.write( String.format( "%d,%f,%f\n", ijk, mediatedCursor.get().get(), coordinateCursor.get().get() ) );
-					lut[ijk] -= 0.1 * mediatedCursor.get().get();
 					++ijk;
 					
 				}
 				
 				bw.close();
-			} catch (IOException e) {
+			} catch (final IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			
+			transform.update( lut );
 			
 		}
 		
@@ -207,23 +226,23 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 	}
 	
 	
-	public ArrayImg< DoubleType, DoubleArray > correlationsToMatrix( long x, long y ) {
+	public ArrayImg< DoubleType, DoubleArray > correlationsToMatrix( final long x, final long y ) {
 		
-		int nSlices = this.correlationsObject.getMetaMap().size(); 
-		ArrayImg<DoubleType, DoubleArray> matrix = ArrayImgs.doubles( nSlices, nSlices );
-		for ( DoubleType m : matrix ) {
+		final int nSlices = this.correlationsObject.getMetaMap().size(); 
+		final ArrayImg<DoubleType, DoubleArray> matrix = ArrayImgs.doubles( nSlices, nSlices );
+		for ( final DoubleType m : matrix ) {
 			m.set( Double.NaN );
 		}
 		
 		for ( long zRef = this.zMin; zRef < this.zMax; ++zRef ) {
-			long relativeZ = zRef - this.zMin;
-			RandomAccessibleInterval<DoubleType> correlations = this.correlationsObject.extractDoubleCorrelationsAt( x, y, zRef ).getA();
-			IntervalView<DoubleType> row = Views.hyperSlice( matrix, 1, relativeZ);
+			final long relativeZ = zRef - this.zMin;
+			final RandomAccessibleInterval<DoubleType> correlations = this.correlationsObject.extractDoubleCorrelationsAt( x, y, zRef ).getA();
+			final IntervalView<DoubleType> row = Views.hyperSlice( matrix, 1, relativeZ);
 			
-			RandomAccess<DoubleType> correlationsAccess = correlations.randomAccess();
-			RandomAccess<DoubleType> rowAccess          = row.randomAccess();
+			final RandomAccess<DoubleType> correlationsAccess = correlations.randomAccess();
+			final RandomAccess<DoubleType> rowAccess          = row.randomAccess();
 			
-			Meta meta = this.correlationsObject.getMetaMap().get( zRef );
+			final Meta meta = this.correlationsObject.getMetaMap().get( zRef );
 			
 			rowAccess.setPosition( Math.max( meta.zCoordinateMin - this.zMin, 0 ), 0 );
 			
@@ -240,26 +259,47 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			
 		}
 		 
+		// remove this as soon everything's working, only for visualization purposes
+//		EstimateCorrelationsAtSamplePoints.matrixImg = ArrayImgs.doubles( matrix.dimension(0) * 5, matrix.dimension(1) * 5, this.nIterations );
+//		EstimateCorrelationsAtSamplePoints.matrixImg = ArrayImgs.doubles( 512, 512, this.nIterations );
+		// end vis
+		
+//		final Random rng = new Random( 100 );
+//		
+//		for ( long i = 0; i < matrix.dimension(0); ++ i ) {
+//			
+//			final double mult = 1.0;//rng.nextDouble() / 2 + 0.5;
+//			
+//			
+//			final Cursor<DoubleType> sl1 = Views.flatIterable( Views.hyperSlice(matrix, 0, i) ).cursor();
+//			final Cursor<DoubleType> sl2 = Views.flatIterable( Views.hyperSlice(matrix, 1, i) ).cursor();
+//			
+//			while ( sl1.hasNext() ) {
+//				sl1.next().mul( mult );
+//				sl2.next().mul( mult );
+//			}
+//		}
 		
 		return matrix;
 	}
 	
 	
-	public static void main(String[] args) throws FunctionEvaluationException, NotEnoughDataPointsException, IllDefinedDataPointsException {
+	public static void main(final String[] args) throws FunctionEvaluationException, NotEnoughDataPointsException, IllDefinedDataPointsException {
 		
 		
 		
-		Random rng = new Random( 100 );
+		final Random rng = new Random( 100 );
 
-		boolean doPrint = false;
+		final boolean doPrint = false;
 		
 		final int nData = 200;
 		final int zMin  = 1;
 		final int zMax  = zMin + nData;
-		double xScale   = 0.5;
-		double sigma    = 4.0;
-		final int range = 10;
-		double gradient = -1.0 / range;
+		final double xScale   = 0.5;
+		final double sigma    = 4.0;
+		final int range = 25;
+		final double gradient = -1.0 / range;
+		final int nRep = 40;
 		
 		final ArrayList<Double> coordinateBase  = new ArrayList<Double>();
 		final ArrayList<Double> coordinateShift = new ArrayList<Double>();
@@ -288,21 +328,21 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			System.out.println( coordinateShift );
 		}
 		
-		double[] initialCoordinates = new double[ nData - 2*range ];
+		final double[] initialCoordinates = new double[ nData - 2*range ];
 		
-		File file = new File("/groups/saalfeld/home/hanslovskyp/initialcoordinates.csv");
+		final File file = new File("/groups/saalfeld/home/hanslovskyp/initialcoordinates.csv");
 		try {
 			file.createNewFile();
-			FileWriter fw = new FileWriter( file.getAbsoluteFile() );
-			BufferedWriter bw = new BufferedWriter( fw );
+			final FileWriter fw = new FileWriter( file.getAbsoluteFile() );
+			final BufferedWriter bw = new BufferedWriter( fw );
 		
 			for ( int i = 0; i < initialCoordinates.length; ++i ) {
 				initialCoordinates[i] = coordinateShift.get( range + i ) - range - 1;
-				String writeString = "" + i + "," + initialCoordinates[i] + "\n";
+				final String writeString = "" + i + "," + initialCoordinates[i] + "\n";
 				bw.write( writeString );
 			}
 			bw.close();
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -315,18 +355,18 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 		for ( int i = range; i < nData - range; ++i ) {
 			
 //			System.out.println( i );
-			ArrayImg<DoubleType, DoubleArray> measure = ArrayImgs.doubles( 2 * range + 1 );
-			ArrayCursor<DoubleType> m = measure.cursor();
+			final ArrayImg<DoubleType, DoubleArray> measure = ArrayImgs.doubles( 2 * range + 1 );
+			final ArrayCursor<DoubleType> m = measure.cursor();
 			for ( int r = - range; r <= range; ++r ) {
-//				m.next().set( new BellCurve().value( coordinateShift.get( i + r ), new double[] { coordinateShift.get( i ), sigma } ) );
+				m.next().set( new BellCurve().value( coordinateShift.get( i + r ), new double[] { coordinateShift.get( i ), sigma } ) );
 //				m.next().set( new AbsoluteLinear().value( coordinateShift.get( i + r ), new double[] { coordinateShift.get( i ), 1.0, gradient } ) );
-				m.next().set( Math.abs(coordinateShift.get( i + r ) -  coordinateShift.get( i ) ) * gradient + 1.0 );
+//				m.next().set( Math.abs(coordinateShift.get( i + r ) -  coordinateShift.get( i ) ) * gradient + 1.0 );
 //				System.out.println( i + r + " " + m.get().get() );
 			}
 		
 			
-			ArrayImg<DoubleType, DoubleArray> coord = ArrayImgs.doubles( 2 * range + 1 );
-			ArrayCursor<DoubleType> c = coord.cursor();
+			final ArrayImg<DoubleType, DoubleArray> coord = ArrayImgs.doubles( 2 * range + 1 );
+			final ArrayCursor<DoubleType> c = coord.cursor();
 			for ( int r = - range; r <= range; ++r ) {
 				c.next().set( coordinateBase.get( i + r ) + zShifts.get( i + r ) );
 			}
@@ -336,7 +376,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			corrs.put( new ConstantTriple<Long, Long, Long>( 0l, 0l, (long) (i) ),
 					new ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType> >( measure, coord ));
 
-			Meta meta = new Meta();
+			final Meta meta = new Meta();
 			meta.zPosition = i;
 			meta.zCoordinateMin = i - range;
 			meta.zCoordinateMax = i + range + 1;
@@ -344,12 +384,15 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			
 		}
 
+		
+//		EstimateCorrelationsAtSamplePoints.arryImg = ArrayImgs.doubles( range + 1, 2 * nData - 2 * range, nRep );
+		
 
 		
-		CorrelationsObjectInterface dummyCorrelationsObject = new DummyCorrelationsObject( zMin + range, zMax - range, range, nData, corrs, metaMap );
+		final CorrelationsObjectInterface dummyCorrelationsObject = new DummyCorrelationsObject( zMin + range, zMax - range, range, nData, corrs, metaMap );
 		
-		InferFromCorrelationsObject<TranslationModel1D, ScaleModel> inf = new InferFromCorrelationsObject<TranslationModel1D, ScaleModel>(dummyCorrelationsObject, 
-				100, 
+		final InferFromCorrelationsObject<TranslationModel1D, ScaleModel> inf = new InferFromCorrelationsObject<TranslationModel1D, ScaleModel>(dummyCorrelationsObject, 
+				nRep, 
 				range, 
 				new TranslationModel1D(), 
 				new NLinearInterpolatorFactory<DoubleType>(),
@@ -358,28 +401,32 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 				1, 
 				new OpinionMediatorModel<TranslationModel1D>( new TranslationModel1D() ) );
 		
-		ArrayImg<DoubleType, DoubleArray> matrix = inf.correlationsToMatrix( 0l, 0l );
+		final ArrayImg<DoubleType, DoubleArray> matrix = inf.correlationsToMatrix( 0l, 0l );
 		
-		for ( int i = 0; i < matrix.dimension( 0 ); ++i ) {
-			for ( DoubleType h : Views.iterable(Views.hyperSlice(matrix, 0, i) ) ) {
-				System.out.print( h.get()+ ",");
-			}
-			System.out.println();
-		}
+		// print matrix
+//		for ( int i = 0; i < matrix.dimension( 0 ); ++i ) {
+//			for ( final DoubleType h : Views.iterable(Views.hyperSlice(matrix, 0, i) ) ) {
+//				System.out.print( h.get()+ ",");
+//			}
+//			System.out.println();
+//		}
 		
-		new ImageJ();
-		ImageJFunctions.show( EstimateCorrelationsAtSamplePoints.arryImg );
+		
 		
 		// System.exit(1); 
 		
 		
 		
-		double[] noShiftCoordinates = new double[ initialCoordinates.length ];
+		final double[] noShiftCoordinates = new double[ initialCoordinates.length ];
 		for (int i = 0; i < noShiftCoordinates.length; i++) {
 			noShiftCoordinates[i] = i;
 		}
 		
-		ArrayImg<DoubleType, DoubleArray> coord = inf.estimateZCoordinates( 0, 0, noShiftCoordinates );
+		final ArrayImg<DoubleType, DoubleArray> coord = inf.estimateZCoordinates( 0, 0, noShiftCoordinates );
+		
+		new ImageJ();
+//		ImageJFunctions.show( EstimateCorrelationsAtSamplePoints.arryImg );
+//		ImageJFunctions.show( EstimateCorrelationsAtSamplePoints.matrixImg );
 		
 //		for ( DoubleType c : coord ) {
 //			System.out.println( c.get() );

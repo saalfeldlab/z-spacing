@@ -4,15 +4,14 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.TreeMap;
 
-import org.apache.commons.math.FunctionEvaluationException;
-import org.apache.commons.math.stat.descriptive.moment.Variance;
-import org.janelia.waves.thickness.functions.symmetric.BellCurve;
-
+import mpicbg.models.IllDefinedDataPointsException;
+import mpicbg.models.Model;
+import mpicbg.models.NotEnoughDataPointsException;
+import mpicbg.models.Point;
+import mpicbg.models.PointMatch;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccess;
-import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.RealPoint;
 import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.img.array.ArrayCursor;
@@ -20,40 +19,39 @@ import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.array.ArrayRandomAccess;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
-import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory;
 import net.imglib2.outofbounds.OutOfBounds;
+import net.imglib2.realtransform.InverseRealTransform;
 import net.imglib2.realtransform.RealTransform;
 import net.imglib2.realtransform.RealTransformRandomAccessible;
+import net.imglib2.realtransform.RealTransformRealRandomAccessible;
+import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.numeric.real.DoubleType;
-import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
-import mpicbg.models.IllDefinedDataPointsException;
-import mpicbg.models.Model;
-import mpicbg.models.NotEnoughDataPointsException;
-import mpicbg.models.Point;
-import mpicbg.models.PointMatch;
-import mpicbg.models.TranslationModel1D;
+
+import org.apache.commons.math.FunctionEvaluationException;
+import org.apache.commons.math.stat.descriptive.moment.Variance;
+import org.janelia.waves.thickness.functions.symmetric.BellCurve;
 
 public class EstimateCorrelationsAtSamplePoints {
 	
 	private final static float[] ONE_DIMENSION_ZERO_POSITION = new float[] { 0.0f };
-	public static ArrayImg<DoubleType, DoubleArray> arryImg = ArrayImgs.doubles( 10, 360, 25 );
+	public static ArrayImg<DoubleType, DoubleArray> arryImg = ArrayImgs.doubles( 20, 180, 25 );
+	public static ArrayImg<DoubleType, DoubleArray> matrixImg = ArrayImgs.doubles( 1, 1, 1 );
 	public static int t;
 	
-	public static <M extends Model< M > > ArrayImg< DoubleType, DoubleArray> estimate( ArrayImg< DoubleType, DoubleArray> correlations, ArrayImg< DoubleType, DoubleArray> weights, M model ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+	public static <M extends Model< M > > ArrayImg< DoubleType, DoubleArray> estimate( final ArrayImg< DoubleType, DoubleArray> correlations, final ArrayImg< DoubleType, DoubleArray> weights, final M model ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 		
-		ArrayImg<DoubleType, DoubleArray> result = ArrayImgs.doubles( correlations.dimension( CorrelationsObjectToArrayImg.DZ_AXIS ) );
-		ArrayCursor<DoubleType> resultCursor     = result.cursor();
+		final ArrayImg<DoubleType, DoubleArray> result = ArrayImgs.doubles( correlations.dimension( CorrelationsObjectToArrayImg.DZ_AXIS ) );
+		final ArrayCursor<DoubleType> resultCursor     = result.cursor();
 		
 		for ( int i = 0; i < correlations.dimension( CorrelationsObjectToArrayImg.DZ_AXIS ); ++i ) {
 			
-			Cursor<DoubleType> correlationsCursor = Views.flatIterable( Views.hyperSlice( correlations, CorrelationsObjectToArrayImg.DZ_AXIS, i ) ).cursor();
-			ArrayCursor<DoubleType> weightCursor  = weights.cursor();
+			final Cursor<DoubleType> correlationsCursor = Views.flatIterable( Views.hyperSlice( correlations, CorrelationsObjectToArrayImg.DZ_AXIS, i ) ).cursor();
+			final ArrayCursor<DoubleType> weightCursor  = weights.cursor();
 			
-			ArrayList< PointMatch > pointMatches = new ArrayList<PointMatch>();
+			final ArrayList< PointMatch > pointMatches = new ArrayList<PointMatch>();
 			
 			while ( correlationsCursor.hasNext() ) {
 				correlationsCursor.fwd();
@@ -73,31 +71,61 @@ public class EstimateCorrelationsAtSamplePoints {
 		
 	}
 	
-	public static <M extends Model< M > > ArrayImg< DoubleType, DoubleArray> estimateFromMatrix( RandomAccessibleInterval< DoubleType > correlations, 
-			ArrayImg< DoubleType, DoubleArray> weights,
-			LUTRealTransform transform,
-			int nIter,
-			M model,
-			double[] variances) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+	public static <M extends Model< M > > ArrayImg< DoubleType, DoubleArray> estimateFromMatrix( final RandomAccessibleInterval< DoubleType > correlations, 
+			final ArrayImg< DoubleType, DoubleArray> weights,
+			final LUTRealTransform transform,
+			final double[] coordinates,
+			final int nIter,
+			final M model,
+			final double[] variances) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 		
-		TreeMap<Integer, ArrayList<PointMatch>> pointCollections = new TreeMap< Integer, ArrayList<PointMatch>>();
+		final double[] accumulativeShifts = new double[ coordinates.length ];
+		
+		accumulativeShifts[0] = coordinates[0];
+		for (int i = 1; i < accumulativeShifts.length; i++) {
+			accumulativeShifts[i] = accumulativeShifts[i - 1] + coordinates[i] - i;
+		}
+		
+		final TreeMap<Integer, ArrayList<PointMatch>> pointCollections = new TreeMap< Integer, ArrayList<PointMatch>>();
 		
 		final RealRandomAccessible<DoubleType> source = Views.interpolate( Views.extendValue( correlations, new DoubleType( Double.NaN ) ), new NLinearInterpolatorFactory<DoubleType>());
 		
-		RealTransformRandomAccessible<DoubleType, LUTRealTransform> source2 = new RealTransformRandomAccessible<DoubleType, LUTRealTransform >( source, transform );
+		final RealTransformRealRandomAccessible<DoubleType, InverseRealTransform> source2 = RealViews.transformReal(source, transform);
 		
-//		ImageJFunctions.show(Views.interval(Views.offset(source2, -10, -10), new long[]{0,0}, new long[]{correlations.dimension(0) + 20,correlations.dimension(1) + 20}) );
+//		RealTransformRandomAccessible<DoubleType, LUTRealTransform> source2 = new RealTransformRandomAccessible<DoubleType, LUTRealTransform >( source, transform );
 		
-		RealRandomAccess<DoubleType> access   = source2.realRandomAccess();
-		RealRandomAccess<DoubleType> access2  = source2.realRandomAccess();
-		OutOfBounds<DoubleType> weight1 = Views.extendValue( weights, new DoubleType( Double.NaN ) ).randomAccess();
-		OutOfBounds<DoubleType> weight2 = Views.extendValue( weights, new DoubleType( Double.NaN ) ).randomAccess();
+		// vis with imagej
+////		final RandomAccessibleOnRealRandomAccessible<DoubleType> raster = Views.raster( source2 );
+//		final Scale2D scale = new Scale2D( 20, 20 );
+//		final IntervalView<DoubleType> window = Views.hyperSlice( matrixImg, 2, t );
+//		final Cursor<DoubleType> windowCursor = Views.flatIterable(window).cursor();
+//		final RealRandomAccessible<DoubleType> sourceInterpolatedNN = Views.interpolate( Views.extendValue( correlations, new DoubleType( Double.NaN ) ), new NearestNeighborInterpolatorFactory<DoubleType>());
+//		final AffineRealRandomAccessible<DoubleType, AffineGet> sourceNN = RealViews.affineReal( RealViews.transformReal(sourceInterpolatedNN, transform), scale);
+////		final Cursor<DoubleType> matrixCursor = Views.flatIterable( Views.interval( Views.raster( sourceNN ), new FinalInterval( correlations.dimension(0) * 5, correlations.dimension( 1 ) * 5 ) ) ).cursor();
+////		final Cursor<DoubleType> matrixCursor = Views.flatIterable( Views.interval( Views.raster( sourceNN ), new FinalInterval( new long[]{ 1000, 1000 }, new long[]{ 1511, 1511 } ) ) ).cursor();
+//		final Cursor<DoubleType> matrixCursor = Views.flatIterable( Views.interval( Views.raster( sourceNN ), new FinalInterval( new long[]{ 780, 780 }, new long[]{ 780 + 511, 780 + 511 } ) ) ).cursor();
+//		while ( matrixCursor.hasNext() ) {
+//			windowCursor.next().set( matrixCursor.next() );
+//		}
+//		ImageJFunctions.show( Views.interval( Views.raster( source2 ), new FinalInterval( correlations.dimension(0), correlations.dimension( 1 ) ) ) );
+//		ImageJFunctions.show(Views.interval( raster, new FinalInterval( correlations.dimension( 0 ) + 20, correlations.dimension( 1 ) + 20)));
+		// end vis
 		
-		double[] result = new double[ nIter ];
+		final RealRandomAccess<DoubleType> access   = source2.realRandomAccess();
+		final RealRandomAccess<DoubleType> access2  = source2.realRandomAccess();
+		
+		
+//		RealRandomAccess<DoubleType> access2  = source.realRandomAccess();
+		final OutOfBounds<DoubleType> weight1 = Views.extendValue( weights, new DoubleType( Double.NaN ) ).randomAccess();
+		final OutOfBounds<DoubleType> weight2 = Views.extendValue( weights, new DoubleType( Double.NaN ) ).randomAccess();
+		
+		final double[] result = new double[ nIter ];
 //		result[0] = 1.0;
 		
-		IntervalView<DoubleType> hyperSlice = Views.hyperSlice( arryImg, 2, t);
-		RandomAccess<DoubleType> ra = hyperSlice.randomAccess();
+		// visualization with imagej
+//		final IntervalView<DoubleType> hyperSlice = Views.hyperSlice( arryImg, 2, t);
+//		final RandomAccess<DoubleType> ra = hyperSlice.randomAccess();
+		// end vis
 		
 		for ( int i = 0; i < correlations.dimension( 1 ); ++i ) {
 			
@@ -105,16 +133,24 @@ public class EstimateCorrelationsAtSamplePoints {
 			access.setPosition( i, 0 );
 			
 			transform.apply(access, access);
-			
 			access2.setPosition(access);
 			
-			for ( int k = 0; k < nIter; ++k  ) {
+			for ( int k = 0; k <= nIter; ++k ) {
 				
+				final double a1 = access.get().get();
+				final double a2 = access2.get().get();
 				
+				final double w1 = 1.0; // weight1.get().get();
+				final double w2 = 1.0; // weight2.get().get();
 				
-				weight1.setPosition( i + k, 0 );
-				weight2.setPosition( i - k, 0 );
-			
+				// visualization with imagej
+//				ra.setPosition( 2*i, 1);
+//				ra.setPosition( k, 0);
+//				ra.get().set( a1 );
+//				
+//				ra.fwd(1);
+//				ra.get().set( a2 );
+				// end vis
 				
 				ArrayList<PointMatch> points = pointCollections.get( k );
 				if ( points == null ) {
@@ -122,35 +158,79 @@ public class EstimateCorrelationsAtSamplePoints {
 					pointCollections.put( k, points );
 				}
 				
-				final double a1 = access.get().get();
-				final double a2 = access2.get().get();
-				
-				final double w1 = weight1.get().get();
-				final double w2 = weight2.get().get();
-				
-				ra.setPosition( 2 * i, 1);
-				ra.setPosition( k, 0);
-				ra.get().set( a1 );
-				
-				ra.fwd(1);
-				ra.get().set( a2 );
-				
 				if ( ( ! Double.isNaN( a1 ) ) && ( ! Double.isNaN( w1 ) ) )
 					points.add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new float[]{ (float)a1 } ), (float) w1 ) );
 				
 				if ( ( ! Double.isNaN( a2 ) ) && ( ! Double.isNaN( w2 ) ) )
 					points.add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new float[]{ (float)a2 } ), (float) w2 ) );
 				
-				access.fwd( 0 );
-				access2.bck( 0 );
+				access.fwd(0);
+				access2.bck(0);
 				
 			}
+			
+			
+			
+//			DELETE IF ABOVE IS SUCCESSFUL
+			
+//			for ( int k = -nIter; k <= nIter; ++k  ) {
+//				
+//				if ( i + k < 0 || k + i >= coordinates.length ) {
+//					continue;
+//				}
+//				
+//				final double dz = coordinates[i+k] - zRef;
+//				
+//				
+//				// move starting on grid, but non-integer step
+//				final double pos = i + dz;
+//				
+//				
+//				access.setPosition( i + k, 0 );
+//				access2.setPosition( i + k, 0 );
+//				
+//				weight1.setPosition( i + k, 0 );
+////				weight2.setPosition( i - k, 0 );
+//			
+//				
+//				// assume symmetry -> Math.abs 
+//				ArrayList<PointMatch> points = pointCollections.get( Math.abs( k ) );
+//				if ( points == null ) {
+//					points = new ArrayList<PointMatch>();
+//					pointCollections.put( k, points );
+//				}
+//				
+//				final double a1 = access2.get().get();
+////				final double a2 = access2.get().get();
+//				
+//				final double w1 = 1.0; // weight1.get().get();
+////				final double w2 = 1.0; // weight2.get().get();
+//				
+//				// visualization with imagej
+//				ra.setPosition( i, 1);
+//				ra.setPosition( k + nIter, 0);
+//				ra.get().set( a1 );
+//				
+////				ra.fwd(1);
+////				ra.get().set( a2 );
+//				// end vis
+//				
+//				if ( ( ! Double.isNaN( a1 ) ) && ( ! Double.isNaN( w1 ) ) )
+//					points.add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new float[]{ (float)a1 } ), (float) w1 ) );
+//				
+////				if ( ( ! Double.isNaN( a2 ) ) && ( ! Double.isNaN( w2 ) ) )
+////					points.add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new float[]{ (float)a2 } ), (float) w2 ) );
+//				
+////				access.fwd( 0 );
+////				access2.bck( 0 );
+//				
+//			}
 			
 		}
 		
 		// variances[0] = 0.0;
 		for ( int i = 0; i < result.length; ++i ) {
-			double[] values = new double[ pointCollections.get( i ).size() ];
+			final double[] values = new double[ pointCollections.get( i ).size() ];
 			for ( int k = 0; k < values.length; ++k ) {
 				values[k] = pointCollections.get( i ).get( k ).getP2().getW()[0];
 			}
@@ -162,18 +242,18 @@ public class EstimateCorrelationsAtSamplePoints {
 		return ArrayImgs.doubles( result, result.length );
 	}
 	
-	public static void main( String[] args ) throws FunctionEvaluationException, NotEnoughDataPointsException, IllDefinedDataPointsException {
+	public static void main( final String[] args ) throws FunctionEvaluationException, NotEnoughDataPointsException, IllDefinedDataPointsException {
 		
 
-	double[] param = new double[] { 0.0, 2.0 };
+	final double[] param = new double[] { 0.0, 2.0 };
 	
 	
-		BellCurve func  = new BellCurve();
+		final BellCurve func  = new BellCurve();
 		
-		double[] arr = new double[ 3 * 3 ];
-		ArrayImg<DoubleType, DoubleArray> img = ArrayImgs.doubles( arr,  3, 3 );
+		final double[] arr = new double[ 3 * 3 ];
+		final ArrayImg<DoubleType, DoubleArray> img = ArrayImgs.doubles( arr,  3, 3 );
 		
-		ArrayCursor<DoubleType> cursor = img.cursor();
+		final ArrayCursor<DoubleType> cursor = img.cursor();
 		while( cursor.hasNext() ) {
 			cursor.fwd();
 			double delta = Math.abs( cursor.getDoublePosition( 1 ) - cursor.getDoublePosition( 0 ) );
@@ -183,39 +263,39 @@ public class EstimateCorrelationsAtSamplePoints {
 			cursor.get().set( func.value( delta, param) );
 		}
 		
-		double[] lut = new double[] { 0, 1.0, 2.6 }; 
-		LUTRealTransform lutTransform = new LUTRealTransform( lut, 2, 2 );
+		final double[] lut = new double[] { 0, 1.0, 2.6 }; 
+		final LUTRealTransform lutTransform = new LUTRealTransform( lut, 2, 2 );
 		
-		ArrayImg<DoubleType, DoubleArray> res = ArrayImgs.doubles( 4, 4 );
+		final ArrayImg<DoubleType, DoubleArray> res = ArrayImgs.doubles( 4, 4 );
 		
-		RealRandomAccessible<DoubleType> source = Views.interpolate( Views.extendBorder(img), new NearestNeighborInterpolatorFactory<DoubleType>() );
+		final RealRandomAccessible<DoubleType> source = Views.interpolate( Views.extendBorder(img), new NearestNeighborInterpolatorFactory<DoubleType>() );
 		LUTRealTransform.render( source, res, lutTransform, 0.1 );
 		
-		RealRandomAccessible<DoubleType> view = Views.interpolate( Views.extendBorder( res ), new NLinearInterpolatorFactory<DoubleType>());
+		final RealRandomAccessible<DoubleType> view = Views.interpolate( Views.extendBorder( res ), new NLinearInterpolatorFactory<DoubleType>());
 		
 		final RealRandomAccessible<DoubleType> target = new RealTransformRandomAccessible<DoubleType, RealTransform>( source, lutTransform );
 		
 		for ( int i = 0; i < 3; ++i ) {
 			for ( int j = 0; j < 3; ++j ) {
-				RandomAccess<DoubleType> ra = Views.interval( Views.raster( view ), new long[] {0, 0}, new long[]{ 3, 3 } ).randomAccess();
+				final RandomAccess<DoubleType> ra = Views.interval( Views.raster( view ), new long[] {0, 0}, new long[]{ 3, 3 } ).randomAccess();
 				ra.setPosition( new int[] { i, j } );
 			}
 		}
 		
-		int nCorrs = 100;
-		int nRel   = 7;
+		final int nCorrs = 100;
+		final int nRel   = 7;
 		
-		double[] correlationMatrix = new double[ nCorrs * nCorrs ];
+		final double[] correlationMatrix = new double[ nCorrs * nCorrs ];
 		for (int i = 0; i < correlationMatrix.length; i++) {
 			correlationMatrix[i] = Double.NaN;
 		}
 		
-		ArrayImg<DoubleType, DoubleArray> cImage = ArrayImgs.doubles( correlationMatrix, nCorrs, nCorrs );
-		ArrayRandomAccess<DoubleType> cAccess    = cImage.randomAccess();
+		final ArrayImg<DoubleType, DoubleArray> cImage = ArrayImgs.doubles( correlationMatrix, nCorrs, nCorrs );
+		final ArrayRandomAccess<DoubleType> cAccess    = cImage.randomAccess();
 		
-		Random rng = new Random( nCorrs );
+		final Random rng = new Random( nCorrs );
 		
-		double[] params = new double[] { 0.0, 2.0 };
+		final double[] params = new double[] { 0.0, 2.0 };
 		
 		for ( int i = 0; i < nCorrs; ++ i) {
 			cAccess.setPosition( i, 0 );
@@ -228,9 +308,9 @@ public class EstimateCorrelationsAtSamplePoints {
 			}
 		}
 		
-		ArrayImg<DoubleType, DoubleArray> weights = ArrayImgs.doubles( nCorrs );
+		final ArrayImg<DoubleType, DoubleArray> weights = ArrayImgs.doubles( nCorrs );
 		
-		for ( DoubleType w : weights ) {
+		for ( final DoubleType w : weights ) {
 			w.set( 1.0 );
 		}
 		

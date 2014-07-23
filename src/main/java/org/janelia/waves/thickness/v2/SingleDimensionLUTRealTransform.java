@@ -10,7 +10,6 @@ import java.util.ArrayList;
 
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessible;
-import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealLocalizable;
 import net.imglib2.RealPoint;
 import net.imglib2.RealPositionable;
@@ -23,14 +22,12 @@ import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
-import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory;
 import net.imglib2.neighborsearch.KNearestNeighborSearchOnKDTree;
 import net.imglib2.realtransform.InverseRealTransform;
 import net.imglib2.realtransform.InvertibleRealTransform;
 import net.imglib2.realtransform.RealTransform;
 import net.imglib2.realtransform.RealTransformRandomAccessible;
 import net.imglib2.realtransform.RealViews;
-import net.imglib2.type.Type;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
@@ -43,15 +40,7 @@ import net.imglib2.view.Views;
  * @author saalfelds
  * 
  */
-/**
- * @author hanslovskyp
- *
- */
-/**
- * @author hanslovskyp
- *
- */
-public class LUTRealTransform implements InvertibleRealTransform {
+public class SingleDimensionLUTRealTransform implements InvertibleRealTransform {
 
 	final protected int numSourceDimensions;
 	final protected int numTargetDimensions;
@@ -60,25 +49,29 @@ public class LUTRealTransform implements InvertibleRealTransform {
 	final protected double[] lut;
 	protected KNearestNeighborSearchOnKDTree<Double> search;
 	final protected RealPoint reference = new RealPoint( 1 );
+	final protected int d;
 	
-	private LUTRealTransform(final RealRandomAccess<DoubleType> access,
+	private SingleDimensionLUTRealTransform(final RealRandomAccess<DoubleType> access,
 			final int numSourceDimensions,
 			final int numTargetDimensions,
 			final int lutMaxIndex,
-			final double[] lut) {
+			final double[] lut,
+			final int d ) {
 		this.access = access.copyRealRandomAccess();
 		this.numSourceDimensions = numSourceDimensions;
 		this.numTargetDimensions = numTargetDimensions;
 		this.lutMaxIndex = lutMaxIndex;
 		this.lut = lut.clone();
+		this.d = d;
 		search = generateInverseLUTSearch(lut);
 	}
 
-	public LUTRealTransform(
+	public SingleDimensionLUTRealTransform(
 			final double[] lut,
 			final InterpolatorFactory<DoubleType, RandomAccessible<DoubleType>> interpolatorFactory,
 			final int numSourceDimensions,
-			final int numTargetDimensions ) {
+			final int numTargetDimensions,
+			final int d) {
 		access = Views.interpolate(
 				Views.extendBorder(ArrayImgs.doubles(lut, lut.length)),
 				interpolatorFactory).realRandomAccess();
@@ -86,17 +79,19 @@ public class LUTRealTransform implements InvertibleRealTransform {
 		this.numTargetDimensions = numTargetDimensions;
 		this.lutMaxIndex = lut.length - 1;
 		this.lut = lut.clone();
+		this.d = d;
 		search = generateInverseLUTSearch(lut);
 	}
 
-	public LUTRealTransform(
+	public SingleDimensionLUTRealTransform(
 			final double[] lut,
 			final int numSourceDimensions,
-			final int numTargetDimensions ) {
-		this(lut, new NLinearInterpolatorFactory<DoubleType>(), numSourceDimensions, numTargetDimensions);
+			final int numTargetDimensions,
+			final int d) {
+		this(lut, new NLinearInterpolatorFactory<DoubleType>(), numSourceDimensions, numTargetDimensions, d);
 	}
 	
-	private static KNearestNeighborSearchOnKDTree< Double > generateInverseLUTSearch( final double[] lut ) {
+	protected static KNearestNeighborSearchOnKDTree< Double > generateInverseLUTSearch( final double[] lut ) {
 		final ArrayList< Double > values =  new ArrayList<Double>();
 		for ( int i = 0; i < lut.length; ++i )
 			values.add( new Double( i ) );
@@ -125,57 +120,59 @@ public class LUTRealTransform implements InvertibleRealTransform {
 	}
 
 	public void apply(final double[] source, final double[] target) {
-		assert source.length == target.length : "Dimensions do not match.";
-
-		for (int d = 0; d < source.length; ++d) {
-			if (source[d] < 0)
-				target[d] = -Double.MAX_VALUE;
-			else if (source[d] > lutMaxIndex )
-				target[d] = Double.MAX_VALUE;
-			else {
-				access.setPosition(source[d], 0);
-				target[d] = access.get().getRealDouble();
-			}
+		
+		for (int d = 0; d < target.length; d++) {
+			target[d] = source[d];
+		}
+		
+		// every d below is member d
+		if (source[d] < 0)
+			target[d] = -Double.MAX_VALUE;
+		else if (source[d] > lutMaxIndex )
+			target[d] = Double.MAX_VALUE;
+		else {
+			access.setPosition(source[d], 0);
+			target[d] = access.get().getRealDouble();
 		}
 	}
 
 	public void apply(final float[] source, final float[] target) {
-		assert source.length == target.length : "Dimensions do not match.";
-
-		for (int d = 0; d < source.length; ++d) {
-			if (source[d] < 0)
-				target[d] = -Float.MAX_VALUE;
-			else if (source[d] > lutMaxIndex )
-				target[d] = Float.MAX_VALUE;
-			else {
-				access.setPosition(source[d], 0);
-				target[d] = access.get().getRealFloat();
-			}
+		
+		for (int d = 0; d < target.length; d++) {
+			target[d] = source[d];
+		}
+		
+		// every d below is member d
+		if (source[d] < 0)
+			target[d] = -Float.MAX_VALUE;
+		else if (source[d] > lutMaxIndex )
+			target[d] = Float.MAX_VALUE;
+		else {
+			access.setPosition(source[d], 0);
+			target[d] = access.get().getRealFloat();
 		}
 	}
 
 	public void apply(final RealLocalizable source, final RealPositionable target) {
-		assert source.numDimensions() == target.numDimensions() : "Dimensions do not match.";
 		
-		final int n = source.numDimensions();
-		for (int d = 0; d < n; ++d) {
-			final double arg0d = source.getDoublePosition(d);
-			if (arg0d < 0)
-				target.setPosition( -Double.MAX_VALUE, d);
-			else if (arg0d > lutMaxIndex )
-				target.setPosition( Double.MAX_VALUE, d );
-			else {
-				access.setPosition(arg0d, 0);
-				target.setPosition(access.get().getRealDouble(), d);
-			}
+		target.setPosition(source);
+		
+		final double arg0d = source.getDoublePosition(d);
+		if (arg0d < 0)
+			target.setPosition( -Double.MAX_VALUE, d);
+		else if (arg0d > lutMaxIndex )
+			target.setPosition( Double.MAX_VALUE, d );
+		else {
+			access.setPosition(arg0d, 0);
+			target.setPosition(access.get().getRealDouble(), d);
 		}
 	}
 
 	/**
 	 * Reuses the RealRandomAccessible, generates a new RealRandomAccess.
 	 */
-	public LUTRealTransform copy() {
-		return new LUTRealTransform(access, numSourceDimensions, numTargetDimensions, lutMaxIndex, lut );
+	public SingleDimensionLUTRealTransform copy() {
+		return new SingleDimensionLUTRealTransform(access, numSourceDimensions, numTargetDimensions, lutMaxIndex, lut, d );
 	}
 
 	public int numSourceDimensions() {
@@ -185,92 +182,78 @@ public class LUTRealTransform implements InvertibleRealTransform {
 	public int numTargetDimensions() {
 		return numTargetDimensions;
 	}
-	
-	public static <T extends Type<T>> void render( final RealRandomAccessible< T > source, final RandomAccessibleInterval< T > target, final RealTransform transform, final double dx ) {
-		final RealRandomAccessible<T> interpolant = Views.interpolate(Views.extendBorder( target ), new NearestNeighborInterpolatorFactory<T>());
-		final RealRandomAccess<T> a = source.realRandomAccess();
-		final RealRandomAccess<T> b = interpolant.realRandomAccess();
-		
-		for ( double y = 0; y < target.dimension(1); y += dx) {
-			a.setPosition(y, 1);
-			
-			for ( double x = 0; x < target.dimension(0); x += dx) {
-				a.setPosition(x, 0);
-				transform.apply(a, b);
-				b.get().set(a.get());
-			}
-		}
-	}
-	
-	
 
 	public void applyInverse(final double[] source, final double[] target) {
-		for ( int d = 0; d < target.length; ++d ) {
-			if ( target[ d ] < lut[ 0 ] )
-				source[ d ] = -Double.MAX_VALUE;
-			else if ( target[ d ] > lut[ lutMaxIndex ] )
-				source[ d ] = Double.MAX_VALUE;
-			else {
-				reference.setPosition( target[ d ], 0 );
-				search.search( reference );
-				final double d1 = search.getDistance( 0 );
-				final double d2 = search.getDistance( 1 );
-				final double v1 = search.getSampler( 0 ).get().doubleValue();
-				final double v2 = search.getSampler( 1 ).get().doubleValue();
-				final double m = 1.0 / ( d1 + d2 );
-				source[ d ] = v1 * d2 * m + v2 * d1 * m;
-			}
+		
+		for (int d = 0; d < target.length; d++) {
+			source[d] = target[d];
+		}
+		
+		// every d below is member d
+		if ( target[ d ] < lut[ 0 ] )
+			source[ d ] = -Double.MAX_VALUE;
+		else if ( target[ d ] > lut[ lutMaxIndex ] )
+			source[ d ] = Double.MAX_VALUE;
+		else {
+			reference.setPosition( target[ d ], 0 );
+			search.search( reference );
+			final double d1 = search.getDistance( 0 );
+			final double d2 = search.getDistance( 1 );
+			final double v1 = search.getSampler( 0 ).get().doubleValue();
+			final double v2 = search.getSampler( 1 ).get().doubleValue();
+			final double m = 1.0 / ( d1 + d2 );
+			source[ d ] = v1 * d2 * m + v2 * d1 * m;
 		}
 	}
 
 	public void applyInverse(final float[] source, final float[] target) {
-		for ( int d = 0; d < target.length; ++d ) {
-			if ( target[ d ] < lut[ 0 ] )
-				source[ d ] = -Float.MAX_VALUE;
-			else if ( target[ d ] > lut[ lutMaxIndex ] )
-				source[ d ] = Float.MAX_VALUE;
-			else {
-				reference.setPosition( target[ d ], 0 );
-				search.search( reference );
-				final double d1 = search.getDistance( 0 );
-				final double d2 = search.getDistance( 1 );
-				final double v1 = search.getSampler( 0 ).get().doubleValue();
-				final double v2 = search.getSampler( 1 ).get().doubleValue();
-				final double m = 1.0 / ( d1 + d2 );
-				source[ d ] = ( float )( v1 * d2 * m + v2 * d1 * m );
-			}
+		for (int d = 0; d < target.length; d++) {
+			source[d] = target[d];
+		}
+		
+		// every d below is member d
+		if ( target[ d ] < lut[ 0 ] )
+			source[ d ] = -Float.MAX_VALUE;
+		else if ( target[ d ] > lut[ lutMaxIndex ] )
+			source[ d ] = Float.MAX_VALUE;
+		else {
+			reference.setPosition( target[ d ], 0 );
+			search.search( reference );
+			final double d1 = search.getDistance( 0 );
+			final double d2 = search.getDistance( 1 );
+			final double v1 = search.getSampler( 0 ).get().doubleValue();
+			final double v2 = search.getSampler( 1 ).get().doubleValue();
+			final double m = 1.0 / ( d1 + d2 );
+			source[ d ] = ( float )( v1 * d2 * m + v2 * d1 * m );
 		}
 	}
 
 	public void applyInverse(final RealPositionable source, final RealLocalizable target) {
-		final int numTargetDimensions = target.numDimensions();
-		for ( int d = 0; d < numTargetDimensions; ++d ) {
-			final double tp = target.getDoublePosition( d );
-			if ( tp < lut[ 0 ] )
-				source.setPosition( -Double.MAX_VALUE, d );
-			else if ( tp > lut[ lutMaxIndex ] )
-				source.setPosition( Double.MAX_VALUE, d );
-			else {
-				reference.setPosition( tp, 0 );
-				search.search( reference );
-				final double d1 = search.getDistance( 0 );
-				final double d2 = search.getDistance( 1 );
-				
-				final double v1 = search.getSampler( 0 ).get().doubleValue();
-				final double v2 = search.getSampler( 1 ).get().doubleValue();
-				
-				final double m = 1.0 / ( d1 + d2 );
-				source.setPosition( v1 * d2 * m + v2 * d1 * m, d );
-			}
+		source.setPosition(target);
+		final double tp = target.getDoublePosition( d );
+		if ( tp < lut[ 0 ] )
+			source.setPosition( -Double.MAX_VALUE, d );
+		else if ( tp > lut[ lutMaxIndex ] )
+			source.setPosition( Double.MAX_VALUE, d );
+		else {
+			reference.setPosition( tp, 0 );
+			search.search( reference );
+			final double d1 = search.getDistance( 0 );
+			final double d2 = search.getDistance( 1 );
+			
+			final double v1 = search.getSampler( 0 ).get().doubleValue();
+			final double v2 = search.getSampler( 1 ).get().doubleValue();
+			
+			final double m = 1.0 / ( d1 + d2 );
+			source.setPosition( v1 * d2 * m + v2 * d1 * m, d );
 		}
 	}
 
-	
 	/** 
 	 * TODO create actual inverse
 	 */
 	public InvertibleRealTransform inverse() {
-		return new InverseRealTransform( this );
+		return new InverseRealTransform(this);
 	}
 	
 	
@@ -294,18 +277,15 @@ public class LUTRealTransform implements InvertibleRealTransform {
 		for (int i =0; i < lut.length; ++i)
 			lut[i] = i + Math.pow(i, 1.5);
 		
-		final LUTRealTransform transform = new LUTRealTransform(lut, 2, 2);
+		final SingleDimensionLUTRealTransform transform = new SingleDimensionLUTRealTransform(lut, 2, 2, 2);
 		final RealRandomAccessible<FloatType> source = Views.interpolate( Views.extendBorder(img), new NLinearInterpolatorFactory<FloatType>() );
 		final RandomAccessible<FloatType> target = new RealTransformRandomAccessible<FloatType, RealTransform>(source, transform);
 		final RandomAccessible<FloatType> target2 = RealViews.transform(source, transform);
 		
 //		RealViews.transformReal(source, transform);
 		
-		final ArrayImg<FloatType, FloatArray> targetImg = ArrayImgs.floats(imp.getWidth(), imp.getHeight());
-		render(source, targetImg, transform, 0.05);
 		
 		ImageJFunctions.show(Views.interval(target, new FinalInterval(imp.getWidth(), imp.getHeight())));
 		ImageJFunctions.show(Views.interval(target2, new FinalInterval(imp.getWidth(), imp.getHeight())));
-		ImageJFunctions.show(targetImg);
 	}
 }

@@ -20,15 +20,15 @@ public class OpinionMediatorModel< M extends Model<M> > implements OpinionMediat
 	
 	private final M model;
 
-	public OpinionMediatorModel(M model) {
+	public OpinionMediatorModel(final M model) {
 		super();
 		this.model = model;
 	}
 
 	public ArrayImg<DoubleType, DoubleArray> mediate(
-			TreeMap<Long, ArrayList<ConstantPair<Double, Double>>> shifts) {
+			final TreeMap<Long, ArrayList<ConstantPair<Double, Double>>> shifts) {
 		
-		ArrayImg<DoubleType, DoubleArray> result = ArrayImgs.doubles( new double[ shifts.size() ], shifts.size() );
+		final ArrayImg<DoubleType, DoubleArray> result = ArrayImgs.doubles( new double[ shifts.size() ], shifts.size() );
 		
 		
 		
@@ -36,23 +36,22 @@ public class OpinionMediatorModel< M extends Model<M> > implements OpinionMediat
 	}
 
 	public ArrayImg<DoubleType, DoubleArray> mediate(
-			TreeMap<Long, ArrayList<ConstantPair<Double, Double>>> shifts,
-			ArrayImg<DoubleType, DoubleArray> result) {
+			final TreeMap<Long, ArrayList<ConstantPair<Double, Double>>> shifts,
+			final ArrayImg<DoubleType, DoubleArray> result) {
 		
 		{
-			ArrayCursor<DoubleType> cursor = result.cursor();
+			final ArrayCursor<DoubleType> cursor = result.cursor();
 			for ( int i = 0; i < result.dimension( 0 ); ++i ) {
 				cursor.fwd();
-				ArrayList<ConstantPair<Double, Double>> localShifts = shifts.get( (long) i );
-				ArrayList<PointMatch> pointMatches = new ArrayList< PointMatch >();
+				final ArrayList<ConstantPair<Double, Double>> localShifts = shifts.get( (long) i );
+				final ArrayList<PointMatch> pointMatches = new ArrayList< PointMatch >();
 				
 				if ( localShifts == null ) {
 					cursor.get().set( 0.0 );
 				}
 				
 				else {
-					System.out.println( localShifts.size() );
-					for ( ConstantPair<Double, Double> l : localShifts ) {
+					for ( final ConstantPair<Double, Double> l : localShifts ) {
 						if ( Double.isInfinite( l.getA() ) || Double.isNaN( l.getA() ) ) {
 							continue;
 						}
@@ -61,10 +60,10 @@ public class OpinionMediatorModel< M extends Model<M> > implements OpinionMediat
 					
 					try {
 						model.fit( pointMatches );
-					} catch (NotEnoughDataPointsException e) {
+					} catch (final NotEnoughDataPointsException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
-					} catch (IllDefinedDataPointsException e) {
+					} catch (final IllDefinedDataPointsException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}

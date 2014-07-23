@@ -126,8 +126,8 @@ public class ShiftCoordinates {
 					weightedShifts.put( (long) k, localShifts );
 				}
 				
-//				double difference = corrAccess.get().get() * multAccess.get().get() - fitAccess.get().get();
-				double difference = corrAccess.get().get() * 1.0 - fitAccess.get().get();
+				double difference = corrAccess.get().get() * multAccess.get().get() - fitAccess.get().get();
+//				double difference = corrAccess.get().get() * 1.0 - fitAccess.get().get();
 				weightAccess.setPosition( k, 0 );
 				
 //				if ( Math.abs( gradientAccess.get().getRealDouble() ) > 0.0 ) 
