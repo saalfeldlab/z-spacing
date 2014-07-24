@@ -17,7 +17,6 @@ import net.imglib2.img.imageplus.ImagePlusImg;
 import net.imglib2.img.imageplus.ImagePlusImgs;
 import net.imglib2.img.planar.PlanarCursor;
 import net.imglib2.interpolation.InterpolatorFactory;
-import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
@@ -38,8 +37,6 @@ public class ApplyTransformToImageVisitor extends AbstractMultiVisitor {
 	private final ImagePlus targetImg;
 	private final ImagePlusImg< FloatType, ? > targetImgWrapped;
 	private final double scale;
-	private final SingleDimensionLUTRealTransform lutTransform;
-	
 
 
 	public ApplyTransformToImageVisitor(final String basePath, final RandomAccessibleInterval< FloatType > image, final InterpolatorFactory< FloatType, RandomAccessible< FloatType > > interpolatorFactory, final double scale ) {
@@ -60,7 +57,6 @@ public class ApplyTransformToImageVisitor extends AbstractMultiVisitor {
 		this.image = image;
 		this.interpolatorFactory = interpolatorFactory;
 		this.scale = scale;
-		this.lutTransform = new SingleDimensionLUTRealTransform( new double[ (int) image.dimension( 1 ) ], new NLinearInterpolatorFactory<DoubleType>(), 2, 2, 1 );
 		
 		final FloatProcessor ip = new FloatProcessor( (int) image.dimension(0), (int) ( image.dimension(1) * scale ) );
 		this.targetImg = new ImagePlus( "", ip ); // ImagePlusImgs.floats( max - min, max - min );// ArrayImgs.doubles( max - min, max - min );
@@ -80,11 +76,11 @@ public class ApplyTransformToImageVisitor extends AbstractMultiVisitor {
 		for (int i = 0; i < scaledLut.length; i++) {
 			scaledLut[i] = lut[i] * scale;
 		}
-		lutTransform.update( scaledLut );
+		final SingleDimensionLUTRealTransform lutTransform = new SingleDimensionLUTRealTransform( scaledLut, 2, 2, 1 );
 
 		final PlanarCursor<FloatType> targetCursor = ImagePlusAdapter.wrapFloat( targetImg ).cursor();
 		final RealRandomAccessible<FloatType> interpolated = Views.interpolate( Views.extendValue( this.image, new FloatType( Float.NaN ) ), this.interpolatorFactory );
-		final IntervalView<FloatType> transformed = Views.interval( RealViews.transform( interpolated, this.lutTransform), this.targetImgWrapped );
+		final IntervalView<FloatType> transformed = Views.interval( RealViews.transform( interpolated, lutTransform), this.targetImgWrapped );
 		Views.flatIterable( transformed ).cursor();
 		
 		

@@ -28,102 +28,16 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
 /**
- * This is not thread-safe. lut array can be re-used across multiple instances
- * but instance should not.
- * 
  * @author hanslovskyp
  * @author saalfelds
- * 
  */
-public class LUTRealTransform implements InvertibleRealTransform
+public class LUTRealTransform extends AbstractLUTRealTransform
 {
-	final protected int numSourceDimensions;
-	final protected int numTargetDimensions;
-	final protected int lutMaxIndex;
-	final protected double[] lut;
-	
 	public LUTRealTransform( final double[] lut, final int numSourceDimensions, final int numTargetDimensions )
 	{
-		this.lut = lut;
-		this.numSourceDimensions = numSourceDimensions;
-		this.numTargetDimensions = numTargetDimensions;
-
-		lutMaxIndex = lut.length - 1;
+		super( lut, numSourceDimensions, numTargetDimensions );
 	}
 	
-	private double apply( final double x )
-	{
-		final int xFloor = ( int )x;
-		final double dx = x - xFloor;
-		return ( lut[ xFloor + 1 ] - lut[ xFloor ] ) * dx + lut[ xFloor ];
-	}
-
-	private double applyChecked( final double x )
-	{
-		if ( x < 0 ) return -Double.MAX_VALUE;
-		else if ( x >= lutMaxIndex ) return Double.MAX_VALUE;
-		else return apply( x );
-	}
-	
-	/**
-	 * Finds the LUT index i of the largest value smaller than or equal y for
-	 * all y in [lut[0],lut[max]] both inclusive.  Only exception is lut[max]
-	 * for which it returns max-1.  This is the correct behavior for
-	 * interpolating between lut[i] and lut[i + i] including lut[max].
-	 * 
-	 * Implemented as bin-search.
-	 * 
-	 * @param y
-	 * @return
-	 */
-	private int findFloorIndex( final double y )
-	{
-		int min = 0;
-		int max = lutMaxIndex;
-		int i = max >> 1;
-		do
-		{
-			if ( lut[ i ] > y )
-				max = i;
-			else
-				min = i;
-			i = ( ( max - min ) >> 1 ) + min;
-		}
-		while ( i != min );
-		return i;
-
-	}
-	
-	private double applyInverse( final double y )
-	{
-		final int i = findFloorIndex( y );
-		
-		final double x1 = lut[ i ];
-		final double x2 = lut[ i + 1 ];
-		
-		return ( y - x1 )  / ( x2 - x1 ) + i;
-	}
-	
-	private double applyInverseChecked( final double y )
-	{
-		if ( y < lut[ 0 ] )
-			return -Double.MAX_VALUE;
-		else if ( y > lut[ lutMaxIndex ] )
-			return Double.MAX_VALUE;
-		else
-			return applyInverse( y );
-	}
-	
-	public double minTransformedCoordinate()
-	{
-		return lut[ 0 ];
-	}
-
-	public double maxTransformedCoordinate()
-	{
-		return lut[ lutMaxIndex ];
-	}
-
 	@Override
 	public void apply( final double[] source, final double[] target )
 	{
@@ -161,38 +75,6 @@ public class LUTRealTransform implements InvertibleRealTransform
 		return new LUTRealTransform( lut, numSourceDimensions, numTargetDimensions );
 	}
 
-	@Override
-	public int numSourceDimensions()
-	{
-		return numSourceDimensions;
-	}
-
-	@Override
-	public int numTargetDimensions()
-	{
-		return numTargetDimensions;
-	}
-	
-	public static < T extends Type< T >> void render( final RealRandomAccessible< T > source, final RandomAccessibleInterval< T > target, final RealTransform transform, final double dx )
-	{
-		final RealRandomAccessible< T > interpolant = Views.interpolate( Views.extendBorder( target ), new NearestNeighborInterpolatorFactory< T >() );
-		final RealRandomAccess< T > a = source.realRandomAccess();
-		final RealRandomAccess< T > b = interpolant.realRandomAccess();
-
-		for ( double y = 0; y < target.dimension( 1 ); y += dx )
-		{
-			a.setPosition( y, 1 );
-
-			for ( double x = 0; x < target.dimension( 0 ); x += dx )
-			{
-				a.setPosition( x, 0 );
-				transform.apply( a, b );
-				b.get().set( a.get() );
-			}
-		}
-	}
-	
-	
 	@Override
 	public void applyInverse( final double[] source, final double[] target )
 	{
@@ -236,7 +118,24 @@ public class LUTRealTransform implements InvertibleRealTransform
 	
 	
 	
-	
+	public static < T extends Type< T >> void render( final RealRandomAccessible< T > source, final RandomAccessibleInterval< T > target, final RealTransform transform, final double dx )
+	{
+		final RealRandomAccessible< T > interpolant = Views.interpolate( Views.extendBorder( target ), new NearestNeighborInterpolatorFactory< T >() );
+		final RealRandomAccess< T > a = source.realRandomAccess();
+		final RealRandomAccess< T > b = interpolant.realRandomAccess();
+
+		for ( double y = 0; y < target.dimension( 1 ); y += dx )
+		{
+			a.setPosition( y, 1 );
+
+			for ( double x = 0; x < target.dimension( 0 ); x += dx )
+			{
+				a.setPosition( x, 0 );
+				transform.apply( a, b );
+				b.get().set( a.get() );
+			}
+		}
+	}
 	
 	final static public void main( final String[] args ) {
 		
