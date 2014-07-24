@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.janelia.thickness;
+package org.janelia.thickness.lut;
 
 import ij.ImageJ;
 import ij.ImagePlus;

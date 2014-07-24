@@ -5,7 +5,7 @@ import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.type.numeric.real.DoubleType;
 
 import org.janelia.thickness.FitWithGradient;
-import org.janelia.thickness.LUTRealTransform;
+import org.janelia.thickness.lut.LUTRealTransform;
 
 public interface Visitor {
 

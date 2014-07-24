@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.janelia.thickness;
+package org.janelia.thickness.lut;
 
 import net.imglib2.realtransform.InvertibleRealTransform;
 

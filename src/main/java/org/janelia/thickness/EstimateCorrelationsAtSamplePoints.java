@@ -24,6 +24,7 @@ import net.imglib2.view.Views;
 
 import org.apache.commons.math.FunctionEvaluationException;
 import org.apache.commons.math.stat.descriptive.moment.Variance;
+import org.janelia.thickness.lut.LUTRealTransform;
 
 public class EstimateCorrelationsAtSamplePoints {
 	

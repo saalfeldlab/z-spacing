@@ -30,7 +30,7 @@ from org.janelia.utility import ConstantPair
 from org.janelia.utility import CopyFromIntervalToInterval
 from org.janelia.correlations import CorrelationsObject
 from org.janelia.thickness import InferFromCorrelationsObject
-from org.janelia.thickness import SingleDimensionLUTRealTransform
+from org.janelia.thickness.lut import SingleDimensionLUTRealTransform
 from org.janelia.thickness.inference.visitor import ActualCoordinatesTrackerVisitor
 from org.janelia.thickness.inference.visitor import ApplyTransformToImagesAndAverageVisitor
 from org.janelia.thickness.inference.visitor import ApplyTransformToImageVisitor

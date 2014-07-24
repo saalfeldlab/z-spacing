@@ -23,6 +23,7 @@ import org.apache.commons.math.FunctionEvaluationException;
 import org.janelia.correlations.CorrelationsObjectInterface;
 import org.janelia.correlations.CorrelationsObjectInterface.Meta;
 import org.janelia.thickness.inference.visitor.Visitor;
+import org.janelia.thickness.lut.LUTRealTransform;
 import org.janelia.thickness.mediator.OpinionMediator;
 import org.janelia.utility.ConstantPair;
 

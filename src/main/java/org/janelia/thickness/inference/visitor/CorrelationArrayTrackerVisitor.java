@@ -24,7 +24,7 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
 import org.janelia.thickness.FitWithGradient;
-import org.janelia.thickness.LUTRealTransform;
+import org.janelia.thickness.lut.LUTRealTransform;
 
 public class CorrelationArrayTrackerVisitor extends AbstractMultiVisitor {
 	

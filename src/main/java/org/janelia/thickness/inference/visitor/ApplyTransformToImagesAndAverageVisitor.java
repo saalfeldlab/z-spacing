@@ -25,8 +25,8 @@ import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
 import org.janelia.thickness.FitWithGradient;
-import org.janelia.thickness.LUTRealTransform;
-import org.janelia.thickness.SingleDimensionLUTRealTransform;
+import org.janelia.thickness.lut.LUTRealTransform;
+import org.janelia.thickness.lut.SingleDimensionLUTRealTransform;
 
 public class ApplyTransformToImagesAndAverageVisitor extends AbstractMultiVisitor {
 	
