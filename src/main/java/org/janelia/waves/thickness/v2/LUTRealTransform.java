@@ -124,6 +124,7 @@ public class LUTRealTransform implements InvertibleRealTransform
 		return lut[ lutMaxIndex ];
 	}
 
+	@Override
 	public void apply( final double[] source, final double[] target )
 	{
 		assert source.length == target.length: "Dimensions do not match.";
@@ -132,6 +133,7 @@ public class LUTRealTransform implements InvertibleRealTransform
 			target[ d ] = applyChecked( source[ d ] );
 	}
 
+	@Override
 	public void apply( final float[] source, final float[] target )
 	{
 		assert source.length == target.length: "Dimensions do not match.";
@@ -140,6 +142,7 @@ public class LUTRealTransform implements InvertibleRealTransform
 			target[ d ] = ( float ) applyChecked( source[ d ] );
 	}
 
+	@Override
 	public void apply( final RealLocalizable source, final RealPositionable target )
 	{
 		assert source.numDimensions() == target.numDimensions(): "Dimensions do not match.";
@@ -152,16 +155,19 @@ public class LUTRealTransform implements InvertibleRealTransform
 	/**
 	 * Reuses the LUT.
 	 */
+	@Override
 	public LUTRealTransform copy()
 	{
 		return new LUTRealTransform( lut, numSourceDimensions, numTargetDimensions );
 	}
 
+	@Override
 	public int numSourceDimensions()
 	{
 		return numSourceDimensions;
 	}
 
+	@Override
 	public int numTargetDimensions()
 	{
 		return numTargetDimensions;
@@ -187,6 +193,7 @@ public class LUTRealTransform implements InvertibleRealTransform
 	}
 	
 	
+	@Override
 	public void applyInverse( final double[] source, final double[] target )
 	{
 		assert source.length == target.length: "Dimensions do not match.";
@@ -195,6 +202,7 @@ public class LUTRealTransform implements InvertibleRealTransform
 			source[ d ] = applyInverseChecked( target[ d ] );
 	}
 
+	@Override
 	public void applyInverse( final float[] source, final float[] target )
 	{
 		assert source.length == target.length: "Dimensions do not match.";
@@ -203,11 +211,11 @@ public class LUTRealTransform implements InvertibleRealTransform
 			source[ d ] = ( float ) applyInverseChecked( target[ d ] );
 	}
 
+	@Override
 	public void applyInverse( final RealPositionable source, final RealLocalizable target )
 	{
 		assert source.numDimensions() == target.numDimensions(): "Dimensions do not match.";
 		
-		System.out.println( "buh" );
 		final int n = target.numDimensions();
 		for ( int d = 0; d < n; ++d )
 			source.setPosition( applyInverseChecked( target.getDoublePosition( d ) ), d );
@@ -216,6 +224,7 @@ public class LUTRealTransform implements InvertibleRealTransform
 	/** 
 	 * TODO create actual inverse
 	 */
+	@Override
 	public InvertibleRealTransform inverse()
 	{
 		return new InverseRealTransform( this );
