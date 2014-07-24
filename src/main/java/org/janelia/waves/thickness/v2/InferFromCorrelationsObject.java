@@ -236,7 +236,6 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			visitor.act( n, matrix, lut, transform, multipliers, weights, fitWithGradient);
 			
 		}
-		ImageJFunctions.show( EstimateCorrelationsAtSamplePoints.arryImg );
 		return coordinates;
 	}
 	
