@@ -1,4 +1,4 @@
-package org.janelia.waves.thickness.v2;
+package org.janelia.thickness;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
 
+import org.janelia.thickness.AbstractLUTRealTransform;
+import org.janelia.thickness.LUTRealTransform;
 import org.junit.BeforeClass;
 import org.junit.Test;
 

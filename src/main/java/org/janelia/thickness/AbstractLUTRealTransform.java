@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.janelia.waves.thickness.v2;
+package org.janelia.thickness;
 
 import net.imglib2.realtransform.InvertibleRealTransform;
 

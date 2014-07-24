@@ -29,17 +29,17 @@ from org.janelia.models import ScaleModel
 from org.janelia.utility import ConstantPair
 from org.janelia.utility import CopyFromIntervalToInterval
 from org.janelia.waves.thickness.correlations import CorrelationsObject
-from org.janelia.waves.thickness.v2 import InferFromCorrelationsObject
-from org.janelia.waves.thickness.v2 import SingleDimensionLUTRealTransform
-from org.janelia.waves.thickness.v2.inference.visitor import ActualCoordinatesTrackerVisitor
-from org.janelia.waves.thickness.v2.inference.visitor import ApplyTransformToImagesAndAverageVisitor
-from org.janelia.waves.thickness.v2.inference.visitor import ApplyTransformToImageVisitor
-from org.janelia.waves.thickness.v2.inference.visitor import CorrelationArrayTrackerVisitor
-from org.janelia.waves.thickness.v2.inference.visitor import CorrelationFitTrackerVisitor
-from org.janelia.waves.thickness.v2.inference.visitor import CorrelationMatrixTrackerVisitor
-from org.janelia.waves.thickness.v2.inference.visitor import MultipliersTrackerVisitor
-from org.janelia.waves.thickness.v2.inference.visitor import WeightsTrackerVisitor
-from org.janelia.waves.thickness.v2.mediator import OpinionMediatorModel
+from org.janelia.thickness import InferFromCorrelationsObject
+from org.janelia.thickness import SingleDimensionLUTRealTransform
+from org.janelia.thickness.inference.visitor import ActualCoordinatesTrackerVisitor
+from org.janelia.thickness.inference.visitor import ApplyTransformToImagesAndAverageVisitor
+from org.janelia.thickness.inference.visitor import ApplyTransformToImageVisitor
+from org.janelia.thickness.inference.visitor import CorrelationArrayTrackerVisitor
+from org.janelia.thickness.inference.visitor import CorrelationFitTrackerVisitor
+from org.janelia.thickness.inference.visitor import CorrelationMatrixTrackerVisitor
+from org.janelia.thickness.inference.visitor import MultipliersTrackerVisitor
+from org.janelia.thickness.inference.visitor import WeightsTrackerVisitor
+from org.janelia.thickness.mediator import OpinionMediatorModel
 
 
 

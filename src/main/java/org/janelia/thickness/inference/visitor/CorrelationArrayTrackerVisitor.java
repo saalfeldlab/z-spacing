@@ -1,4 +1,4 @@
-package org.janelia.waves.thickness.v2.inference.visitor;
+package org.janelia.thickness.inference.visitor;
 
 import ij.IJ;
 import ij.ImagePlus;
@@ -23,8 +23,8 @@ import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
-import org.janelia.waves.thickness.v2.FitWithGradient;
-import org.janelia.waves.thickness.v2.LUTRealTransform;
+import org.janelia.thickness.FitWithGradient;
+import org.janelia.thickness.LUTRealTransform;
 
 public class CorrelationArrayTrackerVisitor extends AbstractMultiVisitor {
 	

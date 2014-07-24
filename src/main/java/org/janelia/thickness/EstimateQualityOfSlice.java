@@ -1,4 +1,4 @@
-package org.janelia.waves.thickness.v2;
+package org.janelia.thickness;
 
 import java.util.ArrayList;
 

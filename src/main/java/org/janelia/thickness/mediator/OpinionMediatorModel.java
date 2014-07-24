@@ -1,4 +1,4 @@
-package org.janelia.waves.thickness.v2.mediator;
+package org.janelia.thickness.mediator;
 
 import java.util.ArrayList;
 import java.util.TreeMap;

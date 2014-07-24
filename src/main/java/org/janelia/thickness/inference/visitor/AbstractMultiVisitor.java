@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.janelia.waves.thickness.v2.inference.visitor;
+package org.janelia.thickness.inference.visitor;
 
 import java.util.ArrayList;
 
@@ -9,8 +9,8 @@ import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.type.numeric.real.DoubleType;
 
-import org.janelia.waves.thickness.v2.FitWithGradient;
-import org.janelia.waves.thickness.v2.LUTRealTransform;
+import org.janelia.thickness.FitWithGradient;
+import org.janelia.thickness.LUTRealTransform;
 
 /**
  * @author hanslovskyp

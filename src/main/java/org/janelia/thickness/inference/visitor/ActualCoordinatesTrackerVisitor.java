@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.janelia.waves.thickness.v2.inference.visitor;
+package org.janelia.thickness.inference.visitor;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -9,37 +9,34 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import net.imglib2.img.array.ArrayCursor;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.type.numeric.real.DoubleType;
 
-import org.janelia.waves.thickness.v2.FitWithGradient;
-import org.janelia.waves.thickness.v2.LUTRealTransform;
+import org.janelia.thickness.FitWithGradient;
+import org.janelia.thickness.LUTRealTransform;
 
 /**
  * @author hanslovskyp
  *
  */
-public class MultipliersTrackerVisitor extends AbstractMultiVisitor {
+public class ActualCoordinatesTrackerVisitor extends AbstractMultiVisitor {
 	
 	private final String basePath;
 	private final String separator;
-	
-	private int r;
 
-	public MultipliersTrackerVisitor(final String basePath, final String separator ) {
+	public ActualCoordinatesTrackerVisitor(final String basePath, final String separator ) {
 		this( new ArrayList<Visitor>(), basePath, separator );
 	}
 
-	public MultipliersTrackerVisitor( final ArrayList< Visitor > visitors, final String basePath, final String separator ) {
+	public ActualCoordinatesTrackerVisitor( final ArrayList< Visitor > visitors, final String basePath, final String separator ) {
 		super( visitors );
 		this.basePath = basePath;
 		this.separator = separator;
 	}
 
 	/* (non-Javadoc)
-	 * @see org.janelia.waves.thickness.v2.inference.visitor.AbstractMultiVisitor#actSelf(int, net.imglib2.img.array.ArrayImg, double[], org.janelia.waves.thickness.v2.LUTRealTransform, net.imglib2.img.array.ArrayImg, net.imglib2.img.array.ArrayImg, org.janelia.waves.thickness.v2.FitWithGradient)
+	 * @see org.janelia.thickness.inference.visitor.AbstractMultiVisitor#actSelf(int, net.imglib2.img.array.ArrayImg, double[], org.janelia.thickness.LUTRealTransform, net.imglib2.img.array.ArrayImg, net.imglib2.img.array.ArrayImg, org.janelia.thickness.FitWithGradient)
 	 */
 	@Override
 	void actSelf(final int iteration, final ArrayImg<DoubleType, DoubleArray> matrix,
@@ -50,16 +47,14 @@ public class MultipliersTrackerVisitor extends AbstractMultiVisitor {
 		
 		
 		final File file = new File( String.format( this.basePath, iteration ) );
-		r = 0;
 		try {
 			
 			file.createNewFile();
 			final FileWriter fw = new FileWriter( file.getAbsoluteFile() );
 			final BufferedWriter bw = new BufferedWriter( fw );
 			
-			final ArrayCursor<DoubleType> c = multipliers.cursor();
-			while( c.hasNext() ) {
-				bw.write( String.format( "%d" + this.separator + "%f\n", r++, c.next().get() ) );
+			for ( int r = 0; r < lut.length; ++r ) {
+				bw.write( String.format( "%d" + this.separator + "%f\n", r, lut[r] ) );
 			}
 			
 			bw.close();
