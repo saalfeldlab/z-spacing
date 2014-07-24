@@ -89,18 +89,15 @@ public class EstimateCorrelationsAtSamplePoints {
 		
 		final RealTransformRealRandomAccessible<DoubleType, InverseRealTransform> source2 = RealViews.transformReal(source, transform);
 		
-//		RealTransformRandomAccessible<DoubleType, LUTRealTransform> source2 = new RealTransformRandomAccessible<DoubleType, LUTRealTransform >( source, transform );
 		
 		final RealRandomAccess<DoubleType> access   = source2.realRandomAccess();
 		final RealRandomAccess<DoubleType> access2  = source2.realRandomAccess();
 		
 		
-//		RealRandomAccess<DoubleType> access2  = source.realRandomAccess();
 		final OutOfBounds<DoubleType> weight1 = Views.extendValue( weights, new DoubleType( Double.NaN ) ).randomAccess();
 		final OutOfBounds<DoubleType> weight2 = Views.extendValue( weights, new DoubleType( Double.NaN ) ).randomAccess();
 		
 		final double[] result = new double[ nIter ];
-//		result[0] = 1.0;
 		
 		for ( int i = 0; i < correlations.dimension( 1 ); ++i ) {
 			
@@ -134,67 +131,9 @@ public class EstimateCorrelationsAtSamplePoints {
 				access2.bck(0);
 				
 			}
-			
-			
-			
-//			DELETE IF ABOVE IS SUCCESSFUL
-			
-//			for ( int k = -nIter; k <= nIter; ++k  ) {
-//				
-//				if ( i + k < 0 || k + i >= coordinates.length ) {
-//					continue;
-//				}
-//				
-//				final double dz = coordinates[i+k] - zRef;
-//				
-//				
-//				// move starting on grid, but non-integer step
-//				final double pos = i + dz;
-//				
-//				
-//				access.setPosition( i + k, 0 );
-//				access2.setPosition( i + k, 0 );
-//				
-//				weight1.setPosition( i + k, 0 );
-////				weight2.setPosition( i - k, 0 );
-//			
-//				
-//				// assume symmetry -> Math.abs 
-//				ArrayList<PointMatch> points = pointCollections.get( Math.abs( k ) );
-//				if ( points == null ) {
-//					points = new ArrayList<PointMatch>();
-//					pointCollections.put( k, points );
-//				}
-//				
-//				final double a1 = access2.get().get();
-////				final double a2 = access2.get().get();
-//				
-//				final double w1 = 1.0; // weight1.get().get();
-////				final double w2 = 1.0; // weight2.get().get();
-//				
-//				// visualization with imagej
-//				ra.setPosition( i, 1);
-//				ra.setPosition( k + nIter, 0);
-//				ra.get().set( a1 );
-//				
-////				ra.fwd(1);
-////				ra.get().set( a2 );
-//				// end vis
-//				
-//				if ( ( ! Double.isNaN( a1 ) ) && ( ! Double.isNaN( w1 ) ) )
-//					points.add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new float[]{ (float)a1 } ), (float) w1 ) );
-//				
-////				if ( ( ! Double.isNaN( a2 ) ) && ( ! Double.isNaN( w2 ) ) )
-////					points.add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new float[]{ (float)a2 } ), (float) w2 ) );
-//				
-////				access.fwd( 0 );
-////				access2.bck( 0 );
-//				
-//			}
-			
+					
 		}
 		
-		// variances[0] = 0.0;
 		for ( int i = 0; i < result.length; ++i ) {
 			final double[] values = new double[ pointCollections.get( i ).size() ];
 			for ( int k = 0; k < values.length; ++k ) {
@@ -279,20 +218,6 @@ public class EstimateCorrelationsAtSamplePoints {
 		for ( final DoubleType w : weights ) {
 			w.set( 1.0 );
 		}
-		
-//		ArrayImg<DoubleType, DoubleArray> estimate = estimateFromMatrix( cImage, weights, new TranslationModel1D() );
-//		
-//		System.out.println();
-//		
-//		int count = 0;
-//		
-//		for ( DoubleType e : estimate ) {
-//			if ( count > nRel ) {
-//				break;
-//			}
-//			System.out.println( e.get() + " (" + new BellCurve().value( count, params) + ")" );
-//			++count;
-//		}
 		
 	}
 	
