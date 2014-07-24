@@ -30,9 +30,13 @@ from org.janelia.utility import CopyFromIntervalToInterval
 from org.janelia.waves.thickness.correlations import CorrelationsObject
 from org.janelia.waves.thickness.v2 import InferFromCorrelationsObject
 from org.janelia.waves.thickness.v2 import SingleDimensionLUTRealTransform
+from org.janelia.waves.thickness.v2.inference.visitor import ActualCoordinatesTrackerVisitor
 from org.janelia.waves.thickness.v2.inference.visitor import ApplyTransformToImageVisitor
 from org.janelia.waves.thickness.v2.inference.visitor import CorrelationArrayTrackerVisitor
+from org.janelia.waves.thickness.v2.inference.visitor import CorrelationFitTrackerVisitor
 from org.janelia.waves.thickness.v2.inference.visitor import CorrelationMatrixTrackerVisitor
+from org.janelia.waves.thickness.v2.inference.visitor import MultipliersTrackerVisitor
+from org.janelia.waves.thickness.v2.inference.visitor import WeightsTrackerVisitor
 from org.janelia.waves.thickness.v2.mediator import OpinionMediatorModel
 
 
@@ -243,14 +247,52 @@ if __name__ == "__main__":
     
     bp = home + "/matrix_test/matrixTest_%02d.tif"
     matrixTracker = CorrelationMatrixTrackerVisitor( bp, # base path
-                                                     22, # min
-                                                     32, # max
-                                                     100, # scale
+                                                     10, # min
+                                                     50, # max
+                                                     20, # scale
                                                      FloorInterpolatorFactory() ) # interpolation
+
+    bp = home + "/array_test/arrayTest_%02d.tif"
+    arrayTracker = CorrelationArrayTrackerVisitor( bp, # base path
+                                                   NLinearInterpolatorFactory(), # interpolation
+                                                   imgSource.getStack().getSize(), # number of data points
+                                                   correlationRange ) # range for pairwise correlations
+
+    bp = home + "/render_test/renderTest_%02d.tif"
+    hyperSlice = Views.hyperSlice( ImagePlusImgs.from( imgSource ), 1,  345 )
+    # ImageJFunctions.show( hyperSlice )
+    scale = 5.0
+    renderTracker = ApplyTransformToImageVisitor( bp, # base path
+                                                  hyperSlice, # sub image
+                                                  NearestNeighborInterpolatorFactory(), # interpolation
+                                                  scale )
+
+    bp = home + "/fit_tracker_test/fitTrackerTest_%02d.csv"
+    separator = ','
+    fitTracker = CorrelationFitTrackerVisitor( bp, # base path
+                                               correlationRange, # range
+                                               separator ) # csv separator
+
+    bp = home + "/fit_coordinates_test/fitCoordinatesTest_%02d.csv"
+    coordinateTracker = ActualCoordinatesTrackerVisitor( bp,
+                                                         separator )
+                                                         
+    bp = home + "/multipliers_test/multipliersTest_%02d.csv"
+    coordinateTracker = MultipliersTrackerVisitor( bp,
+                                                   separator )
+
+    bp = home + "/weights_test/weightsTest_%02d.csv"
+    coordinateTracker = WeightsTrackerVisitor( bp,
+                                               separator )                                                                                                          
+
+    matrixTracker.addVisitor( arrayTracker )
+    # matrixTracker.addVisitor( renderTracker )
+    matrixTracker.addVisitor( fitTracker )
+    matrixTracker.addVisitor( coordinateTracker )                                                 
                                                     
     result = inference.estimateZCoordinates( 0, 0, startingCoordinates, matrixTracker )
     import sys
-    # sys.exit( 1 )
+    sys.exit( 1 )
 
     scale = 5.0
 
