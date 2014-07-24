@@ -24,51 +24,6 @@ public class EstimateQualityOfSlice {
 	
 	private final static float[] ONE_DIMENSION_ONE_POSITION = new float[] { 1.0f };
 
-	public static < M extends Model< M >, C extends Model< C > > ArrayImg< DoubleType, DoubleArray > estimate( final ArrayImg< DoubleType, 
-			DoubleArray> correlations, 
-			final ArrayImg< DoubleType, DoubleArray > weights, 
-			final M model,
-			final ArrayImg< DoubleType, DoubleArray > coordinates,
-			final RealRandomAccessible< DoubleType > correlationFit, 
-			final int nThreads ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
-		
-		final ArrayImg<DoubleType, DoubleArray> newWeights = ArrayImgs.doubles( weights.dimension( 0 ) );
-		final ArrayCursor<DoubleType> newWeightCursor      = newWeights.cursor();
-		
-		for ( int z = 0; z < correlations.dimension( CorrelationsObjectToArrayImg.Z_AXIS ); ++z ) {
-			
-			final IterableInterval<DoubleType> correlationsAtBin = Views.flatIterable( Views.hyperSlice( correlations, z, CorrelationsObjectToArrayImg.Z_AXIS ) );
-			final ArrayList< PointMatch > pointMatches           = new ArrayList<PointMatch>();
-			
-			{
-				long currentDZ = -correlations.dimension( CorrelationsObjectToArrayImg.DZ_AXIS ) / 2;
-
-				final RealRandomAccess<DoubleType> fitRandomAccess         = correlationFit.realRandomAccess();
-				final ArrayRandomAccess<DoubleType> coordinateRandomAccess = coordinates.randomAccess();
-				
-				for ( final DoubleType c : correlationsAtBin ) {
-					++currentDZ;
-					if ( Double.isNaN( c.get() ) ) {
-						continue;
-					}
-					final ArrayCursor<DoubleType> weightCursor = weights.cursor();
-					weightCursor.jumpFwd( z + currentDZ );
-					coordinateRandomAccess.setPosition( new long[] { z + currentDZ } );
-					fitRandomAccess.setPosition( new double[] { coordinateRandomAccess.get().get() } );
-					pointMatches.add( new PointMatch( new Point( new float[] { c.getRealFloat() } ), new Point( new float[] { fitRandomAccess.get().getRealFloat() } ), weightCursor.get().getRealFloat() ) );
-				}
-			}
-			
-			model.fit( pointMatches );
-			
-			newWeightCursor.next().set( model.apply( ONE_DIMENSION_ONE_POSITION )[0] );
-			
-		}
-	
-		return newWeights;
-	}
-	
-	
 	public static < M extends Model< M >, C extends Model< C > > ArrayImg< DoubleType, DoubleArray > estimateFromMatrix( final ArrayImg< DoubleType, 
 			DoubleArray> correlations, 
 			final ArrayImg< DoubleType, DoubleArray > weights, 

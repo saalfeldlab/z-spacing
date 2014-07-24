@@ -14,57 +14,6 @@ import org.janelia.utility.ConstantPair;
 
 public class ShiftCoordinates {
 	
-	public static TreeMap< Long, ArrayList< ConstantPair<Double, Double> > > collectShifts( final ArrayImg< DoubleType, DoubleArray > coordinates, 
-			final ArrayImg< DoubleType, DoubleArray > correlations, 
-			final ArrayImg< DoubleType, DoubleArray > weights, 
-			final RealRandomAccessible< DoubleType > correlationFit,
-			final RealRandomAccessible< DoubleType > correlationFitGradient ) {
-		
-		final TreeMap<Long, ArrayList<ConstantPair<Double, Double> > > weightedShifts = new TreeMap< Long, ArrayList< ConstantPair<Double, Double> > >();
-		
-		final ArrayRandomAccess<DoubleType> coordinateRandomAccess   = coordinates.randomAccess();
-		final ArrayRandomAccess<DoubleType> correlationsRandomAccess = correlations.randomAccess();
-		final ArrayRandomAccess<DoubleType> weightRandomAccess       = weights.randomAccess();
-		final RealRandomAccess<DoubleType> fitRandomAccess           = correlationFit.realRandomAccess();
-		final RealRandomAccess<DoubleType> gradientRandomAccess      = correlationFitGradient.realRandomAccess();
-		
-		for ( int z = 0; z < correlations.dimension( CorrelationsObjectToArrayImg.Z_AXIS ); ++z ) {
-			
-			correlationsRandomAccess.setPosition( z, CorrelationsObjectToArrayImg.Z_AXIS );
-			
-			for ( int dz = 0; dz < correlations.dimension( CorrelationsObjectToArrayImg.DZ_AXIS ); ++ dz ) {
-				
-				final int shiftedDz = dz - (int) correlations.dimension( CorrelationsObjectToArrayImg.DZ_AXIS ) / 2;
-				final int currentZ  = z + shiftedDz;
-				
-				coordinateRandomAccess.setPosition( 0, currentZ );
-				correlationsRandomAccess.setPosition( dz, CorrelationsObjectToArrayImg.DZ_AXIS );
-				weightRandomAccess.setPosition( 0, currentZ );
-				fitRandomAccess.setPosition( coordinateRandomAccess.get().get(), 0 );
-				gradientRandomAccess.setPosition( coordinateRandomAccess.get().get(), 0 );
-				
-				if ( Double.isNaN( correlationsRandomAccess.get().get() ) ) {
-					continue;
-				}
-				
-				ArrayList<ConstantPair<Double, Double>> localShifts = weightedShifts.get( currentZ );
-				if ( localShifts == null ) {
-					localShifts = new ArrayList<ConstantPair<Double,Double>>();
-					weightedShifts.put( (long) currentZ, localShifts );
-				}
-				
-				
-				final double difference = correlationsRandomAccess.get().get() - fitRandomAccess.get().get();
-				localShifts.add( new ConstantPair< Double, Double >( difference / gradientRandomAccess.get().get() , weightRandomAccess.get().get() ) );
-				
-			}
-			
-		}
-		
-		
-		return weightedShifts;
-	}
-	
 	public static TreeMap< Long, ArrayList< ConstantPair<Double, Double> > > collectShiftsFromMatrix( final ArrayImg< DoubleType, DoubleArray > coordinates, 
 			final ArrayImg< DoubleType, DoubleArray > correlations, 
 			final ArrayImg< DoubleType, DoubleArray > weights,

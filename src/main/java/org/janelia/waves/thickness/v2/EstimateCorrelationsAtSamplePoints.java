@@ -8,11 +8,9 @@ import mpicbg.models.Model;
 import mpicbg.models.NotEnoughDataPointsException;
 import mpicbg.models.Point;
 import mpicbg.models.PointMatch;
-import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
-import net.imglib2.img.array.ArrayCursor;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
@@ -30,36 +28,6 @@ import org.apache.commons.math.stat.descriptive.moment.Variance;
 public class EstimateCorrelationsAtSamplePoints {
 	
 	private final static float[] ONE_DIMENSION_ZERO_POSITION = new float[] { 0.0f };
-	
-	public static <M extends Model< M > > ArrayImg< DoubleType, DoubleArray> estimate( final ArrayImg< DoubleType, DoubleArray> correlations, final ArrayImg< DoubleType, DoubleArray> weights, final M model ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
-		
-		final ArrayImg<DoubleType, DoubleArray> result = ArrayImgs.doubles( correlations.dimension( CorrelationsObjectToArrayImg.DZ_AXIS ) );
-		final ArrayCursor<DoubleType> resultCursor     = result.cursor();
-		
-		for ( int i = 0; i < correlations.dimension( CorrelationsObjectToArrayImg.DZ_AXIS ); ++i ) {
-			
-			final Cursor<DoubleType> correlationsCursor = Views.flatIterable( Views.hyperSlice( correlations, CorrelationsObjectToArrayImg.DZ_AXIS, i ) ).cursor();
-			final ArrayCursor<DoubleType> weightCursor  = weights.cursor();
-			
-			final ArrayList< PointMatch > pointMatches = new ArrayList<PointMatch>();
-			
-			while ( correlationsCursor.hasNext() ) {
-				correlationsCursor.fwd();
-				if ( Double.isNaN( correlationsCursor.get().get() ) ) {
-					continue;
-				}
-				pointMatches.add( new PointMatch( new Point( new float[] { 0.0f } ), new Point( new float[] { correlationsCursor.get().getRealFloat() }), weightCursor.next().getRealFloat() ) );
-			}
-			
-			model.fit( pointMatches );
-			
-			resultCursor.next().set( model.apply( ONE_DIMENSION_ZERO_POSITION )[0] );
-			
-		}
-		
-		return result;
-		
-	}
 	
 	public static <M extends Model< M > > ArrayImg< DoubleType, DoubleArray> estimateFromMatrix( final RandomAccessibleInterval< DoubleType > correlations, 
 			final ArrayImg< DoubleType, DoubleArray> weights,
