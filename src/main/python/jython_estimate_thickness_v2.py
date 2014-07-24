@@ -264,7 +264,7 @@ if __name__ == "__main__":
     scale = 5.0
     renderTracker = ApplyTransformToImageVisitor( bp, # base path
                                                   hyperSlice, # sub image
-                                                  NearestNeighborInterpolatorFactory(), # interpolation
+                                                  FloorInterpolatorFactory(), # interpolation
                                                   scale )
 
     bp = home + "/fit_tracker_test/fitTrackerTest_%02d.csv"
