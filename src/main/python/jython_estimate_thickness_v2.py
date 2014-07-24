@@ -278,17 +278,19 @@ if __name__ == "__main__":
                                                          separator )
                                                          
     bp = home + "/multipliers_test/multipliersTest_%02d.csv"
-    coordinateTracker = MultipliersTrackerVisitor( bp,
+    multiplierTracker = MultipliersTrackerVisitor( bp,
                                                    separator )
 
     bp = home + "/weights_test/weightsTest_%02d.csv"
-    coordinateTracker = WeightsTrackerVisitor( bp,
-                                               separator )                                                                                                          
+    weightsTracker = WeightsTrackerVisitor( bp,
+                                            separator )                                                                                                          
 
     matrixTracker.addVisitor( arrayTracker )
     # matrixTracker.addVisitor( renderTracker )
     matrixTracker.addVisitor( fitTracker )
-    matrixTracker.addVisitor( coordinateTracker )                                                 
+    matrixTracker.addVisitor( coordinateTracker )
+    matrixTracker.addVisitor( multiplierTracker )
+    matrixTracker.addVisitor( weightsTracker )                                         
                                                     
     result = inference.estimateZCoordinates( 0, 0, startingCoordinates, matrixTracker )
     import sys
