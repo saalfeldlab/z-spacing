@@ -1,7 +1,6 @@
 package org.janelia.waves.thickness.v2;
 
 import java.util.ArrayList;
-import java.util.Random;
 
 import mpicbg.models.IllDefinedDataPointsException;
 import mpicbg.models.Model;
@@ -16,13 +15,10 @@ import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.array.ArrayRandomAccess;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
-import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.Views;
 
 import org.apache.commons.math.FunctionEvaluationException;
-import org.janelia.models.ScaleModel;
-import org.janelia.waves.thickness.functions.symmetric.BellCurve;
 
 public class EstimateQualityOfSlice {
 	
@@ -128,79 +124,79 @@ public class EstimateQualityOfSlice {
 	
 	public static void main(final String[] args) throws FunctionEvaluationException, NotEnoughDataPointsException, IllDefinedDataPointsException {
 		
-		final int nPoints      = 50;
-		final int nComparisons = 10;
-		
-		final double scale = 0.5;
-		
-		final Random rng = new Random( 100 );
-		
-		final double[] params = new double[] { 0.0, 2.0 };
-		
-		final double[] orig = new double[ nPoints * nPoints ];
-		final double[] mult = new double[ nPoints * nPoints ];
-		final double[] fit  = new double[ nPoints ];
-		
-		final double[] weights = new double[ nPoints ];
-		final ArrayImg<DoubleType, DoubleArray> weightsA = ArrayImgs.doubles( weights, nPoints );
-		for ( final DoubleType w : weightsA )
-			w.set( 1.0 );
-		
-		final double[] coordinates = new double[ nPoints ];
-		final ArrayImg<DoubleType, DoubleArray> coordinateA = ArrayImgs.doubles( coordinates, nPoints );
-		{
-			int coord = 0;
-			for ( final DoubleType c : coordinateA ) {
-				c.set( coord );
-				++coord;
-			}
-		}
-		
-		final ArrayImg<DoubleType, DoubleArray> origA = ArrayImgs.doubles( orig, nPoints, nPoints );
-		final ArrayImg<DoubleType, DoubleArray> multA = ArrayImgs.doubles( mult, nPoints, nPoints );
-		final ArrayImg<DoubleType, DoubleArray> fitA  = ArrayImgs.doubles( fit, nPoints );
-		
-		for ( final DoubleType o : origA )
-			o.set( Double.NaN );
-		
-		for ( final DoubleType m : multA )
-			m.set( Double.NaN );
-		
-		final ArrayRandomAccess<DoubleType> origAccess = origA.randomAccess();
-		final ArrayRandomAccess<DoubleType> multAccess = multA.randomAccess();
-		final ArrayRandomAccess<DoubleType> fitAccess  = fitA.randomAccess();
-		
-		for (int i = 0; i < nPoints; ++i) {
-			
-			origAccess.setPosition( i, 0 );
-			multAccess.setPosition( i, 0 );
-			fitAccess.setPosition( i, 0 );
-			
-			fitAccess.get().set( new BellCurve().value( i, params ) );
-			
-			
-			for ( int k = -nComparisons; k <= nComparisons; ++k ) {
-				
-				if ( i + k < 0 || i + k >= nPoints ) {
-					continue;
-				}
-				
-				origAccess.setPosition( i + k, 1 );
-				multAccess.setPosition( i + k, 1 );
-				
-				origAccess.get().set( new BellCurve().value( k, params ) );
-				multAccess.get().set( new BellCurve().value( k, params ) * scale * ( 1 + rng.nextGaussian() * 0.1 ) );
-				
-			}
-		}
-		
-		final ArrayImg<DoubleType, DoubleArray> newW = estimateFromMatrix( multA, 
-				weightsA, 
-				new ScaleModel( 0.0f ), 
-				coordinateA, 
-				Views.interpolate( Views.extendMirrorSingle( fitA ), new NLinearInterpolatorFactory<DoubleType>() ),
-				1);
-				
+//		final int nPoints      = 50;
+//		final int nComparisons = 10;
+//		
+//		final double scale = 0.5;
+//		
+//		final Random rng = new Random( 100 );
+//		
+//		final double[] params = new double[] { 0.0, 2.0 };
+//		
+//		final double[] orig = new double[ nPoints * nPoints ];
+//		final double[] mult = new double[ nPoints * nPoints ];
+//		final double[] fit  = new double[ nPoints ];
+//		
+//		final double[] weights = new double[ nPoints ];
+//		final ArrayImg<DoubleType, DoubleArray> weightsA = ArrayImgs.doubles( weights, nPoints );
+//		for ( final DoubleType w : weightsA )
+//			w.set( 1.0 );
+//		
+//		final double[] coordinates = new double[ nPoints ];
+//		final ArrayImg<DoubleType, DoubleArray> coordinateA = ArrayImgs.doubles( coordinates, nPoints );
+//		{
+//			int coord = 0;
+//			for ( final DoubleType c : coordinateA ) {
+//				c.set( coord );
+//				++coord;
+//			}
+//		}
+//		
+//		final ArrayImg<DoubleType, DoubleArray> origA = ArrayImgs.doubles( orig, nPoints, nPoints );
+//		final ArrayImg<DoubleType, DoubleArray> multA = ArrayImgs.doubles( mult, nPoints, nPoints );
+//		final ArrayImg<DoubleType, DoubleArray> fitA  = ArrayImgs.doubles( fit, nPoints );
+//		
+//		for ( final DoubleType o : origA )
+//			o.set( Double.NaN );
+//		
+//		for ( final DoubleType m : multA )
+//			m.set( Double.NaN );
+//		
+//		final ArrayRandomAccess<DoubleType> origAccess = origA.randomAccess();
+//		final ArrayRandomAccess<DoubleType> multAccess = multA.randomAccess();
+//		final ArrayRandomAccess<DoubleType> fitAccess  = fitA.randomAccess();
+//		
+//		for (int i = 0; i < nPoints; ++i) {
+//			
+//			origAccess.setPosition( i, 0 );
+//			multAccess.setPosition( i, 0 );
+//			fitAccess.setPosition( i, 0 );
+//			
+//			fitAccess.get().set( new BellCurve().value( i, params ) );
+//			
+//			
+//			for ( int k = -nComparisons; k <= nComparisons; ++k ) {
+//				
+//				if ( i + k < 0 || i + k >= nPoints ) {
+//					continue;
+//				}
+//				
+//				origAccess.setPosition( i + k, 1 );
+//				multAccess.setPosition( i + k, 1 );
+//				
+//				origAccess.get().set( new BellCurve().value( k, params ) );
+//				multAccess.get().set( new BellCurve().value( k, params ) * scale * ( 1 + rng.nextGaussian() * 0.1 ) );
+//				
+//			}
+//		}
+//		
+//		final ArrayImg<DoubleType, DoubleArray> newW = estimateFromMatrix( multA, 
+//				weightsA, 
+//				new ScaleModel( 0.0f ), 
+//				coordinateA, 
+//				Views.interpolate( Views.extendMirrorSingle( fitA ), new NLinearInterpolatorFactory<DoubleType>() ),
+//				1);
+//				
 	}
 	
 }
