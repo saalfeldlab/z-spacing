@@ -36,6 +36,9 @@ public class CorrelationArrayTrackerVisitor extends AbstractMultiVisitor {
 	private final int nData;
 	private final int range;
 	
+	private double a1;
+	private double a2;
+	
 	
 
 
@@ -85,21 +88,26 @@ public class CorrelationArrayTrackerVisitor extends AbstractMultiVisitor {
 			sourceAccess1.setPosition( n, 1 );
 			transform.apply( sourceAccess1, sourceAccess2 );
 			sourceAccess1.setPosition( sourceAccess2 );
-			final double a1 = sourceAccess1.get().get();
-			final double a2 = sourceAccess2.get().get();
+			
 			
 			
 			for ( int r = 0; r < range; ++r ) {
+				
+				this.a1 = sourceAccess1.get().get();
+				this.a2 = sourceAccess2.get().get();
+				
 				targetAccess.setPosition( 2*n, 1);
 				targetAccess.setPosition( r, 0 );
 				targetAccess.get().setReal( a1 );
 				
 				targetAccess.fwd( 1 );
 				targetAccess.get().setReal( a2 );
+				
+				sourceAccess1.fwd( 0 );
+				sourceAccess2.bck( 0 );
 			}
 			
-			sourceAccess1.fwd( 0 );
-			sourceAccess2.bck( 0 );
+			
 		}
 
 		IJ.save( targetImg, String.format( this.basePath, iteration ) );
