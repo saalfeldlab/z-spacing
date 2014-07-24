@@ -1,5 +1,6 @@
 from ij import ImagePlus
 from ij import ImageStack
+from ij.process import ImageConverter
 
 from java.lang import Double
 from java.lang import Long
@@ -31,6 +32,7 @@ from org.janelia.waves.thickness.correlations import CorrelationsObject
 from org.janelia.waves.thickness.v2 import InferFromCorrelationsObject
 from org.janelia.waves.thickness.v2 import SingleDimensionLUTRealTransform
 from org.janelia.waves.thickness.v2.inference.visitor import ActualCoordinatesTrackerVisitor
+from org.janelia.waves.thickness.v2.inference.visitor import ApplyTransformToImagesAndAverageVisitor
 from org.janelia.waves.thickness.v2.inference.visitor import ApplyTransformToImageVisitor
 from org.janelia.waves.thickness.v2.inference.visitor import CorrelationArrayTrackerVisitor
 from org.janelia.waves.thickness.v2.inference.visitor import CorrelationFitTrackerVisitor
@@ -169,20 +171,24 @@ if __name__ == "__main__":
     print t0 - t0
     
     # imgSource = IJ.getImage()
-    imgSource   = ImagePlus( '/groups/saalfeld/home/hanslovskyp/data/thickness/test_data/davi/intensity_corrected/crop/intensity_1.tif' )
+    imgSource   = ImagePlus( '/groups/saalfeld/home/hanslovskyp/data/thickness/test_data/davi/intensity_corrected/crop/intensity_1_removed_slices.tif' )
+    # imgSource   = ImagePlus( '/groups/saalfeld/home/hanslovskyp/data/thickness/test_data/fibsem/crop/test_stack_234_8bit.tif' )
+    conv = ImageConverter( imgSource )
+    conv.convertToGray32()
     stackSource = imgSource.getStack()
-    import math
-    stack = ImageStack(int(round(imgSource.getWidth()*0.05)), int(round(imgSource.getHeight()*0.05)))
+    xyScale = 0.2
+    stack = ImageStack(int(round(imgSource.getWidth()*xyScale)), int(round(imgSource.getHeight()*xyScale)))
 
 
     for z in xrange(stackSource.getSize()):
         stack.addSlice(Filter.createDownsampled(
             stackSource.getProcessor(z+1),
-	    0.05,
+	    xyScale,
 	    0.5,
             0.5))
 
     img = ImagePlus("", stack)
+
     
     cc = CorrelationsCreator(img, [img.getWidth(), img.getHeight()])
     correlationRange = 10
@@ -254,39 +260,41 @@ if __name__ == "__main__":
 
     bp = home + "/array_test/arrayTest_%02d.tif"
     arrayTracker = CorrelationArrayTrackerVisitor( bp, # base path
-                                                   NLinearInterpolatorFactory(), # interpolation
+                                                   FloorInterpolatorFactory(), # interpolation
                                                    imgSource.getStack().getSize(), # number of data points
                                                    correlationRange ) # range for pairwise correlations
 
     bp = home + "/render_test/renderTest_%02d.tif"
-    hyperSlice = Views.hyperSlice( ImagePlusImgs.from( imgSource ), 1,  345 )
+    hyperSlices = ArrayList()
+    # hyperSlice = Views.hyperSlice( ImagePlusImgs.from( imgSource ), 1,  345 )
     # ImageJFunctions.show( hyperSlice )
     scale = 5.0
-    renderTracker = ApplyTransformToImageVisitor( bp, # base path
-                                                  hyperSlice, # sub image
-                                                  FloorInterpolatorFactory(), # interpolation
-                                                  scale )
+    renderTracker = ApplyTransformToImagesAndAverageVisitor( bp, # base path
+                                                             FloorInterpolatorFactory(), # interpolation
+                                                             scale )
+    for i in xrange(-2, 3, 1):
+        renderTracker.addImage( Views.hyperSlice( ImagePlusImgs.from( imgSource ), 1,  250 + i ) )                                                 
 
-    bp = home + "/fit_tracker_test/fitTrackerTest_%02d.csv"
+    bp = home + "/fit_tracker_test/fitTrackerTest_%d.csv"
     separator = ','
     fitTracker = CorrelationFitTrackerVisitor( bp, # base path
                                                correlationRange, # range
                                                separator ) # csv separator
 
-    bp = home + "/fit_coordinates_test/fitCoordinatesTest_%02d.csv"
+    bp = home + "/fit_coordinates_test/fitCoordinatesTest_%d.csv"
     coordinateTracker = ActualCoordinatesTrackerVisitor( bp,
                                                          separator )
                                                          
-    bp = home + "/multipliers_test/multipliersTest_%02d.csv"
+    bp = home + "/multipliers_test/multipliersTest_%d.csv"
     multiplierTracker = MultipliersTrackerVisitor( bp,
                                                    separator )
 
-    bp = home + "/weights_test/weightsTest_%02d.csv"
+    bp = home + "/weights_test/weightsTest_%d.csv"
     weightsTracker = WeightsTrackerVisitor( bp,
                                             separator )                                                                                                          
 
     matrixTracker.addVisitor( arrayTracker )
-    # matrixTracker.addVisitor( renderTracker )
+    matrixTracker.addVisitor( renderTracker )
     matrixTracker.addVisitor( fitTracker )
     matrixTracker.addVisitor( coordinateTracker )
     matrixTracker.addVisitor( multiplierTracker )
@@ -296,7 +304,6 @@ if __name__ == "__main__":
     import sys
     sys.exit( 1 )
 
-    scale = 5.0
 
     array = jarray.zeros( result.dimension(0), 'd' )
     cursor = result.cursor()
