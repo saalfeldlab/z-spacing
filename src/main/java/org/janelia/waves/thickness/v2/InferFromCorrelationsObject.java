@@ -134,11 +134,9 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 		
 		visitor.act( 0, matrix, lut, transform, weights, weights, new FitWithGradient( ArrayImgs.doubles( new double[] { Double.NaN, Double.NaN }, 2 ), new FitWithGradient.SymmetricGradient(), this.fitInterpolatorFactory ) );
 		
-		EstimateCorrelationsAtSamplePoints.arryImg = ArrayImgs.doubles( 11, 120, this.nIterations );
 		for ( int n = 0; n < this.nIterations; ++n ) {
 			final double[] vars = new double[ this.comparisonRange ];
 			
-			EstimateCorrelationsAtSamplePoints.t = n;
 			final ArrayImg<DoubleType, DoubleArray> estimatedFit = EstimateCorrelationsAtSamplePoints.estimateFromMatrix( matrix, weights, transform, coordinateArr, this.comparisonRange, this.correlationFitModel, vars );
 			
 			

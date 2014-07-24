@@ -37,9 +37,6 @@ import org.janelia.waves.thickness.functions.symmetric.BellCurve;
 public class EstimateCorrelationsAtSamplePoints {
 	
 	private final static float[] ONE_DIMENSION_ZERO_POSITION = new float[] { 0.0f };
-	public static ArrayImg<DoubleType, DoubleArray> arryImg = ArrayImgs.doubles( 20, 180, 25 );
-	public static ArrayImg<DoubleType, DoubleArray> matrixImg = ArrayImgs.doubles( 1, 1, 1 );
-	public static int t;
 	
 	public static <M extends Model< M > > ArrayImg< DoubleType, DoubleArray> estimate( final ArrayImg< DoubleType, DoubleArray> correlations, final ArrayImg< DoubleType, DoubleArray> weights, final M model ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 		
