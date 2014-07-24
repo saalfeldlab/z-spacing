@@ -28,6 +28,7 @@ import net.imglib2.realtransform.RealTransformRandomAccessible;
 import net.imglib2.realtransform.RealTransformRealRandomAccessible;
 import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.numeric.real.DoubleType;
+import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
 import org.apache.commons.math.FunctionEvaluationException;
@@ -83,7 +84,7 @@ public class EstimateCorrelationsAtSamplePoints {
 		
 		accumulativeShifts[0] = coordinates[0];
 		for (int i = 1; i < accumulativeShifts.length; i++) {
-			accumulativeShifts[i] = accumulativeShifts[i - 1] + coordinates[i] - i;
+			accumulativeShifts[ i ] = accumulativeShifts[ i - 1 ] + coordinates[ i ] - i;
 		}
 		
 		final TreeMap<Integer, ArrayList<PointMatch>> pointCollections = new TreeMap< Integer, ArrayList<PointMatch>>();
@@ -123,8 +124,8 @@ public class EstimateCorrelationsAtSamplePoints {
 //		result[0] = 1.0;
 		
 		// visualization with imagej
-//		final IntervalView<DoubleType> hyperSlice = Views.hyperSlice( arryImg, 2, t);
-//		final RandomAccess<DoubleType> ra = hyperSlice.randomAccess();
+		final IntervalView<DoubleType> hyperSlice = Views.hyperSlice( arryImg, 2, t);
+		final RandomAccess<DoubleType> ra = hyperSlice.randomAccess();
 		// end vis
 		
 		for ( int i = 0; i < correlations.dimension( 1 ); ++i ) {
@@ -144,12 +145,12 @@ public class EstimateCorrelationsAtSamplePoints {
 				final double w2 = 1.0; // weight2.get().get();
 				
 				// visualization with imagej
-//				ra.setPosition( 2*i, 1);
-//				ra.setPosition( k, 0);
-//				ra.get().set( a1 );
-//				
-//				ra.fwd(1);
-//				ra.get().set( a2 );
+				ra.setPosition( 2*i, 1);
+				ra.setPosition( k, 0);
+				ra.get().set( a1 );
+				
+				ra.fwd(1);
+				ra.get().set( a2 );
 				// end vis
 				
 				ArrayList<PointMatch> points = pointCollections.get( k );
