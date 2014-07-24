@@ -110,13 +110,6 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 		
 		final ArrayImg<DoubleType, DoubleArray> coordinates = ArrayImgs.doubles( coordinateArr, coordinateArr.length );
 		
-//		{ 
-//			int i = 0; 
-//			for ( final DoubleType c : coordinates ) {
-//				c.set( startingCoordinates[i]);
-//				++i;
-//			}
-//		}
 		
 		final LUTRealTransform transform = new LUTRealTransform(lut, matrix.numDimensions(), matrix.numDimensions() );
 		
@@ -223,26 +216,6 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			
 		}
 		 
-		// remove this as soon everything's working, only for visualization purposes
-//		EstimateCorrelationsAtSamplePoints.matrixImg = ArrayImgs.doubles( matrix.dimension(0) * 5, matrix.dimension(1) * 5, this.nIterations );
-//		EstimateCorrelationsAtSamplePoints.matrixImg = ArrayImgs.doubles( 512, 512, this.nIterations );
-		// end vis
-		
-//		final Random rng = new Random( 100 );
-//		
-//		for ( long i = 0; i < matrix.dimension(0); ++ i ) {
-//			
-//			final double mult = 1.0;//rng.nextDouble() / 2 + 0.5;
-//			
-//			
-//			final Cursor<DoubleType> sl1 = Views.flatIterable( Views.hyperSlice(matrix, 0, i) ).cursor();
-//			final Cursor<DoubleType> sl2 = Views.flatIterable( Views.hyperSlice(matrix, 1, i) ).cursor();
-//			
-//			while ( sl1.hasNext() ) {
-//				sl1.next().mul( mult );
-//				sl2.next().mul( mult );
-//			}
-//		}
 		
 		return matrix;
 	}
