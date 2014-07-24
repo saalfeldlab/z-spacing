@@ -1,16 +1,12 @@
 package org.janelia.waves.thickness.v2;
 
-import ij.ImageJ;
-
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Random;
 import java.util.TreeMap;
 
 import mpicbg.models.IllDefinedDataPointsException;
 import mpicbg.models.Model;
 import mpicbg.models.NotEnoughDataPointsException;
-import mpicbg.models.TranslationModel1D;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
@@ -19,22 +15,16 @@ import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.interpolation.InterpolatorFactory;
-import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
 import org.apache.commons.math.FunctionEvaluationException;
-import org.janelia.models.ScaleModel;
 import org.janelia.utility.ConstantPair;
-import org.janelia.utility.ConstantTriple;
 import org.janelia.waves.thickness.correlations.CorrelationsObjectInterface;
 import org.janelia.waves.thickness.correlations.CorrelationsObjectInterface.Meta;
-import org.janelia.waves.thickness.correlations.DummyCorrelationsObject;
-import org.janelia.waves.thickness.functions.symmetric.BellCurve;
 import org.janelia.waves.thickness.v2.inference.visitor.Visitor;
 import org.janelia.waves.thickness.v2.mediator.OpinionMediator;
-import org.janelia.waves.thickness.v2.mediator.OpinionMediatorModel;
 
 public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L> > {
 	
@@ -225,133 +215,133 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 		
 		
 		
-		final Random rng = new Random( 100 );
-
-		final boolean doPrint = false;
-		
-		final int nData = 200;
-		final int zMin  = 1;
-		final int zMax  = zMin + nData;
-		final double xScale   = 0.5;
-		final double sigma    = 4.0;
-		final int range = 25;
-		final double gradient = -1.0 / range;
-		final int nRep = 40;
-		
-		final ArrayList<Double> coordinateBase  = new ArrayList<Double>();
-		final ArrayList<Double> coordinateShift = new ArrayList<Double>();
-		final ArrayList<Double> zShifts         = new ArrayList<Double>();
-		
-		
-		for ( int n = 0; n < nData; ++n ) {
-			coordinateBase.add( (double) (n + 1) );
-			zShifts.add( 0.0 );
-			coordinateShift.add( (double) (n + 1) );
-		}
-		
-		
-		double prev = 0.0;
-		for ( int n = range; n < nData - range; ++n ) {
-			coordinateBase.set(n, (double) (n + 1) );
-			zShifts.set( n, Math.abs( rng.nextGaussian() ) * xScale );
-			coordinateShift.set( n, Math.max( prev, coordinateBase.get(n) ) + zShifts.get(n) );
-			prev = coordinateShift.get( n );			
-		}
-		
-		
-		if ( doPrint  ) {
-			System.out.println( coordinateBase );
-			System.out.println( zShifts );
-			System.out.println( coordinateShift );
-		}
-		
-		final double[] initialCoordinates = new double[ nData - 2*range ];
-		
-		final TreeMap< ConstantTriple<Long, Long, Long>, ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType> > > corrs = 
-				new TreeMap< ConstantTriple<Long, Long, Long>, ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType> > >();
-		
-		final TreeMap< Long, Meta > metaMap = new TreeMap<Long, Meta>();
-		
-		for ( int i = range; i < nData - range; ++i ) {
-			
-//			System.out.println( i );
-			final ArrayImg<DoubleType, DoubleArray> measure = ArrayImgs.doubles( 2 * range + 1 );
-			final ArrayCursor<DoubleType> m = measure.cursor();
-			for ( int r = - range; r <= range; ++r ) {
-				m.next().set( new BellCurve().value( coordinateShift.get( i + r ), new double[] { coordinateShift.get( i ), sigma } ) );
-//				m.next().set( new AbsoluteLinear().value( coordinateShift.get( i + r ), new double[] { coordinateShift.get( i ), 1.0, gradient } ) );
-//				m.next().set( Math.abs(coordinateShift.get( i + r ) -  coordinateShift.get( i ) ) * gradient + 1.0 );
-//				System.out.println( i + r + " " + m.get().get() );
-			}
-		
-			
-			final ArrayImg<DoubleType, DoubleArray> coord = ArrayImgs.doubles( 2 * range + 1 );
-			final ArrayCursor<DoubleType> c = coord.cursor();
-			for ( int r = - range; r <= range; ++r ) {
-				c.next().set( coordinateBase.get( i + r ) + zShifts.get( i + r ) );
-			}
-
-			
-			
-			corrs.put( new ConstantTriple<Long, Long, Long>( 0l, 0l, (long) (i) ),
-					new ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType> >( measure, coord ));
-
-			final Meta meta = new Meta();
-			meta.zPosition = i;
-			meta.zCoordinateMin = i - range;
-			meta.zCoordinateMax = i + range + 1;
-			metaMap.put( (long) i, meta );
-			
-		}
-
-		
-//		EstimateCorrelationsAtSamplePoints.arryImg = ArrayImgs.doubles( 11, 120, nRep );
-		
-
-		
-		final CorrelationsObjectInterface dummyCorrelationsObject = new DummyCorrelationsObject( zMin + range, zMax - range, range, nData, corrs, metaMap );
-		
-		final InferFromCorrelationsObject<TranslationModel1D, ScaleModel> inf = new InferFromCorrelationsObject<TranslationModel1D, ScaleModel>(dummyCorrelationsObject, 
-				nRep, 
-				range, 
-				new TranslationModel1D(), 
-				new NLinearInterpolatorFactory<DoubleType>(), 
-				new ScaleModel(), 
-				1, 
-				new OpinionMediatorModel<TranslationModel1D>( new TranslationModel1D() ) );
-		
-		final ArrayImg<DoubleType, DoubleArray> matrix = inf.correlationsToMatrix( 0l, 0l );
-		
-		// print matrix
-//		for ( int i = 0; i < matrix.dimension( 0 ); ++i ) {
-//			for ( final DoubleType h : Views.iterable(Views.hyperSlice(matrix, 0, i) ) ) {
-//				System.out.print( h.get()+ ",");
+//		final Random rng = new Random( 100 );
+//
+//		final boolean doPrint = false;
+//		
+//		final int nData = 200;
+//		final int zMin  = 1;
+//		final int zMax  = zMin + nData;
+//		final double xScale   = 0.5;
+//		final double sigma    = 4.0;
+//		final int range = 25;
+//		final double gradient = -1.0 / range;
+//		final int nRep = 40;
+//		
+//		final ArrayList<Double> coordinateBase  = new ArrayList<Double>();
+//		final ArrayList<Double> coordinateShift = new ArrayList<Double>();
+//		final ArrayList<Double> zShifts         = new ArrayList<Double>();
+//		
+//		
+//		for ( int n = 0; n < nData; ++n ) {
+//			coordinateBase.add( (double) (n + 1) );
+//			zShifts.add( 0.0 );
+//			coordinateShift.add( (double) (n + 1) );
+//		}
+//		
+//		
+//		double prev = 0.0;
+//		for ( int n = range; n < nData - range; ++n ) {
+//			coordinateBase.set(n, (double) (n + 1) );
+//			zShifts.set( n, Math.abs( rng.nextGaussian() ) * xScale );
+//			coordinateShift.set( n, Math.max( prev, coordinateBase.get(n) ) + zShifts.get(n) );
+//			prev = coordinateShift.get( n );			
+//		}
+//		
+//		
+//		if ( doPrint  ) {
+//			System.out.println( coordinateBase );
+//			System.out.println( zShifts );
+//			System.out.println( coordinateShift );
+//		}
+//		
+//		final double[] initialCoordinates = new double[ nData - 2*range ];
+//		
+//		final TreeMap< ConstantTriple<Long, Long, Long>, ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType> > > corrs = 
+//				new TreeMap< ConstantTriple<Long, Long, Long>, ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType> > >();
+//		
+//		final TreeMap< Long, Meta > metaMap = new TreeMap<Long, Meta>();
+//		
+//		for ( int i = range; i < nData - range; ++i ) {
+//			
+////			System.out.println( i );
+//			final ArrayImg<DoubleType, DoubleArray> measure = ArrayImgs.doubles( 2 * range + 1 );
+//			final ArrayCursor<DoubleType> m = measure.cursor();
+//			for ( int r = - range; r <= range; ++r ) {
+//				m.next().set( new BellCurve().value( coordinateShift.get( i + r ), new double[] { coordinateShift.get( i ), sigma } ) );
+////				m.next().set( new AbsoluteLinear().value( coordinateShift.get( i + r ), new double[] { coordinateShift.get( i ), 1.0, gradient } ) );
+////				m.next().set( Math.abs(coordinateShift.get( i + r ) -  coordinateShift.get( i ) ) * gradient + 1.0 );
+////				System.out.println( i + r + " " + m.get().get() );
 //			}
-//			System.out.println();
+//		
+//			
+//			final ArrayImg<DoubleType, DoubleArray> coord = ArrayImgs.doubles( 2 * range + 1 );
+//			final ArrayCursor<DoubleType> c = coord.cursor();
+//			for ( int r = - range; r <= range; ++r ) {
+//				c.next().set( coordinateBase.get( i + r ) + zShifts.get( i + r ) );
+//			}
+//
+//			
+//			
+//			corrs.put( new ConstantTriple<Long, Long, Long>( 0l, 0l, (long) (i) ),
+//					new ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType> >( measure, coord ));
+//
+//			final Meta meta = new Meta();
+//			meta.zPosition = i;
+//			meta.zCoordinateMin = i - range;
+//			meta.zCoordinateMax = i + range + 1;
+//			metaMap.put( (long) i, meta );
+//			
 //		}
-		
-		
-		
-		// System.exit(1); 
-		
-		
-		
-		final double[] noShiftCoordinates = new double[ initialCoordinates.length ];
-		for (int i = 0; i < noShiftCoordinates.length; i++) {
-			noShiftCoordinates[i] = i;
-		}
-		
-		final ArrayImg<DoubleType, DoubleArray> coord = inf.estimateZCoordinates( 0, 0, noShiftCoordinates );
-		
-		new ImageJ();
-//		ImageJFunctions.show( EstimateCorrelationsAtSamplePoints.arryImg );
-//		ImageJFunctions.show( EstimateCorrelationsAtSamplePoints.matrixImg );
-		
-//		for ( DoubleType c : coord ) {
-//			System.out.println( c.get() );
+//
+//		
+////		EstimateCorrelationsAtSamplePoints.arryImg = ArrayImgs.doubles( 11, 120, nRep );
+//		
+//
+//		
+//		final CorrelationsObjectInterface dummyCorrelationsObject = new DummyCorrelationsObject( zMin + range, zMax - range, range, nData, corrs, metaMap );
+//		
+//		final InferFromCorrelationsObject<TranslationModel1D, ScaleModel> inf = new InferFromCorrelationsObject<TranslationModel1D, ScaleModel>(dummyCorrelationsObject, 
+//				nRep, 
+//				range, 
+//				new TranslationModel1D(), 
+//				new NLinearInterpolatorFactory<DoubleType>(), 
+//				new ScaleModel(), 
+//				1, 
+//				new OpinionMediatorModel<TranslationModel1D>( new TranslationModel1D() ) );
+//		
+//		final ArrayImg<DoubleType, DoubleArray> matrix = inf.correlationsToMatrix( 0l, 0l );
+//		
+//		// print matrix
+////		for ( int i = 0; i < matrix.dimension( 0 ); ++i ) {
+////			for ( final DoubleType h : Views.iterable(Views.hyperSlice(matrix, 0, i) ) ) {
+////				System.out.print( h.get()+ ",");
+////			}
+////			System.out.println();
+////		}
+//		
+//		
+//		
+//		// System.exit(1); 
+//		
+//		
+//		
+//		final double[] noShiftCoordinates = new double[ initialCoordinates.length ];
+//		for (int i = 0; i < noShiftCoordinates.length; i++) {
+//			noShiftCoordinates[i] = i;
 //		}
-		
-
+//		
+//		final ArrayImg<DoubleType, DoubleArray> coord = inf.estimateZCoordinates( 0, 0, noShiftCoordinates );
+//		
+//		new ImageJ();
+////		ImageJFunctions.show( EstimateCorrelationsAtSamplePoints.arryImg );
+////		ImageJFunctions.show( EstimateCorrelationsAtSamplePoints.matrixImg );
+//		
+////		for ( DoubleType c : coord ) {
+////			System.out.println( c.get() );
+////		}
+//		
+//
 	}
 	
 	
