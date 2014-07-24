@@ -132,6 +132,8 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 		ArrayCursor<DoubleType> mediatedCursor   = mediatedShifts.cursor();
 		ArrayCursor<DoubleType> coordinateCursor = coordinates.cursor();
 		
+		visitor.act( 0, matrix, lut, transform, weights, weights, new FitWithGradient( ArrayImgs.doubles( new double[] { Double.NaN, Double.NaN }, 2 ), new FitWithGradient.SymmetricGradient(), this.fitInterpolatorFactory ) );
+		
 		EstimateCorrelationsAtSamplePoints.arryImg = ArrayImgs.doubles( 11, 120, this.nIterations );
 		for ( int n = 0; n < this.nIterations; ++n ) {
 			final double[] vars = new double[ this.comparisonRange ];
@@ -233,7 +235,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 				e.printStackTrace();
 			}
 			
-			visitor.act( n, matrix, lut, transform, multipliers, weights, fitWithGradient);
+			visitor.act( n + 1, matrix, lut, transform, multipliers, weights, fitWithGradient);
 			
 		}
 		return coordinates;
