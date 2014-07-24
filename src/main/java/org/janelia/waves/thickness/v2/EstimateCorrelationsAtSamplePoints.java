@@ -94,23 +94,6 @@ public class EstimateCorrelationsAtSamplePoints {
 		
 //		RealTransformRandomAccessible<DoubleType, LUTRealTransform> source2 = new RealTransformRandomAccessible<DoubleType, LUTRealTransform >( source, transform );
 		
-		// vis with imagej
-////		final RandomAccessibleOnRealRandomAccessible<DoubleType> raster = Views.raster( source2 );
-//		final Scale2D scale = new Scale2D( 20, 20 );
-//		final IntervalView<DoubleType> window = Views.hyperSlice( matrixImg, 2, t );
-//		final Cursor<DoubleType> windowCursor = Views.flatIterable(window).cursor();
-//		final RealRandomAccessible<DoubleType> sourceInterpolatedNN = Views.interpolate( Views.extendValue( correlations, new DoubleType( Double.NaN ) ), new NearestNeighborInterpolatorFactory<DoubleType>());
-//		final AffineRealRandomAccessible<DoubleType, AffineGet> sourceNN = RealViews.affineReal( RealViews.transformReal(sourceInterpolatedNN, transform), scale);
-////		final Cursor<DoubleType> matrixCursor = Views.flatIterable( Views.interval( Views.raster( sourceNN ), new FinalInterval( correlations.dimension(0) * 5, correlations.dimension( 1 ) * 5 ) ) ).cursor();
-////		final Cursor<DoubleType> matrixCursor = Views.flatIterable( Views.interval( Views.raster( sourceNN ), new FinalInterval( new long[]{ 1000, 1000 }, new long[]{ 1511, 1511 } ) ) ).cursor();
-//		final Cursor<DoubleType> matrixCursor = Views.flatIterable( Views.interval( Views.raster( sourceNN ), new FinalInterval( new long[]{ 780, 780 }, new long[]{ 780 + 511, 780 + 511 } ) ) ).cursor();
-//		while ( matrixCursor.hasNext() ) {
-//			windowCursor.next().set( matrixCursor.next() );
-//		}
-//		ImageJFunctions.show( Views.interval( Views.raster( source2 ), new FinalInterval( correlations.dimension(0), correlations.dimension( 1 ) ) ) );
-//		ImageJFunctions.show(Views.interval( raster, new FinalInterval( correlations.dimension( 0 ) + 20, correlations.dimension( 1 ) + 20)));
-		// end vis
-		
 		final RealRandomAccess<DoubleType> access   = source2.realRandomAccess();
 		final RealRandomAccess<DoubleType> access2  = source2.realRandomAccess();
 		
@@ -121,11 +104,6 @@ public class EstimateCorrelationsAtSamplePoints {
 		
 		final double[] result = new double[ nIter ];
 //		result[0] = 1.0;
-		
-		// visualization with imagej
-//		final IntervalView<DoubleType> hyperSlice = Views.hyperSlice( arryImg, 2, t);
-//		final RandomAccess<DoubleType> ra = hyperSlice.randomAccess();
-		// end vis
 		
 		for ( int i = 0; i < correlations.dimension( 1 ); ++i ) {
 			
@@ -142,15 +120,6 @@ public class EstimateCorrelationsAtSamplePoints {
 				
 				final double w1 = 1.0; // weight1.get().get();
 				final double w2 = 1.0; // weight2.get().get();
-				
-				// visualization with imagej
-//				ra.setPosition( 2*i, 1);
-//				ra.setPosition( k, 0);
-//				ra.get().set( a1 );
-//				
-//				ra.fwd(1);
-//				ra.get().set( a2 );
-				// end vis
 				
 				ArrayList<PointMatch> points = pointCollections.get( k );
 				if ( points == null ) {
