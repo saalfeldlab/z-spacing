@@ -171,12 +171,12 @@ if __name__ == "__main__":
     print t0 - t0
     
     # imgSource = IJ.getImage()
-    imgSource   = ImagePlus( '/groups/saalfeld/home/hanslovskyp/data/thickness/test_data/davi/intensity_corrected/crop/intensity_1_removed_slices.tif' )
-    # imgSource   = ImagePlus( '/groups/saalfeld/home/hanslovskyp/data/thickness/test_data/fibsem/crop/test_stack_234_8bit.tif' )
+    # imgSource   = ImagePlus( '/groups/saalfeld/home/hanslovskyp/data/thickness/test_data/davi/intensity_corrected/crop/intensity_1_removed_slices.tif' )
+    imgSource   = ImagePlus( '/groups/saalfeld/home/hanslovskyp/data/thickness/test_data/fibsem/crop/test_stack_234_8bit.tif' )
     conv = ImageConverter( imgSource )
     conv.convertToGray32()
     stackSource = imgSource.getStack()
-    xyScale = 0.2
+    xyScale = 1.0
     stack = ImageStack(int(round(imgSource.getWidth()*xyScale)), int(round(imgSource.getHeight()*xyScale)))
 
 
@@ -268,11 +268,11 @@ if __name__ == "__main__":
     hyperSlices = ArrayList()
     # hyperSlice = Views.hyperSlice( ImagePlusImgs.from( imgSource ), 1,  345 )
     # ImageJFunctions.show( hyperSlice )
-    scale = 5.0
+    scale = 1.0
     renderTracker = ApplyTransformToImagesAndAverageVisitor( bp, # base path
                                                              FloorInterpolatorFactory(), # interpolation
                                                              scale )
-    for i in xrange(-2, 3, 1):
+    for i in xrange(-5, 6, 1):
         renderTracker.addImage( Views.hyperSlice( ImagePlusImgs.from( imgSource ), 1,  250 + i ) )                                                 
 
     bp = home + "/fit_tracker_test/fitTrackerTest_%d.csv"
