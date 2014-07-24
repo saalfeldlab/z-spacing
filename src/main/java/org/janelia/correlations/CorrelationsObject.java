@@ -1,4 +1,4 @@
-package org.janelia.waves.thickness.correlations;
+package org.janelia.correlations;
 
 import java.util.HashMap;
 import java.util.TreeMap;

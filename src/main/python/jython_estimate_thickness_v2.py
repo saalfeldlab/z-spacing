@@ -28,7 +28,7 @@ from net.imglib2.type.numeric.real import DoubleType
 from org.janelia.models import ScaleModel
 from org.janelia.utility import ConstantPair
 from org.janelia.utility import CopyFromIntervalToInterval
-from org.janelia.waves.thickness.correlations import CorrelationsObject
+from org.janelia.correlations import CorrelationsObject
 from org.janelia.thickness import InferFromCorrelationsObject
 from org.janelia.thickness import SingleDimensionLUTRealTransform
 from org.janelia.thickness.inference.visitor import ActualCoordinatesTrackerVisitor
