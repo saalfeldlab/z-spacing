@@ -47,7 +47,6 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 	private final int nIterations;
 	private final int comparisonRange;
 	private final M correlationFitModel;
-	private final InterpolatorFactory< DoubleType, RandomAccessible< DoubleType>> lutInterpolatorFactory;
 	private final InterpolatorFactory< DoubleType, RandomAccessible< DoubleType>> fitInterpolatorFactory;
 	private final L measurementsMultiplierModel;
 	private final int nThreads;
@@ -55,16 +54,11 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 	private final long zMin;
 	private final long zMax;
 	
-	
-	
-	
-	
 	public InferFromCorrelationsObject(
 			final CorrelationsObjectInterface correlationsObject,
 			final int nIterations,
 			final int comparisonRange,
 			final M correlationFitModel,
-			final InterpolatorFactory< DoubleType, RandomAccessible< DoubleType>> lutInterpolatorFactory,
 			final InterpolatorFactory< DoubleType, RandomAccessible< DoubleType>> fitInterpolatorFactory,
 			final L measurementsMultiplierModel,
 			final int nThreads,
@@ -75,7 +69,6 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 		this.nIterations = nIterations;
 		this.comparisonRange = comparisonRange;
 		this.correlationFitModel = correlationFitModel;
-		this.lutInterpolatorFactory = lutInterpolatorFactory;
 		this.fitInterpolatorFactory = fitInterpolatorFactory;
 		this.measurementsMultiplierModel = measurementsMultiplierModel;
 		this.nThreads = nThreads;
@@ -93,6 +86,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 	public ArrayImg< DoubleType, DoubleArray > estimateZCoordinates( final long x, final long y, final double[] startingCoordinates ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 		return estimateZCoordinates( x, y, startingCoordinates, new Visitor() {
 
+			@Override
 			public void act(final int iteration,
 					final ArrayImg<DoubleType, DoubleArray> matrix, final double[] lut,
 					final LUTRealTransform transform,
@@ -129,7 +123,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 //			}
 //		}
 		
-		final LUTRealTransform transform = new LUTRealTransform(lut, this.lutInterpolatorFactory, matrix.numDimensions(), matrix.numDimensions() );
+		final LUTRealTransform transform = new LUTRealTransform(lut, matrix.numDimensions(), matrix.numDimensions() );
 		
 		final ArrayImg<DoubleType, DoubleArray> mediatedShifts = ArrayImgs.doubles( lut.length );
 		
@@ -146,7 +140,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			final ArrayImg<DoubleType, DoubleArray> estimatedFit = EstimateCorrelationsAtSamplePoints.estimateFromMatrix( matrix, weights, transform, coordinateArr, this.comparisonRange, this.correlationFitModel, vars );
 			
 			
-			final File f = new File( String.format( "/groups/saalfeld/home/hanslovskyp/fit_iteration=%d.csv", n ) );
+			final File f = new File( String.format( "/groups/saalfeld/home/saalfelds/fit_iteration=%d.csv", n ) );
 			try {
 				f.createNewFile();
 				final FileWriter fw = new FileWriter( f.getAbsoluteFile() );
@@ -168,12 +162,12 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			
 			final ArrayImg<DoubleType, DoubleArray> multipliers = EstimateQualityOfSlice.estimateFromMatrix( matrix, 
 					weights, 
-					this.measurementsMultiplierModel, 
+					this.measurementsMultiplierModel,
 					coordinates, 
 					fitWithGradient.getFit(), 
 					this.nThreads);
 	
-			final File f2 = new File( String.format( "/groups/saalfeld/home/hanslovskyp/mult_iteration=%d.csv", n ) );
+			final File f2 = new File( String.format( "/groups/saalfeld/home/saalfelds/mult_iteration=%d.csv", n ) );
 			try {
 				f2.createNewFile();
 				final FileWriter fw = new FileWriter( f2.getAbsoluteFile() );
@@ -212,7 +206,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			
 			int ijk = 0;
 			
-			final File file = new File( String.format( "/groups/saalfeld/home/hanslovskyp/shifts_iteration=%d.csv", n ) );
+			final File file = new File( String.format( "/groups/saalfeld/home/saalfelds/shifts_iteration=%d.csv", n ) );
 			try {
 				file.createNewFile();
 				final FileWriter fw = new FileWriter( file.getAbsoluteFile() );
@@ -239,7 +233,6 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 				e.printStackTrace();
 			}
 			
-			transform.update( lut );
 			visitor.act( n, matrix, lut, transform, multipliers, weights, fitWithGradient);
 			
 		}
@@ -352,7 +345,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 		
 		final double[] initialCoordinates = new double[ nData - 2*range ];
 		
-		final File file = new File("/groups/saalfeld/home/hanslovskyp/initialcoordinates.csv");
+		final File file = new File("/groups/saalfeld/home/saalfelds/initialcoordinates.csv");
 		try {
 			file.createNewFile();
 			final FileWriter fw = new FileWriter( file.getAbsoluteFile() );
@@ -417,7 +410,6 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 				nRep, 
 				range, 
 				new TranslationModel1D(), 
-				new NLinearInterpolatorFactory<DoubleType>(),
 				new NLinearInterpolatorFactory<DoubleType>(), 
 				new ScaleModel(), 
 				1, 
