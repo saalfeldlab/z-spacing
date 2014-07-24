@@ -112,8 +112,8 @@ public class EstimateCorrelationsAtSamplePoints {
 				final double a1 = access.get().get();
 				final double a2 = access2.get().get();
 				
-				final double w1 = 1.0; // weight1.get().get();
-				final double w2 = 1.0; // weight2.get().get();
+				final double w1 = 1.0; // weight1.get().get(); // replace 1.0 by real weight, as soon as weight calculation has become clear 
+				final double w2 = 1.0; // weight2.get().get(); // replace 1.0 by real weight, as soon as weight calculation has become clear 
 				
 				ArrayList<PointMatch> points = pointCollections.get( k );
 				if ( points == null ) {
