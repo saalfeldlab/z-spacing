@@ -1,13 +1,8 @@
 package org.janelia.waves.thickness.v2;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.TreeMap;
-
-import org.janelia.utility.ConstantPair;
-import org.janelia.waves.thickness.correlations.CorrelationsObjectInterface;
-import org.janelia.waves.thickness.correlations.CorrelationsObjectInterface.Meta;
 
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
@@ -19,12 +14,16 @@ import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
+import org.janelia.utility.ConstantPair;
+import org.janelia.waves.thickness.correlations.CorrelationsObjectInterface;
+import org.janelia.waves.thickness.correlations.CorrelationsObjectInterface.Meta;
+
 public class CorrelationsObjectToArrayImg {
 	
 	public static final int Z_AXIS  = 1;
 	public static final int DZ_AXIS = 1 - Z_AXIS;
 	
-	ConstantPair< ArrayImg< DoubleType, DoubleArray >, ArrayImg< DoubleType, DoubleArray > > extract( CorrelationsObjectInterface correlationsObject, long x, long y ) {
+	ConstantPair< ArrayImg< DoubleType, DoubleArray >, ArrayImg< DoubleType, DoubleArray > > extract( final CorrelationsObjectInterface correlationsObject, final long x, final long y ) {
 		long zRangeLower = 0;
 		long zRangeUpper = 0;
 		long zBinMin     = Integer.MAX_VALUE;
@@ -32,9 +31,9 @@ public class CorrelationsObjectToArrayImg {
 		
 		
 		// get image size
-		TreeMap<Long, Meta> metaMap = correlationsObject.getMetaMap();
+		final TreeMap<Long, Meta> metaMap = correlationsObject.getMetaMap();
 		
-		for ( Entry<Long, Meta> entry : metaMap.entrySet() ) {
+		for ( final Entry<Long, Meta> entry : metaMap.entrySet() ) {
 			
 			if ( entry.getValue().zPosition < zBinMin ) {
 				zBinMin = entry.getKey();
@@ -54,22 +53,22 @@ public class CorrelationsObjectToArrayImg {
 		}
 		
 		// extract correlations and write into image
-		double[] correlationsArray = new double[ (int) (( zRangeLower + zRangeUpper ) * ( zBinMax - zBinMin )) ];
+		final double[] correlationsArray = new double[ (int) (( zRangeLower + zRangeUpper ) * ( zBinMax - zBinMin )) ];
 		Arrays.fill( correlationsArray, Double.NaN );
-		ArrayImg<DoubleType, DoubleArray> correlations = ArrayImgs.doubles( correlationsArray, zRangeLower + zRangeUpper, zBinMax - zBinMin );
-		ArrayImg<DoubleType, DoubleArray> coordinates  = ArrayImgs.doubles( zBinMax - zBinMin );
+		final ArrayImg<DoubleType, DoubleArray> correlations = ArrayImgs.doubles( correlationsArray, zRangeLower + zRangeUpper, zBinMax - zBinMin );
+		final ArrayImg<DoubleType, DoubleArray> coordinates  = ArrayImgs.doubles( zBinMax - zBinMin );
 		
-		ArrayCursor<DoubleType> coordinateCursor = coordinates.cursor();
+		final ArrayCursor<DoubleType> coordinateCursor = coordinates.cursor();
 		
 		
-		for ( Entry<Long, Meta> entry : metaMap.entrySet() ) {
-			ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType> > correlationsAndCoordinates = correlationsObject.extractDoubleCorrelationsAt( x, y, entry.getKey() );
-			IntervalView<DoubleType> currentCorrelationSlice = Views.hyperSlice( correlations, Z_AXIS, entry.getValue().zPosition - zBinMin );
+		for ( final Entry<Long, Meta> entry : metaMap.entrySet() ) {
+			final ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType> > correlationsAndCoordinates = correlationsObject.extractDoubleCorrelationsAt( x, y, entry.getKey() );
+			final IntervalView<DoubleType> currentCorrelationSlice = Views.hyperSlice( correlations, Z_AXIS, entry.getValue().zPosition - zBinMin );
 			
-			long startingIndex = zRangeLower - ( entry.getValue().zPosition - entry.getValue().zCoordinateMin ); // not all zPositions have the maximum correlation range
+			final long startingIndex = zRangeLower - ( entry.getValue().zPosition - entry.getValue().zCoordinateMin ); // not all zPositions have the maximum correlation range
 			
-			Cursor<DoubleType> targetCursor = Views.flatIterable( currentCorrelationSlice ).cursor();
-			Cursor<DoubleType> sourceCursor = Views.flatIterable( correlationsAndCoordinates.getA() ).cursor();
+			final Cursor<DoubleType> targetCursor = Views.flatIterable( currentCorrelationSlice ).cursor();
+			final Cursor<DoubleType> sourceCursor = Views.flatIterable( correlationsAndCoordinates.getA() ).cursor();
 			
 			targetCursor.jumpFwd( startingIndex );
 			
