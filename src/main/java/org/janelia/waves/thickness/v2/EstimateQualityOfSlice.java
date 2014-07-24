@@ -1,12 +1,7 @@
 package org.janelia.waves.thickness.v2;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Random;
-
-import org.apache.commons.math.FunctionEvaluationException;
-import org.janelia.models.ScaleModel;
-import org.janelia.waves.thickness.functions.symmetric.BellCurve;
 
 import mpicbg.models.IllDefinedDataPointsException;
 import mpicbg.models.Model;
@@ -25,38 +20,42 @@ import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.Views;
 
+import org.apache.commons.math.FunctionEvaluationException;
+import org.janelia.models.ScaleModel;
+import org.janelia.waves.thickness.functions.symmetric.BellCurve;
+
 public class EstimateQualityOfSlice {
 	
 	private final static float[] ONE_DIMENSION_ONE_POSITION = new float[] { 1.0f };
 
-	public static < M extends Model< M >, C extends Model< C > > ArrayImg< DoubleType, DoubleArray > estimate( ArrayImg< DoubleType, 
+	public static < M extends Model< M >, C extends Model< C > > ArrayImg< DoubleType, DoubleArray > estimate( final ArrayImg< DoubleType, 
 			DoubleArray> correlations, 
-			ArrayImg< DoubleType, DoubleArray > weights, 
-			M model,
-			ArrayImg< DoubleType, DoubleArray > coordinates,
-			RealRandomAccessible< DoubleType > correlationFit, 
-			int nThreads ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+			final ArrayImg< DoubleType, DoubleArray > weights, 
+			final M model,
+			final ArrayImg< DoubleType, DoubleArray > coordinates,
+			final RealRandomAccessible< DoubleType > correlationFit, 
+			final int nThreads ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 		
-		ArrayImg<DoubleType, DoubleArray> newWeights = ArrayImgs.doubles( weights.dimension( 0 ) );
-		ArrayCursor<DoubleType> newWeightCursor      = newWeights.cursor();
+		final ArrayImg<DoubleType, DoubleArray> newWeights = ArrayImgs.doubles( weights.dimension( 0 ) );
+		final ArrayCursor<DoubleType> newWeightCursor      = newWeights.cursor();
 		
 		for ( int z = 0; z < correlations.dimension( CorrelationsObjectToArrayImg.Z_AXIS ); ++z ) {
 			
-			IterableInterval<DoubleType> correlationsAtBin = Views.flatIterable( Views.hyperSlice( correlations, z, CorrelationsObjectToArrayImg.Z_AXIS ) );
-			ArrayList< PointMatch > pointMatches           = new ArrayList<PointMatch>();
+			final IterableInterval<DoubleType> correlationsAtBin = Views.flatIterable( Views.hyperSlice( correlations, z, CorrelationsObjectToArrayImg.Z_AXIS ) );
+			final ArrayList< PointMatch > pointMatches           = new ArrayList<PointMatch>();
 			
 			{
 				long currentDZ = -correlations.dimension( CorrelationsObjectToArrayImg.DZ_AXIS ) / 2;
 
-				RealRandomAccess<DoubleType> fitRandomAccess         = correlationFit.realRandomAccess();
-				ArrayRandomAccess<DoubleType> coordinateRandomAccess = coordinates.randomAccess();
+				final RealRandomAccess<DoubleType> fitRandomAccess         = correlationFit.realRandomAccess();
+				final ArrayRandomAccess<DoubleType> coordinateRandomAccess = coordinates.randomAccess();
 				
-				for ( DoubleType c : correlationsAtBin ) {
+				for ( final DoubleType c : correlationsAtBin ) {
 					++currentDZ;
 					if ( Double.isNaN( c.get() ) ) {
 						continue;
 					}
-					ArrayCursor<DoubleType> weightCursor = weights.cursor();
+					final ArrayCursor<DoubleType> weightCursor = weights.cursor();
 					weightCursor.jumpFwd( z + currentDZ );
 					coordinateRandomAccess.setPosition( new long[] { z + currentDZ } );
 					fitRandomAccess.setPosition( new double[] { coordinateRandomAccess.get().get() } );
@@ -74,33 +73,33 @@ public class EstimateQualityOfSlice {
 	}
 	
 	
-	public static < M extends Model< M >, C extends Model< C > > ArrayImg< DoubleType, DoubleArray > estimateFromMatrix( ArrayImg< DoubleType, 
+	public static < M extends Model< M >, C extends Model< C > > ArrayImg< DoubleType, DoubleArray > estimateFromMatrix( final ArrayImg< DoubleType, 
 			DoubleArray> correlations, 
-			ArrayImg< DoubleType, DoubleArray > weights, 
-			M model,
-			ArrayImg< DoubleType, DoubleArray > coordinates,
-			RealRandomAccessible< DoubleType > correlationFit,
-			int nThreads ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+			final ArrayImg< DoubleType, DoubleArray > weights, 
+			final M model,
+			final ArrayImg< DoubleType, DoubleArray > coordinates,
+			final RealRandomAccessible< DoubleType > correlationFit,
+			final int nThreads ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 		
-		ArrayImg<DoubleType, DoubleArray> newWeights         = ArrayImgs.doubles( weights.dimension( 0 ) );
-		ArrayCursor<DoubleType> newWeightCursor              = newWeights.cursor();
-		RealRandomAccess<DoubleType> fitRandomAccess         = correlationFit.realRandomAccess();
-		ArrayRandomAccess<DoubleType> coordinateRandomAccess = coordinates.randomAccess();
-		ArrayRandomAccess<DoubleType> weightRanodmAccess     = weights.randomAccess();
+		final ArrayImg<DoubleType, DoubleArray> newWeights         = ArrayImgs.doubles( weights.dimension( 0 ) );
+		final ArrayCursor<DoubleType> newWeightCursor              = newWeights.cursor();
+		final RealRandomAccess<DoubleType> fitRandomAccess         = correlationFit.realRandomAccess();
+		final ArrayRandomAccess<DoubleType> coordinateRandomAccess = coordinates.randomAccess();
+		final ArrayRandomAccess<DoubleType> weightRanodmAccess     = weights.randomAccess();
 		
 		int currentZ;
 		
 		for ( int z = 0; z < correlations.dimension( 0 ); ++z ) {
 			
-			IterableInterval<DoubleType> correlationsAtBin = Views.flatIterable( Views.hyperSlice( correlations, 0, z ) );
-			ArrayList< PointMatch > pointMatches           = new ArrayList<PointMatch>();
+			final IterableInterval<DoubleType> correlationsAtBin = Views.flatIterable( Views.hyperSlice( correlations, 0, z ) );
+			final ArrayList< PointMatch > pointMatches           = new ArrayList<PointMatch>();
 			
 			currentZ = 0;
 			
 			coordinateRandomAccess.setPosition( z, 0 );
-			double refCoordinate = coordinateRandomAccess.get().get();
+			final double refCoordinate = coordinateRandomAccess.get().get();
 			
-			for ( DoubleType c : correlationsAtBin ) {
+			for ( final DoubleType c : correlationsAtBin ) {
 				
 				coordinateRandomAccess.setPosition( currentZ, 0);
 				fitRandomAccess.setPosition( coordinateRandomAccess.get().get() - refCoordinate, 0 );
@@ -127,49 +126,49 @@ public class EstimateQualityOfSlice {
 		return newWeights;
 	}
 	
-	public static void main(String[] args) throws FunctionEvaluationException, NotEnoughDataPointsException, IllDefinedDataPointsException {
+	public static void main(final String[] args) throws FunctionEvaluationException, NotEnoughDataPointsException, IllDefinedDataPointsException {
 		
-		int nPoints      = 50;
-		int nComparisons = 10;
+		final int nPoints      = 50;
+		final int nComparisons = 10;
 		
-		double scale = 0.5;
+		final double scale = 0.5;
 		
-		Random rng = new Random( 100 );
+		final Random rng = new Random( 100 );
 		
-		double[] params = new double[] { 0.0, 2.0 };
+		final double[] params = new double[] { 0.0, 2.0 };
 		
-		double[] orig = new double[ nPoints * nPoints ];
-		double[] mult = new double[ nPoints * nPoints ];
-		double[] fit  = new double[ nPoints ];
+		final double[] orig = new double[ nPoints * nPoints ];
+		final double[] mult = new double[ nPoints * nPoints ];
+		final double[] fit  = new double[ nPoints ];
 		
-		double[] weights = new double[ nPoints ];
-		ArrayImg<DoubleType, DoubleArray> weightsA = ArrayImgs.doubles( weights, nPoints );
-		for ( DoubleType w : weightsA )
+		final double[] weights = new double[ nPoints ];
+		final ArrayImg<DoubleType, DoubleArray> weightsA = ArrayImgs.doubles( weights, nPoints );
+		for ( final DoubleType w : weightsA )
 			w.set( 1.0 );
 		
-		double[] coordinates = new double[ nPoints ];
-		ArrayImg<DoubleType, DoubleArray> coordinateA = ArrayImgs.doubles( coordinates, nPoints );
+		final double[] coordinates = new double[ nPoints ];
+		final ArrayImg<DoubleType, DoubleArray> coordinateA = ArrayImgs.doubles( coordinates, nPoints );
 		{
 			int coord = 0;
-			for ( DoubleType c : coordinateA ) {
+			for ( final DoubleType c : coordinateA ) {
 				c.set( coord );
 				++coord;
 			}
 		}
 		
-		ArrayImg<DoubleType, DoubleArray> origA = ArrayImgs.doubles( orig, nPoints, nPoints );
-		ArrayImg<DoubleType, DoubleArray> multA = ArrayImgs.doubles( mult, nPoints, nPoints );
-		ArrayImg<DoubleType, DoubleArray> fitA  = ArrayImgs.doubles( fit, nPoints );
+		final ArrayImg<DoubleType, DoubleArray> origA = ArrayImgs.doubles( orig, nPoints, nPoints );
+		final ArrayImg<DoubleType, DoubleArray> multA = ArrayImgs.doubles( mult, nPoints, nPoints );
+		final ArrayImg<DoubleType, DoubleArray> fitA  = ArrayImgs.doubles( fit, nPoints );
 		
-		for ( DoubleType o : origA )
+		for ( final DoubleType o : origA )
 			o.set( Double.NaN );
 		
-		for ( DoubleType m : multA )
+		for ( final DoubleType m : multA )
 			m.set( Double.NaN );
 		
-		ArrayRandomAccess<DoubleType> origAccess = origA.randomAccess();
-		ArrayRandomAccess<DoubleType> multAccess = multA.randomAccess();
-		ArrayRandomAccess<DoubleType> fitAccess  = fitA.randomAccess();
+		final ArrayRandomAccess<DoubleType> origAccess = origA.randomAccess();
+		final ArrayRandomAccess<DoubleType> multAccess = multA.randomAccess();
+		final ArrayRandomAccess<DoubleType> fitAccess  = fitA.randomAccess();
 		
 		for (int i = 0; i < nPoints; ++i) {
 			
@@ -195,7 +194,7 @@ public class EstimateQualityOfSlice {
 			}
 		}
 		
-		ArrayImg<DoubleType, DoubleArray> newW = estimateFromMatrix( multA, 
+		final ArrayImg<DoubleType, DoubleArray> newW = estimateFromMatrix( multA, 
 				weightsA, 
 				new ScaleModel( 0.0f ), 
 				coordinateA, 
