@@ -96,7 +96,7 @@ public class CorrelationArrayTrackerVisitor extends AbstractMultiVisitor {
 				this.a1 = sourceAccess1.get().get();
 				this.a2 = sourceAccess2.get().get();
 				
-				targetAccess.setPosition( 2*n, 1);
+				targetAccess.setPosition( 2*n, 1 );
 				targetAccess.setPosition( r, 0 );
 				targetAccess.get().setReal( a1 );
 				
