@@ -22,6 +22,7 @@ import net.imglib2.img.array.ArrayCursor;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
+import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.type.numeric.real.DoubleType;
@@ -36,6 +37,7 @@ import org.janelia.waves.thickness.correlations.CorrelationsObjectInterface;
 import org.janelia.waves.thickness.correlations.CorrelationsObjectInterface.Meta;
 import org.janelia.waves.thickness.correlations.DummyCorrelationsObject;
 import org.janelia.waves.thickness.functions.symmetric.BellCurve;
+import org.janelia.waves.thickness.v2.inference.visitor.Visitor;
 import org.janelia.waves.thickness.v2.mediator.OpinionMediator;
 import org.janelia.waves.thickness.v2.mediator.OpinionMediatorModel;
 
@@ -52,6 +54,10 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 	private final OpinionMediator shiftMediator;
 	private final long zMin;
 	private final long zMax;
+	
+	
+	
+	
 	
 	public InferFromCorrelationsObject(
 			final CorrelationsObjectInterface correlationsObject,
@@ -85,6 +91,19 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 	}
 	
 	public ArrayImg< DoubleType, DoubleArray > estimateZCoordinates( final long x, final long y, final double[] startingCoordinates ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+		return estimateZCoordinates( x, y, startingCoordinates, new Visitor() {
+
+			public void act(final int iteration,
+					final ArrayImg<DoubleType, DoubleArray> matrix, final double[] lut,
+					final LUTRealTransform transform,
+					final ArrayImg<DoubleType, DoubleArray> multipliers,
+					final ArrayImg<DoubleType, DoubleArray> weights,
+					final FitWithGradient fitWithGradient) {
+				// don't do anything
+			}} );
+	}
+	
+	public ArrayImg< DoubleType, DoubleArray > estimateZCoordinates( final long x, final long y, final double[] startingCoordinates, final Visitor visitor ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 		
 		final ArrayImg<DoubleType, DoubleArray> matrix = this.correlationsToMatrix( x, y);
 		final ArrayImg<DoubleType, DoubleArray> weights = ArrayImgs.doubles( matrix.dimension( 0 ) );
@@ -119,7 +138,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 		ArrayCursor<DoubleType> mediatedCursor   = mediatedShifts.cursor();
 		ArrayCursor<DoubleType> coordinateCursor = coordinates.cursor();
 		
-		
+		EstimateCorrelationsAtSamplePoints.arryImg = ArrayImgs.doubles( 11, 120, this.nIterations );
 		for ( int n = 0; n < this.nIterations; ++n ) {
 			final double[] vars = new double[ this.comparisonRange ];
 			
@@ -205,7 +224,9 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 //					coordinateCursor.get().setReal( coordinateCursor.get().getRealDouble() + 0.1*mediatedCursor.get().getRealDouble() );
 					
 					
-					lut[ijk] += 0.1 * mediatedCursor.get().get();
+					lut[ijk] += 0.5 * mediatedCursor.get().get();
+					lut[ijk] *= 0.99;
+					lut[ijk] += 0.01 * ijk;
 					
 					bw.write( String.format( "%d,%f,%f\n", ijk, mediatedCursor.get().get(), coordinateCursor.get().get() ) );
 					++ijk;
@@ -219,9 +240,10 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			}
 			
 			transform.update( lut );
+			visitor.act( n, matrix, lut, transform, multipliers, weights, fitWithGradient);
 			
 		}
-		
+		ImageJFunctions.show( EstimateCorrelationsAtSamplePoints.arryImg );
 		return coordinates;
 	}
 	
@@ -385,7 +407,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 		}
 
 		
-//		EstimateCorrelationsAtSamplePoints.arryImg = ArrayImgs.doubles( range + 1, 2 * nData - 2 * range, nRep );
+//		EstimateCorrelationsAtSamplePoints.arryImg = ArrayImgs.doubles( 11, 120, nRep );
 		
 
 		
