@@ -2,10 +2,6 @@ package org.janelia.waves.thickness.v2;
 
 import ij.ImageJ;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Random;
@@ -139,23 +135,6 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			final ArrayImg<DoubleType, DoubleArray> estimatedFit = EstimateCorrelationsAtSamplePoints.estimateFromMatrix( matrix, weights, transform, coordinateArr, this.comparisonRange, this.correlationFitModel, vars );
 			
 			
-			final File f = new File( String.format( "/groups/saalfeld/home/saalfelds/fit_iteration=%d.csv", n ) );
-			try {
-				f.createNewFile();
-				final FileWriter fw = new FileWriter( f.getAbsoluteFile() );
-				final BufferedWriter bw = new BufferedWriter( fw );
-				final ArrayCursor<DoubleType> efCursor = estimatedFit.cursor();
-				
-				for (int i = 0; i < vars.length; i++) {
-					bw.write( String.format( "%d,%f,%f\n", i, efCursor.next().get(), vars[i] ) );
-				}
-				
-				bw.close();
-			} catch (final IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
 			final FitWithGradient fitWithGradient = new FitWithGradient( estimatedFit, new FitWithGradient.SymmetricGradient(), this.fitInterpolatorFactory );
 			
 			
@@ -166,23 +145,6 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 					fitWithGradient.getFit(), 
 					this.nThreads);
 	
-			final File f2 = new File( String.format( "/groups/saalfeld/home/saalfelds/mult_iteration=%d.csv", n ) );
-			try {
-				f2.createNewFile();
-				final FileWriter fw = new FileWriter( f2.getAbsoluteFile() );
-				final BufferedWriter bw = new BufferedWriter( fw );
-				final ArrayCursor<DoubleType> mCursor = multipliers.cursor();
-				
-				for (int i = 0; i < multipliers.dimension( 0 ); i++) {
-					bw.write( String.format( "%d,%f\n", i, mCursor.next().get() ) );
-				}
-				
-				bw.close();
-			} catch (final IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
 			
 			final TreeMap<Long, ArrayList<ConstantPair<Double, Double>>> shifts = ShiftCoordinates.collectShiftsFromMatrix(coordinates, 
 					matrix, 
@@ -205,32 +167,21 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			
 			int ijk = 0;
 			
-			final File file = new File( String.format( "/groups/saalfeld/home/saalfelds/shifts_iteration=%d.csv", n ) );
-			try {
-				file.createNewFile();
-				final FileWriter fw = new FileWriter( file.getAbsoluteFile() );
-				final BufferedWriter bw = new BufferedWriter( fw );
-				while ( mediatedCursor.hasNext() ) {
-					
-					coordinateCursor.fwd();
-					mediatedCursor.fwd();
-//					coordinateCursor.get().setReal( coordinateCursor.get().getRealDouble() + 0.1*mediatedCursor.get().getRealDouble() );
-					
-					
-					lut[ijk] += 0.5 * mediatedCursor.get().get();
-					lut[ijk] *= 0.99;
-					lut[ijk] += 0.01 * ijk;
-					
-					bw.write( String.format( "%d,%f,%f\n", ijk, mediatedCursor.get().get(), coordinateCursor.get().get() ) );
-					++ijk;
-					
-				}
+			
+			while ( mediatedCursor.hasNext() ) {
 				
-				bw.close();
-			} catch (final IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				coordinateCursor.fwd();
+				mediatedCursor.fwd();
+				
+				lut[ijk] += 0.5 * mediatedCursor.get().get();
+				lut[ijk] *= 0.99;
+				lut[ijk] += 0.01 * ijk;
+				
+				++ijk;
+				
 			}
+				
+			
 			
 			visitor.act( n + 1, matrix, lut, transform, multipliers, weights, fitWithGradient);
 			
@@ -342,23 +293,6 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 		}
 		
 		final double[] initialCoordinates = new double[ nData - 2*range ];
-		
-		final File file = new File("/groups/saalfeld/home/saalfelds/initialcoordinates.csv");
-		try {
-			file.createNewFile();
-			final FileWriter fw = new FileWriter( file.getAbsoluteFile() );
-			final BufferedWriter bw = new BufferedWriter( fw );
-		
-			for ( int i = 0; i < initialCoordinates.length; ++i ) {
-				initialCoordinates[i] = coordinateShift.get( range + i ) - range - 1;
-				final String writeString = "" + i + "," + initialCoordinates[i] + "\n";
-				bw.write( writeString );
-			}
-			bw.close();
-		} catch (final IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 		
 		final TreeMap< ConstantTriple<Long, Long, Long>, ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType> > > corrs = 
 				new TreeMap< ConstantTriple<Long, Long, Long>, ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType> > >();
