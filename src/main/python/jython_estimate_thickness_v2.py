@@ -1,6 +1,7 @@
 from ij import ImagePlus
 from ij import ImageStack
 
+from java.lang import Double
 from java.lang import Long
 from java.lang import System
 
@@ -17,6 +18,7 @@ from net.imglib2.img import ImagePlusAdapter
 from net.imglib2.img.display.imagej import ImgLib2Display
 from net.imglib2.interpolation.randomaccess import NLinearInterpolatorFactory
 from net.imglib2.interpolation.randomaccess import NearestNeighborInterpolatorFactory
+from net.imglib2.interpolation.randomaccess import FloorInterpolatorFactory
 from net.imglib2.view import Views
 from net.imglib2.realtransform import RealViews
 from net.imglib2.img.imageplus import ImagePlusImgs
@@ -163,7 +165,7 @@ if __name__ == "__main__":
     print t0 - t0
     
     # imgSource = IJ.getImage()
-    imgSource   = ImagePlus( '/groups/saalfeld/home/hanslovskyp/data/thickness/test_data/davi/intensity_corrected/crop/intensity_1_removed_slices.tif' )
+    imgSource   = ImagePlus( '/groups/saalfeld/home/hanslovskyp/data/thickness/test_data/davi/intensity_corrected/crop/intensity_1.tif' )
     stackSource = imgSource.getStack()
     import math
     stack = ImageStack(int(round(imgSource.getWidth()*0.05)), int(round(imgSource.getHeight()*0.05)))
@@ -232,7 +234,6 @@ if __name__ == "__main__":
                                              correlationRange,
                                              TranslationModel1D(),
                                              NLinearInterpolatorFactory(),
-                                             NLinearInterpolatorFactory(),
                                              ScaleModel(),
                                              nThreads,
                                              OpinionMediatorModel( TranslationModel1D() )
@@ -245,21 +246,23 @@ if __name__ == "__main__":
                                                      22, # min
                                                      32, # max
                                                      100, # scale
-                                                     NearestNeighborInterpolatorFactory() ) # interpolation
+                                                     FloorInterpolatorFactory() ) # interpolation
                                                     
     result = inference.estimateZCoordinates( 0, 0, startingCoordinates, matrixTracker )
     import sys
-    sys.exit( 1 )
+    # sys.exit( 1 )
+
+    scale = 5.0
 
     array = jarray.zeros( result.dimension(0), 'd' )
     cursor = result.cursor()
     for i in xrange(result.dimension(0) ):
         array[i] = scale * cursor.next().get()
 
-    lutTransform = SingleDimensionLUTRealTransform( array, NLinearInterpolatorFactory(), 3, 3, 2 )
+    lutTransform = SingleDimensionLUTRealTransform( array, 3, 3, 2 )
 
     resultImage = ImagePlusImgs.unsignedBytes( imgSource.getWidth(), imgSource.getHeight(), int(scale) * stack.getSize() )# ArrayImgs.doubles( img.getWidth(), img.getHeight(), 10 * stack.getSize() )
-    interpolated = Views.interpolate( Views.extendValue( ImagePlusImgs.from(imgSource), DoubleType( Double.NaN ) ), NearestNeighborInterpolatorFactory() )
+    interpolated = Views.interpolate( Views.extendValue( ImagePlusImgs.from(imgSource), DoubleType( Double.NaN ) ), FloorInterpolatorFactory() )
     transformed =  Views.interval( RealViews.transform( interpolated, lutTransform ), resultImage )
 
     print type(transformed)
