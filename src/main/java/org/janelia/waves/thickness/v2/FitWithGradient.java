@@ -12,7 +12,6 @@ import net.imglib2.img.array.ArrayRandomAccess;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
-import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.Views;
 
@@ -28,11 +27,12 @@ public class FitWithGradient {
 	
 	public static class SymmetricGradient implements GradientCalculator {
 
-		public void calculate(ArrayImg<DoubleType, DoubleArray> fitValues,
-				ArrayImg<DoubleType, DoubleArray> gradient) {
+		@Override
+		public void calculate(final ArrayImg<DoubleType, DoubleArray> fitValues,
+				final ArrayImg<DoubleType, DoubleArray> gradient) {
 			
-			ArrayRandomAccess<DoubleType> fitAccess      = fitValues.randomAccess();
-			ArrayRandomAccess<DoubleType> gradientAccess = gradient.randomAccess();
+			final ArrayRandomAccess<DoubleType> fitAccess      = fitValues.randomAccess();
+			final ArrayRandomAccess<DoubleType> gradientAccess = gradient.randomAccess();
 			
 			gradientAccess.setPosition( 0, 0 );
 			gradientAccess.get().set( 0.0 );
@@ -52,7 +52,7 @@ public class FitWithGradient {
 				
 			}
 			
-			ArrayRandomAccess<DoubleType> gradientAccess2 = gradient.randomAccess();
+			final ArrayRandomAccess<DoubleType> gradientAccess2 = gradient.randomAccess();
 			gradientAccess2.setPosition( gradient.dimension( 0 ) -1, 0 );
 			gradientAccess2.get().set( gradientAccess.get() );
 			
@@ -67,7 +67,7 @@ public class FitWithGradient {
 		private final ArrayImg< DoubleType, DoubleArray > baseData;
 		private final RealRandomAccessible< DoubleType > viewData;
 
-		public SymmetricRealRandomAccessible( boolean invert, ArrayImg< DoubleType, DoubleArray > baseData, InterpolatorFactory< DoubleType, RandomAccessible<DoubleType> > factory ) {
+		public SymmetricRealRandomAccessible( final boolean invert, final ArrayImg< DoubleType, DoubleArray > baseData, final InterpolatorFactory< DoubleType, RandomAccessible<DoubleType> > factory ) {
 			super();
 			this.invert = invert;
 			
@@ -75,6 +75,7 @@ public class FitWithGradient {
 			this.viewData = Views.interpolate( Views.extendValue( baseData, new DoubleType( Double.NaN ) ), factory);
 		}
 
+		@Override
 		public int numDimensions() {
 			return baseData.numDimensions();
 		}
@@ -89,10 +90,11 @@ public class FitWithGradient {
 				this.access = viewData.realRandomAccess();
 			}
 
+			@Override
 			public DoubleType get() {
 				
 				this.access.setPosition( Math.abs( this.position[0] ), 0 );
-				double value = this.access.get().get();
+				final double value = this.access.get().get();
 				
 				if ( this.position[0] < 0.0 && invert ) {
 					return new DoubleType( - value );
@@ -101,31 +103,35 @@ public class FitWithGradient {
 				}
 			}
 
+			// need to clarify use of copy() and copyRealRandomAccess()
+			@Override
 			public Sampler<DoubleType> copy() {
-				// TODO Auto-generated method stub
-				return null;
+				return new SymmetricRealRandomAccess();
 			}
 
+			// is baseData known here?
+			@Override
 			public RealRandomAccess<DoubleType> copyRealRandomAccess() {
-				// TODO Auto-generated method stub
-				return null;
+				return new SymmetricRealRandomAccess();
 			}
 			
 			
 			
 		}
 
-		public RealRandomAccess<DoubleType> realRandomAccess(RealInterval interval) {
+		@Override
+		public RealRandomAccess<DoubleType> realRandomAccess(final RealInterval interval) {
 			return this.realRandomAccess();
 		}
 
+		@Override
 		public RealRandomAccess<DoubleType> realRandomAccess() {
 			return new SymmetricRealRandomAccess();
 		}
 		
 	}
 	
-	public FitWithGradient( ArrayImg<DoubleType, DoubleArray> fitValues, GradientCalculator calc, InterpolatorFactory<DoubleType, RandomAccessible<DoubleType> > interpolatorFactory ) {
+	public FitWithGradient( final ArrayImg<DoubleType, DoubleArray> fitValues, final GradientCalculator calc, final InterpolatorFactory<DoubleType, RandomAccessible<DoubleType> > interpolatorFactory ) {
 		super();
 		
 		this.fitValues           = fitValues;
@@ -149,17 +155,17 @@ public class FitWithGradient {
 	
 	
 	
-	public static void main(String[] args) {
+	public static void main(final String[] args) {
 		
-		double[] values = new double[] { 5, 4, 2, 1.5, 0 };
+		final double[] values = new double[] { 5, 4, 2, 1.5, 0 };
 		
-		FitWithGradient fwg = new FitWithGradient( ArrayImgs.doubles( values, values.length ), new FitWithGradient.SymmetricGradient(), new NLinearInterpolatorFactory<DoubleType>());
+		final FitWithGradient fwg = new FitWithGradient( ArrayImgs.doubles( values, values.length ), new FitWithGradient.SymmetricGradient(), new NLinearInterpolatorFactory<DoubleType>());
 		
-		RealRandomAccess<DoubleType> fitAccess      = fwg.getFit().realRandomAccess();
-		RealRandomAccess<DoubleType> gradientAccess = fwg.getGradient().realRandomAccess();
+		final RealRandomAccess<DoubleType> fitAccess      = fwg.getFit().realRandomAccess();
+		final RealRandomAccess<DoubleType> gradientAccess = fwg.getGradient().realRandomAccess();
 		
 		for ( int i = -values.length + 1; i < values.length; ++ i ) {
-			double j = i + 0.5;
+			final double j = i + 0.5;
 			fitAccess.setPosition( j, 0 );
 			gradientAccess.setPosition( j, 0);
 			System.out.println( j + ": f=" + fitAccess.get().get() + ", df/dz=" + gradientAccess.get().get() );
