@@ -54,14 +54,6 @@ public class ShiftCoordinates {
 				}
 				
 				
-				
-//				localShifts.add( 
-//								findShiftForDataPoint( coordinateRandomAccess.get().get(), 
-//										               correlationsRandomAccess.get().get(),
-//										               weightRandomAccess.get().get(),
-//										               currentZ, 
-//										               correlationFit )
-//								);
 				final double difference = correlationsRandomAccess.get().get() - fitRandomAccess.get().get();
 				localShifts.add( new ConstantPair< Double, Double >( difference / gradientRandomAccess.get().get() , weightRandomAccess.get().get() ) );
 				
@@ -126,11 +118,9 @@ public class ShiftCoordinates {
 				}
 				
 				final double difference = corrAccess.get().get() * multAccess.get().get() - fitAccess.get().get();
-//				double difference = corrAccess.get().get() * 1.0 - fitAccess.get().get();
 				weightAccess.setPosition( k, 0 );
 				
-//				if ( Math.abs( gradientAccess.get().getRealDouble() ) > 0.0 ) 
-					localShifts.add( new ConstantPair<Double, Double>( difference / gradientAccess.get().getRealDouble(), weightAccess.get().getRealDouble() ) );
+				localShifts.add( new ConstantPair<Double, Double>( difference / gradientAccess.get().getRealDouble(), weightAccess.get().getRealDouble() ) );
 				
 			}
 		}
