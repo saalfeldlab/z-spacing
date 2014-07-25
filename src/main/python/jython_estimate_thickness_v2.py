@@ -312,7 +312,7 @@ if __name__ == "__main__":
 
     lutTransform = SingleDimensionLUTRealTransform( array, 3, 3, 2 )
 
-    resultImage = ImagePlusImgs.unsignedBytes( imgSource.getWidth(), imgSource.getHeight(), int(scale) * stack.getSize() )# ArrayImgs.doubles( img.getWidth(), img.getHeight(), 10 * stack.getSize() )
+    resultImage = ImagePlusImgs.unsignedBytes( imgSource.getWidth(), imgSource.getHeight(), int(scale) * stack.getSize() )
     interpolated = Views.interpolate( Views.extendValue( ImagePlusImgs.from(imgSource), DoubleType( Double.NaN ) ), FloorInterpolatorFactory() )
     transformed =  Views.interval( RealViews.transform( interpolated, lutTransform ), resultImage )
 
