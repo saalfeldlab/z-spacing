@@ -22,7 +22,6 @@ import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.Views;
 
-import org.apache.commons.math.FunctionEvaluationException;
 import org.apache.commons.math.stat.descriptive.moment.Variance;
 import org.janelia.thickness.lut.LUTRealTransform;
 
@@ -108,81 +107,5 @@ public class EstimateCorrelationsAtSamplePoints {
 		
 		return ArrayImgs.doubles( result, result.length );
 	}
-	
-	public static void main( final String[] args ) throws FunctionEvaluationException, NotEnoughDataPointsException, IllDefinedDataPointsException {
-		
-
-//	final double[] param = new double[] { 0.0, 2.0 };
-//	
-//	
-//		final BellCurve func  = new BellCurve();
-//		
-//		final double[] arr = new double[ 3 * 3 ];
-//		final ArrayImg<DoubleType, DoubleArray> img = ArrayImgs.doubles( arr,  3, 3 );
-//		
-//		final ArrayCursor<DoubleType> cursor = img.cursor();
-//		while( cursor.hasNext() ) {
-//			cursor.fwd();
-//			double delta = Math.abs( cursor.getDoublePosition( 1 ) - cursor.getDoublePosition( 0 ) );
-//			if ( delta > 0.1 && ( cursor.getDoublePosition(0) == 2 || cursor.getDoublePosition(1 ) == 2 ) ) {
-//				delta += 0.5;
-//			}
-//			cursor.get().set( func.value( delta, param) );
-//		}
-//		
-//		final double[] lut = new double[] { 0, 1.0, 2.6 }; 
-//		final LUTRealTransform lutTransform = new LUTRealTransform( lut, 2, 2 );
-//		
-//		final ArrayImg<DoubleType, DoubleArray> res = ArrayImgs.doubles( 4, 4 );
-//		
-//		final RealRandomAccessible<DoubleType> source = Views.interpolate( Views.extendBorder(img), new NearestNeighborInterpolatorFactory<DoubleType>() );
-//		LUTRealTransform.render( source, res, lutTransform, 0.1 );
-//		
-//		final RealRandomAccessible<DoubleType> view = Views.interpolate( Views.extendBorder( res ), new NLinearInterpolatorFactory<DoubleType>());
-//		
-//		final RealRandomAccessible<DoubleType> target = new RealTransformRandomAccessible<DoubleType, RealTransform>( source, lutTransform );
-//		
-//		for ( int i = 0; i < 3; ++i ) {
-//			for ( int j = 0; j < 3; ++j ) {
-//				final RandomAccess<DoubleType> ra = Views.interval( Views.raster( view ), new long[] {0, 0}, new long[]{ 3, 3 } ).randomAccess();
-//				ra.setPosition( new int[] { i, j } );
-//			}
-//		}
-//		
-//		final int nCorrs = 100;
-//		final int nRel   = 7;
-//		
-//		final double[] correlationMatrix = new double[ nCorrs * nCorrs ];
-//		for (int i = 0; i < correlationMatrix.length; i++) {
-//			correlationMatrix[i] = Double.NaN;
-//		}
-//		
-//		final ArrayImg<DoubleType, DoubleArray> cImage = ArrayImgs.doubles( correlationMatrix, nCorrs, nCorrs );
-//		final ArrayRandomAccess<DoubleType> cAccess    = cImage.randomAccess();
-//		
-//		final Random rng = new Random( nCorrs );
-//		
-//		final double[] params = new double[] { 0.0, 2.0 };
-//		
-//		for ( int i = 0; i < nCorrs; ++ i) {
-//			cAccess.setPosition( i, 0 );
-//			for ( int j = -nRel; j <= nRel; ++j ) {
-//				if ( i + j < 0 || i + j >= nCorrs ) {
-//					continue;
-//				}
-//				cAccess.setPosition( i + j, 1 );
-//				cAccess.get().set( new BellCurve().value( j, params) + rng.nextGaussian() * 0.1 ); //* new BellCurve().value( j, params) );
-//			}
-//		}
-//		
-//		final ArrayImg<DoubleType, DoubleArray> weights = ArrayImgs.doubles( nCorrs );
-//		
-//		for ( final DoubleType w : weights ) {
-//			w.set( 1.0 );
-//		}
-		
-	}
-	
-	
 
 }
