@@ -61,7 +61,7 @@ public class CorrelationsObject implements CorrelationsObjectInterface {
 	/**
 	 * @param options the options to set
 	 */
-	public void setOptions(Options options) {
+	public void setOptions(final Options options) {
 		this.options = options;
 	}
 
@@ -77,6 +77,7 @@ public class CorrelationsObject implements CorrelationsObjectInterface {
 	/**
 	 * @return the metaMap
 	 */
+	@Override
 	public TreeMap<Long, Meta> getMetaMap() {
 		return metaMap;
 	}
@@ -93,6 +94,7 @@ public class CorrelationsObject implements CorrelationsObjectInterface {
 	/**
 	 * @return the zMin
 	 */
+	@Override
 	public long getzMin() {
 		return zMin;
 	}
@@ -101,6 +103,7 @@ public class CorrelationsObject implements CorrelationsObjectInterface {
 	/**
 	 * @return the zMax
 	 */
+	@Override
 	public long getzMax() {
 		return zMax;
 	}
@@ -122,7 +125,7 @@ public class CorrelationsObject implements CorrelationsObjectInterface {
 			this.zMin = this.metaMap.values().iterator().next().zCoordinateMin;
 			this.zMax = this.metaMap.values().iterator().next().zCoordinateMax;
 			
-			for ( Meta v : this.metaMap.values() ) {
+			for ( final Meta v : this.metaMap.values() ) {
 				if ( v.zCoordinateMin < this.zMin ) {
 					this.zMin = v.zCoordinateMin;
 				}
@@ -134,16 +137,16 @@ public class CorrelationsObject implements CorrelationsObjectInterface {
 	}
 
 
-	public CorrelationsObject(Options options) {
+	public CorrelationsObject(final Options options) {
 		this(new HashMap<Long, RandomAccessibleInterval<FloatType>>(),
 				new TreeMap<Long, Meta>(),
 				options);
 	}
 	
 	
-	public void addCorrelationImage(long index, 
-			RandomAccessibleInterval<FloatType> correlations,
-			Meta meta) 
+	public void addCorrelationImage(final long index, 
+			final RandomAccessibleInterval<FloatType> correlations,
+			final Meta meta) 
 	{
 		this.correlationsMap.put(index, correlations);
 		this.metaMap.put(index, meta);
@@ -164,12 +167,13 @@ public class CorrelationsObject implements CorrelationsObjectInterface {
 	 * @param z extract correlations at z
 	 * @return {@link Pair} holding correlations and coordinates in terms of z slices. The actual "thicknesses" or real world coordinates need to be saved seperately. 
 	 */
-	public ConstantPair<RandomAccessibleInterval<FloatType>, RandomAccessibleInterval<FloatType> > extractCorrelationsAt(long x, long y, long z) {
-		IntervalView<FloatType> entryA         = Views.hyperSlice( Views.hyperSlice( correlationsMap.get( z ), 0, x ), 0, y );
-		ArrayImg<FloatType, FloatArray> entryB = ArrayImgs.floats(entryA.dimension(0));
+	@Override
+	public ConstantPair<RandomAccessibleInterval<FloatType>, RandomAccessibleInterval<FloatType> > extractCorrelationsAt(final long x, final long y, final long z) {
+		final IntervalView<FloatType> entryA         = Views.hyperSlice( Views.hyperSlice( correlationsMap.get( z ), 0, x ), 0, y );
+		final ArrayImg<FloatType, FloatArray> entryB = ArrayImgs.floats(entryA.dimension(0));
 		
 		long zPosition               = metaMap.get(z).zCoordinateMin;
-		ArrayCursor<FloatType> cursor = entryB.cursor();
+		final ArrayCursor<FloatType> cursor = entryB.cursor();
 		
 		while ( cursor.hasNext() ) {
 			cursor.next().set( zPosition );
@@ -182,17 +186,18 @@ public class CorrelationsObject implements CorrelationsObjectInterface {
 	}
 
 
+	@Override
 	public ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType>> extractDoubleCorrelationsAt(
-			long x, long y, long z) {
-		IntervalView<FloatType> entryAFloat      = Views.hyperSlice( Views.hyperSlice( correlationsMap.get( z ), 0, x ), 0, y );
-		ArrayImg<DoubleType, DoubleArray> entryA = ArrayImgs.doubles(entryAFloat.dimension(0));
-		ArrayImg<DoubleType, DoubleArray> entryB = ArrayImgs.doubles(entryAFloat.dimension(0));
+			final long x, final long y, final long z) {
+		final IntervalView<FloatType> entryAFloat      = Views.hyperSlice( Views.hyperSlice( correlationsMap.get( z ), 0, x ), 0, y );
+		final ArrayImg<DoubleType, DoubleArray> entryA = ArrayImgs.doubles(entryAFloat.dimension(0));
+		final ArrayImg<DoubleType, DoubleArray> entryB = ArrayImgs.doubles(entryAFloat.dimension(0));
 		
 		long zPosition               = metaMap.get(z).zCoordinateMin;
 		
-		Cursor<FloatType> cursorFloat   = Views.flatIterable( entryAFloat ).cursor();
-		ArrayCursor<DoubleType> cursorA = entryA.cursor();
-		ArrayCursor<DoubleType> cursorB = entryB.cursor();
+		final Cursor<FloatType> cursorFloat   = Views.flatIterable( entryAFloat ).cursor();
+		final ArrayCursor<DoubleType> cursorA = entryA.cursor();
+		final ArrayCursor<DoubleType> cursorB = entryB.cursor();
 		
 		while ( cursorA.hasNext() ) {
 			cursorA.next().set( cursorFloat.next().getRealDouble() );
