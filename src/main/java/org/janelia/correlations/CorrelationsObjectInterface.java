@@ -1,13 +1,12 @@
 package org.janelia.correlations;
 
-import java.util.HashMap;
 import java.util.TreeMap;
-
-import org.janelia.utility.ConstantPair;
 
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
+
+import org.janelia.utility.ConstantPair;
 
 public interface CorrelationsObjectInterface {
 	
