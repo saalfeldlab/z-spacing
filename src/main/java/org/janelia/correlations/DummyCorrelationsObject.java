@@ -10,6 +10,12 @@ import net.imglib2.type.numeric.real.FloatType;
 import org.janelia.utility.ConstantPair;
 import org.janelia.utility.ConstantTriple;
 
+/**
+ * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>
+ * 
+ * Implements the {@link CorrelationsObjectInterface} for test purposes.
+ *
+ */
 public class DummyCorrelationsObject implements CorrelationsObjectInterface {
 		
 	

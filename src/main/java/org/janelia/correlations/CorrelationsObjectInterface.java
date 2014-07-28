@@ -8,6 +8,13 @@ import net.imglib2.type.numeric.real.FloatType;
 
 import org.janelia.utility.ConstantPair;
 
+/**
+ * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>
+ * 
+ * The {@link CorrelationsObjectInterface} provides functions to get correlations for any point in an image volume given it's x,y,z coordinates.
+ * The function {@link CorrelationsObjectInterface#getMetaMap()} returns a map that stores {@link Meta} information for each z-slice. 
+ *
+ */
 public interface CorrelationsObjectInterface {
 	
 	public static class Meta {

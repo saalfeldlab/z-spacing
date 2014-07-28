@@ -22,12 +22,13 @@ import org.janelia.utility.ConstantPair;
 
 
 /**
+ * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>
+ * 
  * A {@link CorrelatonsObject} calculates and stores the parameters of a fit to
  * correllation data. Use {@link CorrelationsObject.Options} to specify the fitter
  * as well as the sample ranges (by stride and fitIntervalLength) of the fit.
  * {@link CorrelationsObject.Meta} stores meta information, such as the position
  * of the current image in z-direction.
- * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>
  * 
  */
 public class CorrelationsObject implements CorrelationsObjectInterface {
