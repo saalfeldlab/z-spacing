@@ -313,24 +313,22 @@ if __name__ == "__main__":
         matrixTracker.addVisitor( weightsTracker )                                         
                                                         
         result = inference.estimateZCoordinates( 0, 0, startingCoordinates, matrixTracker )
-        import sys          
-        sys.exit( 1 )       
                             
                             
-        array = jarray.zeros( result.dimension(0), 'd' )
-        cursor = result.cursor()
-        for i in xrange(result.dimension(0) ):
-            array[i] = scale * cursor.next().get()
+        #array = jarray.zeros( result.dimension(0), 'd' )
+        #cursor = result.cursor()
+        #for i in xrange(result.dimension(0) ):
+        #    array[i] = scale * cursor.next().get()
+        #                    
+        #lutTransform = SingleDimensionLUTRealTransform( array, 3, 3, 2 )
+        #                    
+        #resultImage = ImagePlusImgs.unsignedBytes( imgSource.getWidth(), imgSource.getHeight(), int(scale) * stack.getSize() )
+        #interpolated = Views.interpolate( Views.extendValue( ImagePlusImgs.from(imgSource), DoubleType( Double.NaN ) ), FloorInterpolatorFactory() )
+        #transformed =  Views.interval( RealViews.transform( interpolated, lutTransform ), resultImage )
+        #                    
+        #CopyFromIntervalToInterval.copy( transformed, resultImage )
                             
-        lutTransform = SingleDimensionLUTRealTransform( array, 3, 3, 2 )
                             
-        resultImage = ImagePlusImgs.unsignedBytes( imgSource.getWidth(), imgSource.getHeight(), int(scale) * stack.getSize() )
-        interpolated = Views.interpolate( Views.extendValue( ImagePlusImgs.from(imgSource), DoubleType( Double.NaN ) ), FloorInterpolatorFactory() )
-        transformed =  Views.interval( RealViews.transform( interpolated, lutTransform ), resultImage )
-                            
-        CopyFromIntervalToInterval.copy( transformed, resultImage )
-                            
-                            
-        ImageJFunctions.show( resultImage )
+        #ImageJFunctions.show( resultImage )
                             
  
