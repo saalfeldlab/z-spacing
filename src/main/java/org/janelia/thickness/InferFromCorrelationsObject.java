@@ -46,11 +46,13 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			final Options result = new Options();
 			result.multiplierGenerationRegularizerWeight = 0.01;
 			result.coordinateUpdateRegularizerWeight = 0.01;
+			result.shiftProportion = 0.5;
 			return result;
 		}
 		
-		public double multiplierGenerationRegularizerWeight;
-		public double coordinateUpdateRegularizerWeight;
+		public double multiplierGenerationRegularizerWeight; // m_regularized = m * ( 1 - w ) + 1 * w
+		public double coordinateUpdateRegularizerWeight; // coordinate_regularized = predicted * ( 1 - w ) + original * w
+		public double shiftProportion; // actual_shift = shift * shiftProportion
 		
 		
 	}
@@ -183,7 +185,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 				coordinateCursor.fwd();
 				mediatedCursor.fwd();
 				
-				lut[ijk] += 0.5 * mediatedCursor.get().get();
+				lut[ijk] += options.shiftProportion * mediatedCursor.get().get();
 				lut[ijk] *= inverseCoordinateUpdateRegularizerWeight;
 				lut[ijk] += options.coordinateUpdateRegularizerWeight * ijk;
 				
