@@ -29,13 +29,16 @@ public class EstimateQualityOfSlice {
 			final M model,
 			final ArrayImg< DoubleType, DoubleArray > coordinates,
 			final RealRandomAccessible< DoubleType > correlationFit,
-			final int nThreads ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+			final int nThreads,
+			final double regularizerWeight ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 		
 		final ArrayImg<DoubleType, DoubleArray> multipliers         = ArrayImgs.doubles( weights.dimension( 0 ) );
 		final ArrayCursor<DoubleType> multiplierCursor              = multipliers.cursor();
 		final RealRandomAccess<DoubleType> fitRandomAccess         = correlationFit.realRandomAccess();
 		final ArrayRandomAccess<DoubleType> coordinateRandomAccess = coordinates.randomAccess();
 		final ArrayRandomAccess<DoubleType> weightRanodmAccess     = weights.randomAccess();
+		
+		final double inverseRegularizerWeight = 1 - regularizerWeight;
 		
 		for ( int z = 0; z < correlations.dimension( 0 ); ++z ) {
 			
@@ -75,7 +78,7 @@ public class EstimateQualityOfSlice {
 			model.fit( pointMatches );
 			
 			/* set factor regularized towards 1.0 */
-			multiplierCursor.next().set( model.apply( ONE_DIMENSION_ONE_POSITION )[0] * 0.99 + 0.01 );
+			multiplierCursor.next().set( model.apply( ONE_DIMENSION_ONE_POSITION )[0] * inverseRegularizerWeight + regularizerWeight );
 			
 		}
 		return multipliers;

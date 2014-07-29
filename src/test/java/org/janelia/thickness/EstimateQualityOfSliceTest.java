@@ -64,10 +64,11 @@ public class EstimateQualityOfSliceTest {
 		
 		final FitWithGradient fitWithGradient = new FitWithGradient( fit, new FitWithGradient.SymmetricGradient(), new NearestNeighborInterpolatorFactory<DoubleType>() );
 		
-		final ArrayImg<DoubleType, DoubleArray> multipilers = EstimateQualityOfSlice.estimateFromMatrix( matrix, weights, new ScaleModel(), coord, fitWithGradient.getFit(), 1);
+		final double regularizerWeight = 0.0;
+		final ArrayImg<DoubleType, DoubleArray> multipilers = EstimateQualityOfSlice.estimateFromMatrix( matrix, weights, new ScaleModel(), coord, fitWithGradient.getFit(), 1, regularizerWeight );
 		int k = 1;
 		for ( final DoubleType m : multipilers ) {
-			Assert.assertEquals( 0.99 * k + 0.01, m.getRealDouble(), 0.0001);
+			Assert.assertEquals( ( 1.0 - regularizerWeight ) * k + regularizerWeight, m.getRealDouble(), 0.0001);
 			++k;
 		}
 	}

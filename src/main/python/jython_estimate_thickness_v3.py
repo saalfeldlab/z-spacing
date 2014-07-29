@@ -330,8 +330,12 @@ if __name__ == "__main__":
     matrixTracker.addVisitor( coordinateTracker )
     matrixTracker.addVisitor( multiplierTracker )
     matrixTracker.addVisitor( weightsTracker )                                         
-                                                    
-    result = inference.estimateZCoordinates( 0, 0, startingCoordinates, matrixTracker )
+
+    options = InferFromCorrelationsObject.Options.generateDefaultOptions()
+    # if you want to specify values for options, do:
+    # options.multiplierGenerationRegularizerWeight = <value>
+    # or equivalent
+    result = inference.estimateZCoordinates( 0, 0, startingCoordinates, matrixTracker, options )
     import sys
     sys.exit( 1 )
 

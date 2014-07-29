@@ -40,6 +40,20 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 	private final long zMin;
 	private final long zMax;
 	
+	public static class Options {
+		
+		public static Options generateDefaultOptions() {
+			final Options result = new Options();
+			result.multiplierGenerationRegularizerWeight = 0.01;
+			return result;
+		}
+		
+		public double multiplierGenerationRegularizerWeight;
+		
+		
+	}
+	
+	
 	public InferFromCorrelationsObject(
 			final CorrelationsObjectInterface correlationsObject,
 			final int nIterations,
@@ -69,7 +83,10 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 		zMax = zMaxTmp + 1;
 	}
 	
-	public ArrayImg< DoubleType, DoubleArray > estimateZCoordinates( final long x, final long y, final double[] startingCoordinates ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+	public ArrayImg< DoubleType, DoubleArray > estimateZCoordinates( final long x, 
+			final long y, 
+			final double[] startingCoordinates,
+			final Options options) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 		return estimateZCoordinates( x, y, startingCoordinates, new Visitor() {
 
 			@Override
@@ -80,10 +97,16 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 					final ArrayImg<DoubleType, DoubleArray> weights,
 					final FitWithGradient fitWithGradient) {
 				// don't do anything
-			}} );
+			}},
+			options );
 	}
 	
-	public ArrayImg< DoubleType, DoubleArray > estimateZCoordinates( final long x, final long y, final double[] startingCoordinates, final Visitor visitor ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+	public ArrayImg< DoubleType, DoubleArray > estimateZCoordinates( 
+			final long x, 
+			final long y, 
+			final double[] startingCoordinates, 
+			final Visitor visitor,
+			final Options options) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 		
 		final ArrayImg<DoubleType, DoubleArray> matrix = this.correlationsToMatrix( x, y);
 		final ArrayImg<DoubleType, DoubleArray> weights = ArrayImgs.doubles( matrix.dimension( 0 ) );
@@ -127,7 +150,8 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 					this.measurementsMultiplierModel,
 					coordinates, 
 					fitWithGradient.getFit(), 
-					this.nThreads);
+					this.nThreads,
+					options.multiplierGenerationRegularizerWeight );
 	
 			
 			final TreeMap<Long, ArrayList<ConstantPair<Double, Double>>> shifts = ShiftCoordinates.collectShiftsFromMatrix(coordinates, 
