@@ -45,10 +45,12 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 		public static Options generateDefaultOptions() {
 			final Options result = new Options();
 			result.multiplierGenerationRegularizerWeight = 0.01;
+			result.coordinateUpdateRegularizerWeight = 0.01;
 			return result;
 		}
 		
 		public double multiplierGenerationRegularizerWeight;
+		public double coordinateUpdateRegularizerWeight;
 		
 		
 	}
@@ -119,7 +121,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 		final double[] coordinateArr = lut;
 		
 		
-		
+		final double inverseCoordinateUpdateRegularizerWeight = 1 - options.coordinateUpdateRegularizerWeight;
 		
 		
 		final ArrayImg<DoubleType, DoubleArray> coordinates = ArrayImgs.doubles( coordinateArr, coordinateArr.length );
@@ -182,8 +184,8 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 				mediatedCursor.fwd();
 				
 				lut[ijk] += 0.5 * mediatedCursor.get().get();
-				lut[ijk] *= 0.99;
-				lut[ijk] += 0.01 * ijk;
+				lut[ijk] *= inverseCoordinateUpdateRegularizerWeight;
+				lut[ijk] += options.coordinateUpdateRegularizerWeight * ijk;
 				
 				++ijk;
 				
