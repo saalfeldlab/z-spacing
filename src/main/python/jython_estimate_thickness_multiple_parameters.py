@@ -200,9 +200,11 @@ if __name__ == "__main__":
     img = ImagePlus("", stack)
 
     
-    cc = CorrelationsCreator(img, [img.getWidth(), img.getHeight()])
+    
     correlationRanges = xrange(3,16,2)
     for correlationRange in correlationRanges:
+        print corrleationRange
+        cc = CorrelationsCreator(img, [img.getWidth(), img.getHeight()])
         cc.correlateAllWithinRange( correlationRange )
                             
                             
