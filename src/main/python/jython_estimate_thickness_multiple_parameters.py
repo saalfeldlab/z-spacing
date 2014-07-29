@@ -51,7 +51,7 @@ import errno
 
 def make_sure_path_exists(path):
     try:
-        os.makedirs(path)
+        os.makedirs( os.path.dirname( path ) )
     except OSError, exception: # need comma here, 'as' does not work in jython
         if exception.errno != errno.EEXIST:
             raise
