@@ -7,6 +7,7 @@ import mpicbg.models.Model;
 import mpicbg.models.NotEnoughDataPointsException;
 import mpicbg.models.Point;
 import mpicbg.models.PointMatch;
+import net.imglib2.Cursor;
 import net.imglib2.IterableInterval;
 import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
@@ -22,9 +23,9 @@ public class EstimateQualityOfSlice {
 	
 	private final static float[] ONE_DIMENSION_ONE_POSITION = new float[] { 1.0f };
 
-	public static < M extends Model< M >, C extends Model< C > > ArrayImg< DoubleType, DoubleArray > estimateFromMatrix( final ArrayImg< DoubleType, 
-			DoubleArray> correlations, 
-			final ArrayImg< DoubleType, DoubleArray > weights, 
+	public static < M extends Model< M >, C extends Model< C > > ArrayImg< DoubleType, DoubleArray > estimateFromMatrix(
+			final ArrayImg< DoubleType, DoubleArray > correlations,
+			final ArrayImg< DoubleType, DoubleArray > weights,
 			final M model,
 			final ArrayImg< DoubleType, DoubleArray > coordinates,
 			final RealRandomAccessible< DoubleType > correlationFit,
@@ -36,40 +37,45 @@ public class EstimateQualityOfSlice {
 		final ArrayRandomAccess<DoubleType> coordinateRandomAccess = coordinates.randomAccess();
 		final ArrayRandomAccess<DoubleType> weightRanodmAccess     = weights.randomAccess();
 		
-		int currentZ;
-		
 		for ( int z = 0; z < correlations.dimension( 0 ); ++z ) {
 			
 			final IterableInterval<DoubleType> correlationsAtBin = Views.flatIterable( Views.hyperSlice( correlations, 0, z ) );
 			final ArrayList< PointMatch > pointMatches           = new ArrayList<PointMatch>();
 			
-			currentZ = 0;
-			
 			coordinateRandomAccess.setPosition( z, 0 );
 			final double refCoordinate = coordinateRandomAccess.get().get();
 			
-			for ( final DoubleType c : correlationsAtBin ) {
+			final Cursor< DoubleType > correlationBinCursor = correlationsAtBin.localizingCursor();
+			while ( correlationBinCursor.hasNext() ) {
 				
+				final DoubleType tc = correlationBinCursor.next();
+				final int currentZ = correlationBinCursor.getIntPosition( 0 );
+				
+				if ( currentZ == z )
+					continue;
+				
+				final double c = tc.get();
 				coordinateRandomAccess.setPosition( currentZ, 0);
 				fitRandomAccess.setPosition( coordinateRandomAccess.get().get() - refCoordinate, 0 );
 				weightRanodmAccess.setPosition( currentZ, 0 );
+
+				final double fra = fitRandomAccess.get().get();
 				
-				++currentZ;
-				if ( Float.isNaN( c.getRealFloat() ) || Float.isNaN(fitRandomAccess.get().getRealFloat() ) ) {
+				if ( Double.isNaN( c ) || Double.isNaN( fra ) )
 					continue;
-				}
 				
-				pointMatches.add( new PointMatch( new Point( new float[] { c.getRealFloat() } ), new Point( new float[] { fitRandomAccess.get().getRealFloat() }), weightRanodmAccess.get().getRealFloat() ) );
-				
-				
-				
-				
+				pointMatches.add(
+						new PointMatch(
+								new Point( new float[]{ ( float )c } ),
+								new Point( new float[]{ ( float )fra } ),
+								weightRanodmAccess.get().getRealFloat() ) );
 				
 			}
 	
 			model.fit( pointMatches );
 			
-			multiplierCursor.next().set( model.apply( ONE_DIMENSION_ONE_POSITION )[0] );
+			/* set factor regularized towards 1.0 */
+			multiplierCursor.next().set( model.apply( ONE_DIMENSION_ONE_POSITION )[0] * 0.99 + 0.01 );
 			
 		}
 		return multipliers;

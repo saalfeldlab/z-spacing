@@ -67,7 +67,7 @@ public class EstimateQualityOfSliceTest {
 		final ArrayImg<DoubleType, DoubleArray> multipilers = EstimateQualityOfSlice.estimateFromMatrix( matrix, weights, new ScaleModel(), coord, fitWithGradient.getFit(), 1);
 		int k = 1;
 		for ( final DoubleType m : multipilers ) {
-			Assert.assertEquals( k, m.getRealDouble(), 0.0001);
+			Assert.assertEquals( 0.99 * k + 0.01, m.getRealDouble(), 0.0001);
 			++k;
 		}
 	}

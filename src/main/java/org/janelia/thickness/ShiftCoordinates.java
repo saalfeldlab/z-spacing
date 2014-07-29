@@ -66,7 +66,10 @@ public class ShiftCoordinates {
 					weightedShifts.put( (long) k, localShifts );
 				}
 				
-				final double difference = corrAccess.get().get() * multAccess.get().get() - fitAccess.get().get();
+				
+				final double m = ( k == i ) ? 1.0 : multAccess.get().get();
+				
+				final double difference = corrAccess.get().get() * m - fitAccess.get().get();
 				weightAccess.setPosition( k, 0 );
 				
 				localShifts.add( new ConstantPair<Double, Double>( difference / gradientAccess.get().getRealDouble(), weightAccess.get().getRealDouble() ) );
