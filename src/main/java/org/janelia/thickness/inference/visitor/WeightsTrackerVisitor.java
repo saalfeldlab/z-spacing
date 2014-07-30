@@ -14,7 +14,6 @@ import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.type.numeric.real.DoubleType;
 
-import org.janelia.thickness.FitWithGradient;
 import org.janelia.thickness.lut.LUTRealTransform;
 
 /**
@@ -46,7 +45,7 @@ public class WeightsTrackerVisitor extends AbstractMultiVisitor {
 			final double[] lut, final LUTRealTransform transform,
 			final ArrayImg<DoubleType, DoubleArray> multipliers,
 			final ArrayImg<DoubleType, DoubleArray> weights,
-			final FitWithGradient fitWithGradient) {
+			final double[] estimatedFit ) {
 		
 		
 		final File file = new File( String.format( this.basePath, iteration ) );

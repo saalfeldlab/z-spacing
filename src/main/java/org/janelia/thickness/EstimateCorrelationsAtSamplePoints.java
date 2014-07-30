@@ -12,7 +12,6 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.img.array.ArrayImg;
-import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.outofbounds.OutOfBounds;
@@ -29,7 +28,7 @@ public class EstimateCorrelationsAtSamplePoints {
 	
 	private final static float[] ONE_DIMENSION_ZERO_POSITION = new float[] { 0.0f };
 	
-	public static <M extends Model< M > > ArrayImg< DoubleType, DoubleArray> estimateFromMatrix( final RandomAccessibleInterval< DoubleType > correlations, 
+	public static <M extends Model< M > > double[] estimateFromMatrix( final RandomAccessibleInterval< DoubleType > correlations, 
 			final ArrayImg< DoubleType, DoubleArray> weights,
 			final LUTRealTransform transform,
 			final double[] coordinates,
@@ -101,11 +100,13 @@ public class EstimateCorrelationsAtSamplePoints {
 				values[k] = pointCollections.get( i ).get( k ).getP2().getW()[0];
 			}
 			model.fit( pointCollections.get( i ) );
-			result[i] = model.apply( ONE_DIMENSION_ZERO_POSITION )[ 0 ];
+			
+			/* TODO inverts because LUTRealTransform can only increasing */
+			result[i] = -model.apply( ONE_DIMENSION_ZERO_POSITION )[ 0 ];
 			variances[i] = new Variance().evaluate( values );
 		}
 		
-		return ArrayImgs.doubles( result, result.length );
+		return result;
 	}
 
 }

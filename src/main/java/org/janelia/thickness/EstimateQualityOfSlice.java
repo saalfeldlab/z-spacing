@@ -11,9 +11,7 @@ import net.imglib2.Cursor;
 import net.imglib2.IterableInterval;
 import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
-import net.imglib2.img.array.ArrayCursor;
 import net.imglib2.img.array.ArrayImg;
-import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.array.ArrayRandomAccess;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.type.numeric.real.DoubleType;
@@ -23,7 +21,7 @@ public class EstimateQualityOfSlice {
 	
 	private final static float[] ONE_DIMENSION_ONE_POSITION = new float[] { 1.0f };
 
-	public static < M extends Model< M >, C extends Model< C > > ArrayImg< DoubleType, DoubleArray > estimateFromMatrix(
+	public static < M extends Model< M >, C extends Model< C > > double[] estimateFromMatrix(
 			final ArrayImg< DoubleType, DoubleArray > correlations,
 			final ArrayImg< DoubleType, DoubleArray > weights,
 			final M model,
@@ -32,8 +30,7 @@ public class EstimateQualityOfSlice {
 			final int nThreads,
 			final double regularizerWeight ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 		
-		final ArrayImg<DoubleType, DoubleArray> multipliers         = ArrayImgs.doubles( weights.dimension( 0 ) );
-		final ArrayCursor<DoubleType> multiplierCursor              = multipliers.cursor();
+		final double[] multipliers = new double[ ( int )weights.dimension( 0 ) ];
 		final RealRandomAccess<DoubleType> fitRandomAccess         = correlationFit.realRandomAccess();
 		final ArrayRandomAccess<DoubleType> coordinateRandomAccess = coordinates.randomAccess();
 		final ArrayRandomAccess<DoubleType> weightRanodmAccess     = weights.randomAccess();
@@ -67,10 +64,11 @@ public class EstimateQualityOfSlice {
 				if ( Double.isNaN( c ) || Double.isNaN( fra ) )
 					continue;
 				
+				/* TODO inverts because LUTRealTransform can only increasing */
 				pointMatches.add(
 						new PointMatch(
 								new Point( new float[]{ ( float )c } ),
-								new Point( new float[]{ ( float )fra } ),
+								new Point( new float[]{ -( float )fra } ),
 								weightRanodmAccess.get().getRealFloat() ) );
 				
 			}
@@ -78,7 +76,7 @@ public class EstimateQualityOfSlice {
 			model.fit( pointMatches );
 			
 			/* set factor regularized towards 1.0 */
-			multiplierCursor.next().set( model.apply( ONE_DIMENSION_ONE_POSITION )[0] * inverseRegularizerWeight + regularizerWeight );
+			multipliers[ z ] = model.apply( ONE_DIMENSION_ONE_POSITION )[0] * inverseRegularizerWeight + regularizerWeight;
 			
 		}
 		return multipliers;

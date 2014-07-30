@@ -21,12 +21,8 @@ public class DummyCorrelationsObject implements CorrelationsObjectInterface {
 	
 	private final long zMin;
 	private final long zMax;
-	private final int range;
-	private final int nData;
 	private final TreeMap< ConstantTriple<Long, Long, Long>, ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType> > > corrs;
 	private final TreeMap< Long, Meta > metaMap;
-	
-	
 		
 	public DummyCorrelationsObject(
 			final long zMin,
@@ -38,8 +34,6 @@ public class DummyCorrelationsObject implements CorrelationsObjectInterface {
 		super();
 		this.zMin    = zMin;
 		this.zMax    = zMax;
-		this.range   = range;
-		this.nData   = nData;
 		this.corrs   = corrs;
 		this.metaMap = metaMap;
 	}

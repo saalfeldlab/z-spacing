@@ -10,11 +10,13 @@ import mpicbg.models.NotEnoughDataPointsException;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.RealRandomAccessible;
 import net.imglib2.img.array.ArrayCursor;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.interpolation.InterpolatorFactory;
+import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
@@ -99,10 +101,21 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 					final LUTRealTransform transform,
 					final ArrayImg<DoubleType, DoubleArray> multipliers,
 					final ArrayImg<DoubleType, DoubleArray> weights,
-					final FitWithGradient fitWithGradient) {
+					final double[] estimatedFit ) {
 				// don't do anything
 			}},
 			options );
+	}
+	
+	private static RealRandomAccessible< DoubleType > mirrorAndExtend(
+			final double[] data,
+			final InterpolatorFactory< DoubleType, RandomAccessible< DoubleType > > interpolatorFactory )
+	{
+		final ArrayImg< DoubleType, DoubleArray > img = ArrayImgs.doubles( data, new long[]{ data.length } );
+		final RandomAccessible< DoubleType > mirror = Views.extendMirrorSingle( img );
+		final RandomAccessibleInterval< DoubleType > crop = Views.interval( mirror, new long[]{ 1 - data.length }, new long[]{ data.length - 1 } );
+		final RandomAccessible< DoubleType > extension = Views.extendValue( crop, new DoubleType( Double.NaN ) );
+		return Views.interpolate( extension, interpolatorFactory );
 	}
 	
 	public ArrayImg< DoubleType, DoubleArray > estimateZCoordinates( 
@@ -113,7 +126,9 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			final Options options) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 		
 		final ArrayImg<DoubleType, DoubleArray> matrix = this.correlationsToMatrix( x, y);
-		final ArrayImg<DoubleType, DoubleArray> weights = ArrayImgs.doubles( matrix.dimension( 0 ) );
+		
+		final double[] weightArr = new double[ ( int )matrix.dimension( 0 ) ];
+		final ArrayImg<DoubleType, DoubleArray> weights = ArrayImgs.doubles( weightArr, new long[]{ weightArr.length } );
 		
 		for ( final DoubleType w : weights) {
 			w.set( 1.0 );
@@ -138,32 +153,29 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 		ArrayCursor<DoubleType> mediatedCursor   = mediatedShifts.cursor();
 		ArrayCursor<DoubleType> coordinateCursor = coordinates.cursor();
 		
-		visitor.act( 0, matrix, lut, transform, weights, weights, new FitWithGradient( ArrayImgs.doubles( new double[] { Double.NaN, Double.NaN }, 2 ), new FitWithGradient.SymmetricGradient(), this.fitInterpolatorFactory ) );
+		visitor.act( 0, matrix, lut, transform, weights, weights, new double[ lut.length ] );
 		
 		for ( int n = 0; n < this.nIterations; ++n ) {
 			final double[] vars = new double[ this.comparisonRange ];
 			
-			final ArrayImg<DoubleType, DoubleArray> estimatedFit = EstimateCorrelationsAtSamplePoints.estimateFromMatrix( matrix, weights, transform, coordinateArr, this.comparisonRange, this.correlationFitModel, vars );
+			final double[] estimatedFit = EstimateCorrelationsAtSamplePoints.estimateFromMatrix( matrix, weights, transform, coordinateArr, this.comparisonRange, this.correlationFitModel, vars );
 			
-			
-			final FitWithGradient fitWithGradient = new FitWithGradient( estimatedFit, new FitWithGradient.SymmetricGradient(), this.fitInterpolatorFactory );
-			
-			
-			final ArrayImg<DoubleType, DoubleArray> multipliers = EstimateQualityOfSlice.estimateFromMatrix( matrix, 
+			final double[] multipliers = EstimateQualityOfSlice.estimateFromMatrix( matrix, 
 					weights, 
 					this.measurementsMultiplierModel,
 					coordinates, 
-					fitWithGradient.getFit(), 
+					mirrorAndExtend( estimatedFit, new NLinearInterpolatorFactory< DoubleType >() ), 
 					this.nThreads,
 					options.multiplierGenerationRegularizerWeight );
 	
 			
-			final TreeMap<Long, ArrayList<ConstantPair<Double, Double>>> shifts = ShiftCoordinates.collectShiftsFromMatrix(coordinates, 
-					matrix, 
-					weights, 
-					multipliers, 
-					fitWithGradient.getFit(),
-					fitWithGradient.getGradient() );
+			final TreeMap< Long, ArrayList< ConstantPair< Double, Double > > > shifts =
+					ShiftCoordinates.collectShiftsFromMatrix(
+							coordinateArr,
+							matrix,
+							weightArr,
+							multipliers,
+							new LUTRealTransform( estimatedFit, 1, 1 ) );
 			
 			
 			
@@ -195,7 +207,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 				
 			
 			
-			visitor.act( n + 1, matrix, lut, transform, multipliers, weights, fitWithGradient);
+			visitor.act( n + 1, matrix, lut, transform, ArrayImgs.doubles( multipliers, new long[]{ multipliers.length } ), weights, estimatedFit );
 			
 		}
 		return coordinates;

@@ -58,11 +58,12 @@ public class EstimateCorrelationsAtSamplePointsTest {
 		}
 		final LUTRealTransform transform = new LUTRealTransform(coordinates, 2, 2);
 		
-		final ArrayImg<DoubleType, DoubleArray> estimate = EstimateCorrelationsAtSamplePoints.estimateFromMatrix( cImage, weights, transform, coordinates, nRel, new TranslationModel1D(), variances);
+		final double[] estimate = EstimateCorrelationsAtSamplePoints.estimateFromMatrix( cImage, weights, transform, coordinates, nRel, new TranslationModel1D(), variances);
 		
 		int j = 0;
-		for ( final DoubleType e : estimate ) {
-			Assert.assertEquals( e.getRealDouble(), Math.exp( -0.5*j*j / Math.pow( sigma, 2.0 ) ), 0.00001 );
+		for ( final double e : estimate ) {
+			/* TODO inverts because LUTRealTransform can only increasing */
+			Assert.assertEquals( -e, Math.exp( -0.5*j*j / Math.pow( sigma, 2.0 ) ), 0.00001 );
 			++j;
 		}
 		

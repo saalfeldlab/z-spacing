@@ -10,12 +10,10 @@ import java.util.IllegalFormatException;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
-import net.imglib2.img.ImagePlusAdapter;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.img.imageplus.ImagePlusImg;
 import net.imglib2.img.imageplus.ImagePlusImgs;
-import net.imglib2.img.planar.PlanarCursor;
 import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.numeric.real.DoubleType;
@@ -23,7 +21,6 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
-import org.janelia.thickness.FitWithGradient;
 import org.janelia.thickness.lut.LUTRealTransform;
 import org.janelia.thickness.lut.SingleDimensionLUTRealTransform;
 import org.janelia.utility.CopyFromIntervalToInterval;
@@ -70,7 +67,7 @@ public class ApplyTransformToImageVisitor extends AbstractMultiVisitor {
 			final LUTRealTransform transform,
 			final ArrayImg<DoubleType, DoubleArray> multipliers,
 			final ArrayImg<DoubleType, DoubleArray> weights,
-			final FitWithGradient fitWithGradient) {
+			final double[] estimatedFit ) {
 		
 		final double[] scaledLut = new double[ lut.length ];
 		for (int i = 0; i < scaledLut.length; i++) {
@@ -78,7 +75,6 @@ public class ApplyTransformToImageVisitor extends AbstractMultiVisitor {
 		}
 		final SingleDimensionLUTRealTransform lutTransform = new SingleDimensionLUTRealTransform( scaledLut, 2, 2, 1 );
 
-		final PlanarCursor<FloatType> targetCursor = ImagePlusAdapter.wrapFloat( targetImg ).cursor();
 		final RealRandomAccessible<FloatType> interpolated = Views.interpolate( Views.extendValue( this.image, new FloatType( Float.NaN ) ), this.interpolatorFactory );
 		final IntervalView<FloatType> transformed = Views.interval( RealViews.transform( interpolated, lutTransform), this.targetImgWrapped );
 		Views.flatIterable( transformed ).cursor();

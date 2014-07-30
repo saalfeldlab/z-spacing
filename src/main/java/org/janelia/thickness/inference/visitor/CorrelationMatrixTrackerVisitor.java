@@ -24,7 +24,6 @@ import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
-import org.janelia.thickness.FitWithGradient;
 import org.janelia.thickness.lut.LUTRealTransform;
 
 public class CorrelationMatrixTrackerVisitor extends AbstractMultiVisitor {
@@ -82,7 +81,7 @@ public class CorrelationMatrixTrackerVisitor extends AbstractMultiVisitor {
 			final LUTRealTransform transform,
 			final ArrayImg<DoubleType, DoubleArray> multipliers,
 			final ArrayImg<DoubleType, DoubleArray> weights,
-			final FitWithGradient fitWithGradient) {
+			final double[] estimatedFit ) {
 
 		final PlanarCursor<FloatType> targetCursor = ImagePlusAdapter.wrapFloat( targetImg ).cursor();
 		final RealRandomAccessible<DoubleType> sourceInterpolated = Views.interpolate( Views.extendValue( matrix, new DoubleType( Double.NaN ) ), this.interpolatorFactory);

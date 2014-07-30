@@ -9,7 +9,6 @@ import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.type.numeric.real.DoubleType;
 
-import org.janelia.thickness.FitWithGradient;
 import org.janelia.thickness.lut.LUTRealTransform;
 
 /**
@@ -39,17 +38,18 @@ public abstract class AbstractMultiVisitor implements Visitor {
 	final LUTRealTransform transform,
 	final ArrayImg<DoubleType, DoubleArray> multipliers,
 	final ArrayImg<DoubleType, DoubleArray> weights,
-	final FitWithGradient fitWithGradient );
+	final double[] estimatedFit );
 	
+	@Override
 	public void act( final int iteration, final ArrayImg<DoubleType, DoubleArray> matrix, final double[] lut,
 			final LUTRealTransform transform,
 			final ArrayImg<DoubleType, DoubleArray> multipliers,
 			final ArrayImg<DoubleType, DoubleArray> weights,
-			final FitWithGradient fitWithGradient) {
+			final double[] estimatedFit ) {
 		for ( final Visitor v : visitors ) {
-			v.act(iteration, matrix, lut, transform, multipliers, weights, fitWithGradient);
+			v.act(iteration, matrix, lut, transform, multipliers, weights, estimatedFit );
 		}
-		actSelf(iteration, matrix, lut, transform, multipliers, weights, fitWithGradient);
+		actSelf(iteration, matrix, lut, transform, multipliers, weights, estimatedFit );
 	}
 	
 }

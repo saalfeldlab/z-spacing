@@ -9,9 +9,11 @@ import mpicbg.models.PointMatch;
 
 public class ScaleModel extends AbstractModel<ScaleModel> {
 	
+	private static final long serialVersionUID = -1209207585882740130L;
+
 	private float multiplier = 1.0f;
 
-	public ScaleModel(float multiplier) {
+	public ScaleModel(final float multiplier) {
 		super();
 		this.multiplier = multiplier;
 	}
@@ -20,18 +22,20 @@ public class ScaleModel extends AbstractModel<ScaleModel> {
 		this( 0.0f );
 	}
 
+	@Override
 	public int getMinNumMatches() {
 		return 1;
 	}
 
-	public <P extends PointMatch> void fit(Collection<P> matches)
+	@Override
+	public <P extends PointMatch> void fit(final Collection<P> matches)
 			throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 		// TODO Auto-generated method stub
 		
 		float XY = 0.0f;
 		float XX = 0.0f;
 		
-		for ( P m : matches ) {
+		for ( final P m : matches ) {
 			
 			XY += m.getP1().getL()[0] * m.getP2().getL()[0] * m.getWeight();
 			XX += m.getP1().getL()[0] * m.getP1().getL()[0] * m.getWeight();
@@ -42,23 +46,27 @@ public class ScaleModel extends AbstractModel<ScaleModel> {
 		
 	}
 
-	public void set(ScaleModel m) {
+	@Override
+	public void set(final ScaleModel m) {
 		this.multiplier = m.multiplier;
 	}
 
+	@Override
 	public ScaleModel copy() {
 		return new ScaleModel( this.multiplier );
 	}
 
-	public float[] apply(float[] location) {
-		float[] ret = new float[ location.length ];
+	@Override
+	public float[] apply(final float[] location) {
+		final float[] ret = new float[ location.length ];
 		for (int i = 0; i < ret.length; i++) {
 			ret[i] = location[i] * this.multiplier;
 		}
 		return ret;
 	}
 
-	public void applyInPlace(float[] location) {
+	@Override
+	public void applyInPlace(final float[] location) {
 		for (int i = 0; i < location.length; i++) {
 			location[i] *= this.multiplier;
 		}

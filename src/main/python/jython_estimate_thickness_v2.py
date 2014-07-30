@@ -1,3 +1,4 @@
+from ij import IJ
 from ij import ImagePlus
 from ij import ImageStack
 from ij.process import ImageConverter
@@ -20,6 +21,7 @@ from net.imglib2.img.display.imagej import ImgLib2Display
 from net.imglib2.interpolation.randomaccess import NLinearInterpolatorFactory
 from net.imglib2.interpolation.randomaccess import NearestNeighborInterpolatorFactory
 from net.imglib2.interpolation.randomaccess import FloorInterpolatorFactory
+from net.imglib2.interpolation.randomaccess import LanczosInterpolatorFactory;
 from net.imglib2.view import Views
 from net.imglib2.realtransform import RealViews
 from net.imglib2.img.imageplus import ImagePlusImgs
@@ -167,37 +169,48 @@ class Bucket(object):
 
 if __name__ == "__main__":
 
+    xyScale = 0.25
+    correlationRange = 50
+    nIterations = 200
+    scale = 0.2
+
+    matrixMin = 0
+    matrixMax = 511
+    matrixScale = 4
+
+    xzSliceThickness = 5;
+    xzSliceY = 25;
+
+
     t0 = time.time()
     print t0 - t0
     
-    # imgSource = IJ.getImage()
-    # imgSource   = ImagePlus( '/groups/saalfeld/home/hanslovskyp/data/thickness/test_data/davi/intensity_corrected/crop/intensity_1_removed_slices.tif' )
-    imgSource   = ImagePlus( '/groups/saalfeld/home/hanslovskyp/data/thickness/test_data/fibsem/crop/test_stack_234_8bit.tif' )
+    imgSource = IJ.getImage()
+#    imgSource   = ImagePlus( '/groups/saalfeld/home/hanslovskyp/data/thickness/test_data/davi/intensity_corrected/crop/intensity_1_removed_slices.tif' )
+    #imgSource   = ImagePlus( '/groups/saalfeld/home/hanslovskyp/data/thickness/test_data/fibsem/crop/test_stack_234_8bit.tif' )
     conv = ImageConverter( imgSource )
     conv.convertToGray32()
     stackSource = imgSource.getStack()
-    xyScale = 1.0
     stack = ImageStack(int(round(imgSource.getWidth()*xyScale)), int(round(imgSource.getHeight()*xyScale)))
 
 
     for z in xrange(stackSource.getSize()):
         stack.addSlice(Filter.createDownsampled(
             stackSource.getProcessor(z+1),
-	    xyScale,
-	    0.5,
+	        xyScale,
+	        0.5,
             0.5))
 
     img = ImagePlus("", stack)
 
     
     cc = CorrelationsCreator(img, [img.getWidth(), img.getHeight()])
-    correlationRange = 10
     cc.correlateAllWithinRange( correlationRange )
 
     t1 = time.time()
     print t1 - t0
 
-    options                   = CorrelationsObject.Options()
+    options = CorrelationsObject.Options()
     # options.fitIntervalLength = 3
     # options.stride            = 2
     # options.fitterFactory     = StackFitterNoUncertaintyFactory([1.0])
@@ -236,7 +249,6 @@ if __name__ == "__main__":
     t3 = time.time()
     print t3 - t0
 
-    nIterations = 50
     nThreads = 1
 
     inference = InferFromCorrelationsObject( co,
@@ -244,6 +256,7 @@ if __name__ == "__main__":
                                              correlationRange,
                                              TranslationModel1D(),
                                              NLinearInterpolatorFactory(),
+#                                             LanczosInterpolatorFactory(),
                                              ScaleModel(),
                                              nThreads,
                                              OpinionMediatorModel( TranslationModel1D() )
@@ -253,14 +266,17 @@ if __name__ == "__main__":
     
     bp = home + "/matrix_test/matrixTest_%02d.tif"
     matrixTracker = CorrelationMatrixTrackerVisitor( bp, # base path
-                                                     10, # min
-                                                     50, # max
-                                                     20, # scale
+                                                     matrixMin, # min
+                                                     matrixMax, # max
+                                                     matrixScale, # scale
                                                      FloorInterpolatorFactory() ) # interpolation
+#                                                     LanczosInterpolatorFactory() ) # interpolation
+#                                                     NLinearInterpolatorFactory() ) # interpolation
 
     bp = home + "/array_test/arrayTest_%02d.tif"
     arrayTracker = CorrelationArrayTrackerVisitor( bp, # base path
-                                                   FloorInterpolatorFactory(), # interpolation
+#                                                   FloorInterpolatorFactory(), # interpolation
+                                                   NLinearInterpolatorFactory(), # interpolation
                                                    imgSource.getStack().getSize(), # number of data points
                                                    correlationRange ) # range for pairwise correlations
 
@@ -268,12 +284,12 @@ if __name__ == "__main__":
     hyperSlices = ArrayList()
     # hyperSlice = Views.hyperSlice( ImagePlusImgs.from( imgSource ), 1,  345 )
     # ImageJFunctions.show( hyperSlice )
-    scale = 1.0
     renderTracker = ApplyTransformToImagesAndAverageVisitor( bp, # base path
                                                              FloorInterpolatorFactory(), # interpolation
+#                                                             NLinearInterpolatorFactory(), # interpolation
                                                              scale )
-    for i in xrange(-5, 6, 1):
-        renderTracker.addImage( Views.hyperSlice( ImagePlusImgs.from( imgSource ), 1,  250 + i ) )                                                 
+    for i in xrange( -( xzSliceThickness / 2 ), xzSliceThickness / 2 + 1, 1 ):
+        renderTracker.addImage( Views.hyperSlice( ImagePlusImgs.from( imgSource ), 1,  xzSliceY + i ) )
 
     bp = home + "/fit_tracker_test/fitTrackerTest_%d.csv"
     separator = ','
@@ -301,6 +317,7 @@ if __name__ == "__main__":
     matrixTracker.addVisitor( weightsTracker )                                         
 
     options = InferFromCorrelationsObject.Options.generateDefaultOptions()
+    options.shiftProportion = 0.5
     # if you want to specify values for options, do:
     # options.multiplierGenerationRegularizerWeight = <value>
     # or equivalent                                                

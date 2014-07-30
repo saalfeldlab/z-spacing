@@ -45,7 +45,7 @@ public class SingleDimensionLUTRealTransform extends AbstractLUTRealTransform {
 	{
 		assert source.length == target.length: "Dimensions do not match.";
 
-		for ( int d = 0; d < target.length; d++ )
+		for ( @SuppressWarnings( "hiding" ) int d = 0; d < target.length; d++ )
 			target[ d ] = source[ d ];
 
 		target[ d ] = applyChecked( source[ d ] );
@@ -56,7 +56,7 @@ public class SingleDimensionLUTRealTransform extends AbstractLUTRealTransform {
 	{
 		assert source.length == target.length: "Dimensions do not match.";
 
-		for ( int d = 0; d < target.length; d++ )
+		for ( @SuppressWarnings( "hiding" ) int d = 0; d < target.length; d++ )
 			target[ d ] = source[ d ];
 
 		target[ d ] = ( float ) applyChecked( source[ d ] );

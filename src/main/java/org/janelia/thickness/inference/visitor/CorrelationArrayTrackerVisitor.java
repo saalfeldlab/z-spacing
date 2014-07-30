@@ -7,7 +7,6 @@ import ij.process.FloatProcessor;
 import java.util.ArrayList;
 import java.util.IllegalFormatException;
 
-import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
@@ -23,7 +22,6 @@ import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
-import org.janelia.thickness.FitWithGradient;
 import org.janelia.thickness.lut.LUTRealTransform;
 
 public class CorrelationArrayTrackerVisitor extends AbstractMultiVisitor {
@@ -32,7 +30,6 @@ public class CorrelationArrayTrackerVisitor extends AbstractMultiVisitor {
 	private final String basePath;
 	private final InterpolatorFactory< DoubleType, RandomAccessible< DoubleType > > interpolatorFactory;
 	private final ImagePlus targetImg;
-	private final FinalInterval closedInterval;
 	private final int nData;
 	private final int range;
 	
@@ -62,7 +59,6 @@ public class CorrelationArrayTrackerVisitor extends AbstractMultiVisitor {
 			throw new RuntimeException( "basePath must contain exactly one integer format placeholder, cf String.format" );
 		}
 		
-		this.closedInterval = new FinalInterval( nData, nData );
 		this.nData = nData;
 		this.range = range;
 	}
@@ -73,7 +69,7 @@ public class CorrelationArrayTrackerVisitor extends AbstractMultiVisitor {
 			final LUTRealTransform transform,
 			final ArrayImg<DoubleType, DoubleArray> multipliers,
 			final ArrayImg<DoubleType, DoubleArray> weights,
-			final FitWithGradient fitWithGradient) {
+			final double[] estimatedFit ) {
 
 		final PlanarRandomAccess<FloatType> targetAccess = ImagePlusAdapter.wrapFloat( targetImg ).randomAccess();
 		final RealRandomAccessible<DoubleType> sourceInterpolated = Views.interpolate( Views.extendValue( matrix, new DoubleType( Double.NaN ) ), this.interpolatorFactory);
