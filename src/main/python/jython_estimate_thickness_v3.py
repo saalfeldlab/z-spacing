@@ -231,7 +231,6 @@ if __name__ == "__main__":
 
     
     cc = CorrelationsCreator(img, [img.getWidth(), img.getHeight()])
-    correlationRange = 10
     cc.correlateAllWithinRange( correlationRange )
 
     t1 = time.time()
@@ -276,8 +275,7 @@ if __name__ == "__main__":
     t3 = time.time()
     print t3 - t0
 
-    nIterations = 100
-    nThreads = 1
+    
 
     inference = InferFromCorrelationsObject( co,
                                              nIterations,
