@@ -89,6 +89,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 		zMax = zMaxTmp + 1;
 	}
 	
+	
 	public ArrayImg< DoubleType, DoubleArray > estimateZCoordinates( final long x, 
 			final long y, 
 			final double[] startingCoordinates,
@@ -107,6 +108,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			options );
 	}
 	
+	
 	private static RealRandomAccessible< DoubleType > mirrorAndExtend(
 			final double[] data,
 			final InterpolatorFactory< DoubleType, RandomAccessible< DoubleType > > interpolatorFactory )
@@ -117,6 +119,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 		final RandomAccessible< DoubleType > extension = Views.extendValue( crop, new DoubleType( Double.NaN ) );
 		return Views.interpolate( extension, interpolatorFactory );
 	}
+	
 	
 	public ArrayImg< DoubleType, DoubleArray > estimateZCoordinates( 
 			final long x, 
@@ -177,13 +180,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 							multipliers,
 							new LUTRealTransform( estimatedFit, 1, 1 ) );
 			
-			
-			
-			
-			
 			this.shiftMediator.mediate( shifts, mediatedShifts );
-			
-			
 			
 			mediatedCursor   = mediatedShifts.cursor();
 			coordinateCursor = coordinates.cursor();
@@ -204,8 +201,6 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 				++ijk;
 				
 			}
-				
-			
 			
 			visitor.act( n + 1, matrix, lut, transform, ArrayImgs.doubles( multipliers, new long[]{ multipliers.length } ), weights, estimatedFit );
 			
