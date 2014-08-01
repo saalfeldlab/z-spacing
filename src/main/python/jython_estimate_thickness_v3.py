@@ -1,5 +1,6 @@
 from ij import ImagePlus
 from ij import ImageStack
+from ij.plugin import FolderOpener
 from ij.process import ImageConverter
 
 from java.lang import Double
@@ -171,9 +172,26 @@ class Bucket(object):
             result.append(fitter.fit(stack, interval))
         self.buckets[radius] = result
         return result
-            
+
+
+def parseOptionsFromFile( filename ):
+
+    defaultValues = {
+        
+    }
+    
+    result = InferFromCorrelationsObject.Options()
+    visitorOptions = {}
 
 if __name__ == "__main__":
+
+    # import optparse
+
+    # parser = optparse.OptionParser()
+    # parser.add_option('--config', '-c', default='/dev/null', help='Config file that stores parameters and filenames.')
+
+    # options, args = parser.parse_args()
+
 
     t0 = time.time()
     print t0 - t0
@@ -181,12 +199,19 @@ if __name__ == "__main__":
     # imgSource = IJ.getImage()
     # imgSource   = ImagePlus( '/groups/saalfeld/home/hanslovskyp/data/thickness/test_data/davi/intensity_corrected/crop/intensity_1_removed_slices.tif' )
     # imgSource   = ImagePlus( '/groups/saalfeld/home/hanslovskyp/data/thickness/test_data/fibsem/crop/test_stack_234_8bit.tif' )
-    imgSource   = ImagePlus( '/ssd/hanslovskyp/playground/pov-ray/variable_thickness_subset/850-949/scale/0.2/600x600+700+700.tif' )
+    correlationRange = 5
+    # imgSource   = ImagePlus( '/ssd/hanslovskyp/playground/pov-ray/variable_thickness_subset1/750-1049/scale/0.04/200x200+100+100.tif' )
+    imgSource = FolderOpener().open( '/ssd/hanslovskyp/playground/pov-ray/variable_thickness_subset1/750-1049/scale/0.04/200x200+100+100/data' )
+    home = '/ssd/hanslovskyp/playground/pov-ray/variable_thickness_subset1/750-1049/scale/0.04/200x200+100+100/range=%d'.rstrip('/')
+    home = home % correlationRange
     conv = ImageConverter( imgSource )
     conv.convertToGray32()
     stackSource = imgSource.getStack()
     xyScale = 1.0
     doXYScale = False
+    nIterations = 100
+    nThreads = 1
+    scale = 1.0
     
 
 
@@ -264,22 +289,21 @@ if __name__ == "__main__":
                                              OpinionMediatorModel( TranslationModel1D() )
                                              )
                                              
-    home = '/ssd/hanslovskyp/playground/pov-ray/variable_thickness_subset/850-949/scale/0.2/600x600+700+700/range=%d'.rstrip('/')
-    home = home % correlationRange
+    
     
     bp = home + "/matrix/matrix_%02d.tif"
     make_sure_path_exists( bp )
     matrixTracker = CorrelationMatrixTrackerVisitor( bp, # base path
                                                      0, # min
                                                      100, # max
-                                                     10, # scale
+                                                     30, # scale
                                                      FloorInterpolatorFactory() ) # interpolation
 
     bp = home + "/matrix_nlinear/matrixNLinear_%02d.tif"
     make_sure_path_exists( bp )
     matrixTracker = CorrelationMatrixTrackerVisitor( bp, # base path
                                                      0, # min
-                                                     100, # max
+                                                     300, # max
                                                      10, # scale
                                                      NLinearInterpolatorFactory() ) # interpolation
 
@@ -295,12 +319,12 @@ if __name__ == "__main__":
     hyperSlices = ArrayList()
     # hyperSlice = Views.hyperSlice( ImagePlusImgs.from( imgSource ), 1,  345 )
     # ImageJFunctions.show( hyperSlice )
-    scale = 1.0
+    
     renderTracker = ApplyTransformToImagesAndAverageVisitor( bp, # base path
                                                              FloorInterpolatorFactory(), # interpolation
                                                              scale )
-    for i in xrange(-5, 6, 1):
-        renderTracker.addImage( Views.hyperSlice( ImagePlusImgs.from( imgSource ), 1,  250 + i ) )                                                 
+    for i in xrange(-2, 3, 1):
+        renderTracker.addImage( Views.hyperSlice( ImagePlusImgs.from( imgSource ), 1,  100 + i ) )                                                 
 
     bp = home + "/fit_tracker/fitTracker_%d.csv"
     make_sure_path_exists( bp )
