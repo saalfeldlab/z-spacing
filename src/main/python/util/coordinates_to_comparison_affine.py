@@ -62,13 +62,15 @@ def fitAffine( coordinates, reference ):
 
 
 if __name__ == "__main__":
-    cRange = 5
-    srcPattern = '/ssd/hanslovskyp/playground/pov-ray/variable_thickness_subset1/750-1049/scale/0.04/200x200+100+100/range=%d/fit_coordinates/*csv' % cRange
+    cRange = 8
+    base = '/data/hanslovskyp/playground/pov-ray/variable_thickness_subset1/750-1049'
+    root = '%s/scale/0.04/200x200+100+100/range=%d' % ( base.rstrip('/'), cRange )
+    srcPattern = '%s/fit_coordinates/*csv' % root.rstrip('/')
     filenames  = sorted( glob.glob( srcPattern ) )
-    targetDir  = '/ssd/hanslovskyp/playground/pov-ray/variable_thickness_subset1/750-1049/scale/0.04/200x200+100+100/range=%d/fit_coordinates_transformed' % cRange
+    targetDir  = '%s/fit_coordinates_transformed' % root.rstrip('/')
     make_sure_path_exists( targetDir +'/' )
 
-    referenceFileName = '/ssd/hanslovskyp/playground/pov-ray/variable_thickness_subset1/750-1049/coordinates_zero_based'
+    referenceFileName = '%s/coordinates_zero_based' % base.rstrip('/')
     
     coordinateColumn = 1
     referenceColumn  = 1

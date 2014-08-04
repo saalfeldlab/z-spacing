@@ -199,10 +199,11 @@ if __name__ == "__main__":
     # imgSource = IJ.getImage()
     # imgSource   = ImagePlus( '/groups/saalfeld/home/hanslovskyp/data/thickness/test_data/davi/intensity_corrected/crop/intensity_1_removed_slices.tif' )
     # imgSource   = ImagePlus( '/groups/saalfeld/home/hanslovskyp/data/thickness/test_data/fibsem/crop/test_stack_234_8bit.tif' )
-    correlationRange = 5
+    correlationRange = 8
     # imgSource   = ImagePlus( '/ssd/hanslovskyp/playground/pov-ray/variable_thickness_subset1/750-1049/scale/0.04/200x200+100+100.tif' )
-    imgSource = FolderOpener().open( '/ssd/hanslovskyp/playground/pov-ray/variable_thickness_subset1/750-1049/scale/0.04/200x200+100+100/data' )
-    home = '/ssd/hanslovskyp/playground/pov-ray/variable_thickness_subset1/750-1049/scale/0.04/200x200+100+100/range=%d'.rstrip('/')
+    root = '/data/hanslovskyp/playground/pov-ray/variable_thickness_subset1/750-1049/scale/0.04/200x200+100+100'
+    imgSource = FolderOpener().open( '%s/data' % root.rstrip('/') )
+    home = root.rstrip('/') + '/range=%d'.rstrip('/')
     home = home % correlationRange
     conv = ImageConverter( imgSource )
     conv.convertToGray32()
