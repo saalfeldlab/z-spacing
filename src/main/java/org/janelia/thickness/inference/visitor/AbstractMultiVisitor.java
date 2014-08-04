@@ -36,15 +36,15 @@ public abstract class AbstractMultiVisitor implements Visitor {
 
 	abstract void actSelf( final int iteration, final ArrayImg<DoubleType, DoubleArray> matrix, final double[] lut,
 	final LUTRealTransform transform,
-	final ArrayImg<DoubleType, DoubleArray> multipliers,
-	final ArrayImg<DoubleType, DoubleArray> weights,
+	final double[] multipliers,
+	final double[] weights,
 	final double[] estimatedFit );
 	
 	@Override
 	public void act( final int iteration, final ArrayImg<DoubleType, DoubleArray> matrix, final double[] lut,
 			final LUTRealTransform transform,
-			final ArrayImg<DoubleType, DoubleArray> multipliers,
-			final ArrayImg<DoubleType, DoubleArray> weights,
+			final double[] multipliers,
+			final double[] weights,
 			final double[] estimatedFit ) {
 		for ( final Visitor v : visitors ) {
 			v.act(iteration, matrix, lut, transform, multipliers, weights, estimatedFit );

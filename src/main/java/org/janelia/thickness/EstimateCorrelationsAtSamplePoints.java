@@ -11,10 +11,7 @@ import mpicbg.models.PointMatch;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
-import net.imglib2.img.array.ArrayImg;
-import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
-import net.imglib2.outofbounds.OutOfBounds;
 import net.imglib2.realtransform.InverseRealTransform;
 import net.imglib2.realtransform.RealTransformRealRandomAccessible;
 import net.imglib2.realtransform.RealViews;
@@ -29,7 +26,7 @@ public class EstimateCorrelationsAtSamplePoints {
 	private final static float[] ONE_DIMENSION_ZERO_POSITION = new float[] { 0.0f };
 	
 	public static <M extends Model< M > > double[] estimateFromMatrix( final RandomAccessibleInterval< DoubleType > correlations, 
-			final ArrayImg< DoubleType, DoubleArray> weights,
+			final double[] weights,
 			final LUTRealTransform transform,
 			final double[] coordinates,
 			final int nIter,
@@ -54,9 +51,6 @@ public class EstimateCorrelationsAtSamplePoints {
 		final RealRandomAccess<DoubleType> access2  = source2.realRandomAccess();
 		
 		
-		final OutOfBounds<DoubleType> weight1 = Views.extendValue( weights, new DoubleType( Double.NaN ) ).randomAccess();
-		final OutOfBounds<DoubleType> weight2 = Views.extendValue( weights, new DoubleType( Double.NaN ) ).randomAccess();
-		
 		final double[] result = new double[ nIter ];
 		
 		for ( int i = 0; i < correlations.dimension( 1 ); ++i ) {
@@ -72,8 +66,8 @@ public class EstimateCorrelationsAtSamplePoints {
 				final double a1 = access.get().get();
 				final double a2 = access2.get().get();
 				
-				final double w1 = 1.0; // weight1.get().get(); // replace 1.0 by real weight, as soon as weight calculation has become clear 
-				final double w2 = 1.0; // weight2.get().get(); // replace 1.0 by real weight, as soon as weight calculation has become clear 
+				final double w1 = 1.0; // weights[i + k]; // replace 1.0 by real weight, as soon as weight calculation has become clear 
+				final double w2 = 1.0; // weights[i - k]; // replace 1.0 by real weight, as soon as weight calculation has become clear 
 				
 				ArrayList<PointMatch> points = pointCollections.get( k );
 				if ( points == null ) {

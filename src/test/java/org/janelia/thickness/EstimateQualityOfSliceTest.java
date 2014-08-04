@@ -20,9 +20,12 @@ public class EstimateQualityOfSliceTest {
 	private final int nData = 100;
 	private final int correlationRange = 7;
 	private final double sigma = 2.0;
+	
+	private final double[] weightArr = new double[ nData ];
+	
 	private final ArrayImg< DoubleType, DoubleArray > matrix  = ArrayImgs.doubles( nData, nData );
 	private final ArrayImg< DoubleType, DoubleArray > coord   = ArrayImgs.doubles( nData );
-	private final ArrayImg< DoubleType, DoubleArray > weights = ArrayImgs.doubles( nData );
+	private final ArrayImg< DoubleType, DoubleArray > weights = ArrayImgs.doubles( weightArr, nData );
 	private final ArrayImg< DoubleType, DoubleArray > fit     = ArrayImgs.doubles( correlationRange );
 
 	@Before
@@ -66,7 +69,7 @@ public class EstimateQualityOfSliceTest {
 		final double regularizerWeight = 0.0;
 		final double[] multipilers = EstimateQualityOfSlice.estimateFromMatrix(
 				matrix,
-				weights,
+				weightArr,
 				new ScaleModel(),
 				coord,
 				fitWithGradient.getFit(),

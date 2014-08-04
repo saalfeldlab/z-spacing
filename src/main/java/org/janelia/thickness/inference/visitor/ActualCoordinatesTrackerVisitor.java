@@ -40,8 +40,8 @@ public class ActualCoordinatesTrackerVisitor extends AbstractMultiVisitor {
 	@Override
 	void actSelf(final int iteration, final ArrayImg<DoubleType, DoubleArray> matrix,
 			final double[] lut, final LUTRealTransform transform,
-			final ArrayImg<DoubleType, DoubleArray> multipliers,
-			final ArrayImg<DoubleType, DoubleArray> weights,
+			final double[] multipliers,
+			final double[] weights,
 			final double[] estimatedFit ) {
 		
 		

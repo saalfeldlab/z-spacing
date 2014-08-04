@@ -23,17 +23,16 @@ public class EstimateQualityOfSlice {
 
 	public static < M extends Model< M >, C extends Model< C > > double[] estimateFromMatrix(
 			final ArrayImg< DoubleType, DoubleArray > correlations,
-			final ArrayImg< DoubleType, DoubleArray > weights,
+			final double[] weights,
 			final M model,
 			final ArrayImg< DoubleType, DoubleArray > coordinates,
 			final RealRandomAccessible< DoubleType > correlationFit,
 			final int nThreads,
 			final double regularizerWeight ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 		
-		final double[] multipliers = new double[ ( int )weights.dimension( 0 ) ];
+		final double[] multipliers = new double[ weights.length ];
 		final RealRandomAccess<DoubleType> fitRandomAccess         = correlationFit.realRandomAccess();
 		final ArrayRandomAccess<DoubleType> coordinateRandomAccess = coordinates.randomAccess();
-		final ArrayRandomAccess<DoubleType> weightRanodmAccess     = weights.randomAccess();
 		
 		final double inverseRegularizerWeight = 1 - regularizerWeight;
 		
@@ -57,7 +56,6 @@ public class EstimateQualityOfSlice {
 				final double c = tc.get();
 				coordinateRandomAccess.setPosition( currentZ, 0);
 				fitRandomAccess.setPosition( coordinateRandomAccess.get().get() - refCoordinate, 0 );
-				weightRanodmAccess.setPosition( currentZ, 0 );
 
 				final double fra = fitRandomAccess.get().get();
 				
@@ -69,7 +67,7 @@ public class EstimateQualityOfSlice {
 						new PointMatch(
 								new Point( new float[]{ ( float )c } ),
 								new Point( new float[]{ -( float )fra } ),
-								weightRanodmAccess.get().getRealFloat() ) );
+								(float)weights[ currentZ ] ) );
 				
 			}
 	

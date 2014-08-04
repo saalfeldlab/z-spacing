@@ -20,8 +20,10 @@ public class EstimateCorrelationsAtSamplePointsTest {
 	private final long seed  = 100;
 	private final double sigma = 2.0;
 	
+	private final double[] weightArr = new double[ nCorrs ];
+	
 	private final ArrayImg<DoubleType, DoubleArray> cImage = ArrayImgs.doubles( nCorrs, nCorrs );
-	private final ArrayImg<DoubleType, DoubleArray> weights = ArrayImgs.doubles( nCorrs );
+	private final ArrayImg<DoubleType, DoubleArray> weights = ArrayImgs.doubles( weightArr, nCorrs );
 
 	@Before
 	public void setUp() throws Exception {
@@ -58,7 +60,7 @@ public class EstimateCorrelationsAtSamplePointsTest {
 		}
 		final LUTRealTransform transform = new LUTRealTransform(coordinates, 2, 2);
 		
-		final double[] estimate = EstimateCorrelationsAtSamplePoints.estimateFromMatrix( cImage, weights, transform, coordinates, nRel, new TranslationModel1D(), variances);
+		final double[] estimate = EstimateCorrelationsAtSamplePoints.estimateFromMatrix( cImage, weightArr, transform, coordinates, nRel, new TranslationModel1D(), variances);
 		
 		int j = 0;
 		for ( final double e : estimate ) {

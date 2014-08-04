@@ -9,7 +9,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import net.imglib2.img.array.ArrayCursor;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.type.numeric.real.DoubleType;
@@ -43,8 +42,8 @@ public class WeightsTrackerVisitor extends AbstractMultiVisitor {
 	@Override
 	void actSelf(final int iteration, final ArrayImg<DoubleType, DoubleArray> matrix,
 			final double[] lut, final LUTRealTransform transform,
-			final ArrayImg<DoubleType, DoubleArray> multipliers,
-			final ArrayImg<DoubleType, DoubleArray> weights,
+			final double[] multipliers,
+			final double[] weights,
 			final double[] estimatedFit ) {
 		
 		
@@ -56,10 +55,8 @@ public class WeightsTrackerVisitor extends AbstractMultiVisitor {
 			final FileWriter fw = new FileWriter( file.getAbsoluteFile() );
 			final BufferedWriter bw = new BufferedWriter( fw );
 			
-			final ArrayCursor<DoubleType> w = weights.cursor();
-			
-			while( w.hasNext() ) {
-				bw.write( String.format( "%d" + this.separator + "%f\n", r++, w.next().get() ) );
+			for ( final double w : weights ) {
+				bw.write( String.format( "%d" + this.separator + "%f\n", r++, w ) );
 			}
 			
 			bw.close();

@@ -10,7 +10,7 @@ public interface Visitor {
 
 	public void act(int iteration, ArrayImg<DoubleType, DoubleArray> matrix, double[] lut,
 			LUTRealTransform transform,
-			ArrayImg<DoubleType, DoubleArray> multipliers,
-			ArrayImg<DoubleType, DoubleArray> weights,
+			double[] multipliers,
+			double[] weights,
 			double[] estimatedFit);
 }

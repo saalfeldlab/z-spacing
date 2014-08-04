@@ -100,8 +100,8 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			public void act(final int iteration,
 					final ArrayImg<DoubleType, DoubleArray> matrix, final double[] lut,
 					final LUTRealTransform transform,
-					final ArrayImg<DoubleType, DoubleArray> multipliers,
-					final ArrayImg<DoubleType, DoubleArray> weights,
+					final double[] multipliers,
+					final double[] weights,
 					final double[] estimatedFit ) {
 				// don't do anything
 			}},
@@ -128,7 +128,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			final Visitor visitor,
 			final Options options) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 		
-		final ArrayImg<DoubleType, DoubleArray> matrix = this.correlationsToMatrix( x, y);
+		final ArrayImg<DoubleType, DoubleArray> matrix = this.correlationsToMatrix( x, y );
 		
 		final double[] weightArr = new double[ ( int )matrix.dimension( 0 ) ];
 		final ArrayImg<DoubleType, DoubleArray> weights = ArrayImgs.doubles( weightArr, new long[]{ weightArr.length } );
@@ -141,9 +141,6 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 		final double[] coordinateArr = lut;
 		
 		
-		final double inverseCoordinateUpdateRegularizerWeight = 1 - options.coordinateUpdateRegularizerWeight;
-		
-		
 		final ArrayImg<DoubleType, DoubleArray> coordinates = ArrayImgs.doubles( coordinateArr, coordinateArr.length );
 		
 		
@@ -153,59 +150,81 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 		
 
 		
-		ArrayCursor<DoubleType> mediatedCursor   = mediatedShifts.cursor();
-		ArrayCursor<DoubleType> coordinateCursor = coordinates.cursor();
-		
-		visitor.act( 0, matrix, lut, transform, weights, weights, new double[ lut.length ] );
+		visitor.act( 0, matrix, lut, transform, weightArr, weightArr, new double[ lut.length ] );
 		
 		for ( int n = 0; n < this.nIterations; ++n ) {
-			final double[] vars = new double[ this.comparisonRange ];
 			
-			final double[] estimatedFit = EstimateCorrelationsAtSamplePoints.estimateFromMatrix( matrix, weights, transform, coordinateArr, this.comparisonRange, this.correlationFitModel, vars );
-			
-			final double[] multipliers = EstimateQualityOfSlice.estimateFromMatrix( matrix, 
-					weights, 
-					this.measurementsMultiplierModel,
-					coordinates, 
-					mirrorAndExtend( estimatedFit, new NLinearInterpolatorFactory< DoubleType >() ), 
-					this.nThreads,
-					options.multiplierGenerationRegularizerWeight );
-	
-			
-			final TreeMap< Long, ArrayList< ConstantPair< Double, Double > > > shifts =
-					ShiftCoordinates.collectShiftsFromMatrix(
-							coordinateArr,
-							matrix,
-							weightArr,
-							multipliers,
-							new LUTRealTransform( estimatedFit, 1, 1 ) );
-			
-			this.shiftMediator.mediate( shifts, mediatedShifts );
-			
-			mediatedCursor   = mediatedShifts.cursor();
-			coordinateCursor = coordinates.cursor();
-			
-			
-			int ijk = 0;
-			
-			
-			while ( mediatedCursor.hasNext() ) {
-				
-				coordinateCursor.fwd();
-				mediatedCursor.fwd();
-				
-				lut[ijk] += options.shiftProportion * mediatedCursor.get().get();
-				lut[ijk] *= inverseCoordinateUpdateRegularizerWeight;
-				lut[ijk] += options.coordinateUpdateRegularizerWeight * ijk;
-				
-				++ijk;
-				
-			}
-			
-			visitor.act( n + 1, matrix, lut, transform, ArrayImgs.doubles( multipliers, new long[]{ multipliers.length } ), weights, estimatedFit );
+			this.iterationStep(matrix, weightArr, transform, lut, coordinateArr, coordinates, mediatedShifts, options, visitor, n);
 			
 		}
 		return coordinates;
+	}
+	
+	
+	public RandomAccessibleInterval< double[] > estimateZCoordinatesLocally(
+			) {
+		
+		return null;
+	}
+	
+	
+	private void iterationStep( final ArrayImg<DoubleType, DoubleArray> matrix,
+			final double[] weights,
+			final LUTRealTransform transform,
+			final double[] lut,
+			final double[] coordinateArr,
+			final ArrayImg< DoubleType, DoubleArray > coordinates,
+			final ArrayImg< DoubleType, DoubleArray > mediatedShifts,
+			final Options options,
+			final Visitor visitor,
+			final int n
+			) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+		final double[] vars = new double[ this.comparisonRange ];
+		
+		final double[] estimatedFit = EstimateCorrelationsAtSamplePoints.estimateFromMatrix( matrix, weights, transform, coordinateArr, this.comparisonRange, this.correlationFitModel, vars );
+		
+		final double inverseCoordinateUpdateRegularizerWeight = 1 - options.coordinateUpdateRegularizerWeight;
+		
+		final double[] multipliers = EstimateQualityOfSlice.estimateFromMatrix( matrix, 
+				weights, 
+				this.measurementsMultiplierModel,
+				coordinates, 
+				mirrorAndExtend( estimatedFit, new NLinearInterpolatorFactory< DoubleType >() ), 
+				this.nThreads,
+				options.multiplierGenerationRegularizerWeight );
+
+		
+		final TreeMap< Long, ArrayList< ConstantPair< Double, Double > > > shifts =
+				ShiftCoordinates.collectShiftsFromMatrix(
+						coordinateArr,
+						matrix,
+						weights,
+						multipliers,
+						new LUTRealTransform( estimatedFit, 1, 1 ) );
+		
+		this.shiftMediator.mediate( shifts, mediatedShifts );
+		
+		final ArrayCursor<DoubleType> mediatedCursor = mediatedShifts.cursor();
+		final ArrayCursor<DoubleType> coordinateCursor = coordinates.cursor();
+		
+		
+		int ijk = 0;
+		
+		
+		while ( mediatedCursor.hasNext() ) {
+			
+			coordinateCursor.fwd();
+			mediatedCursor.fwd();
+			
+			lut[ijk] += options.shiftProportion * mediatedCursor.get().get();
+			lut[ijk] *= inverseCoordinateUpdateRegularizerWeight;
+			lut[ijk] += options.coordinateUpdateRegularizerWeight * ijk;
+			
+			++ijk;
+			
+		}
+		
+		visitor.act( n + 1, matrix, lut, transform, multipliers, weights, estimatedFit );
 	}
 	
 	
