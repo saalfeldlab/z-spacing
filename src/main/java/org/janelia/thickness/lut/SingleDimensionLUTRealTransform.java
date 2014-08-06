@@ -26,8 +26,8 @@ import net.imglib2.view.Views;
 /**
  * Threadsafe.
  * 
- * @author hanslovskyp
- * @author saalfelds
+ * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>
+ * @author Stephan Saalfeld <saalfelds@janelia.hhmi.org>
  * 
  */
 public class SingleDimensionLUTRealTransform extends AbstractLUTRealTransform {

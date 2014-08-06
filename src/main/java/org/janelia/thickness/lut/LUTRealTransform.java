@@ -28,8 +28,8 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
 /**
- * @author hanslovskyp
- * @author saalfelds
+ * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>
+ * @author Stephan Saalfeld <saalfelds@janelia.hhmi.org>
  */
 public class LUTRealTransform extends AbstractLUTRealTransform
 {
