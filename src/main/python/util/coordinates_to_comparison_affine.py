@@ -62,33 +62,27 @@ def fitAffine( coordinates, reference ):
 
 
 if __name__ == "__main__":
-    cRange = 8
-    base = '/data/hanslovskyp/playground/pov-ray/variable_thickness_subset1/750-1049'
-    root = '%s/scale/0.04/200x200+100+100/range=%d' % ( base.rstrip('/'), cRange )
-    srcPattern = '%s/fit_coordinates/*csv' % root.rstrip('/')
-    filenames  = sorted( glob.glob( srcPattern ) )
-    targetDir  = '%s/fit_coordinates_transformed' % root.rstrip('/')
-    make_sure_path_exists( targetDir +'/' )
-
+    ranges = range(10, 61, 10)
+    base = '/data/hanslovskyp/playground/pov-ray/variable_thickness_subset2/2200-2799'
     referenceFileName = '%s/coordinates_zero_based' % base.rstrip('/')
-    
-    coordinateColumn = 1
-    referenceColumn  = 1
+    coordinateColumn = 1                                   
+    referenceColumn  = 1                                   
     delimiter        = ','
-
     reference = csvToArray( referenceFileName, delimiter, referenceColumn )
-
-    for fn in filenames:
-    
-        coordinates = csvToArray( fn, delimiter, coordinateColumn )
-        transformed = fitAffine( coordinates, reference )
-        fnBase = ntpath.basename( fn )
-        arrayToCsv( transformed, '%s/%s' % ( targetDir.rstrip('/'), fnBase ), delimiter )
-        # print '%s/%s' % ( targetDir.rstrip('/'), fnBase )
+    for idx, r in enumerate( ranges ):
+        print idx, r
+        cRange = r                                             
+        root = '%s/scale/0.04/200x200+100+100/range=%d' % ( base.rstrip('/'), cRange )
+        srcPattern = '%s/fit_coordinates/*csv' % root.rstrip('/')
+        filenames  = sorted( glob.glob( srcPattern ) )         
+        targetDir  = '%s/fit_coordinates_transformed' % root.rstrip('/')
+        make_sure_path_exists( targetDir +'/' )                
+                                                               
+        for fn in filenames:                                   
+                                                               
+            coordinates = csvToArray( fn, delimiter, coordinateColumn )
+            transformed = fitAffine( coordinates, reference )  
+            fnBase = ntpath.basename( fn )                     
+            arrayToCsv( transformed, '%s/%s' % ( targetDir.rstrip('/'), fnBase ), delimiter )
+            # print '%s/%s' % ( targetDir.rstrip('/'), fnBase )
         
-        
-    
-
-
-
-    
