@@ -9,7 +9,7 @@ import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.type.numeric.real.DoubleType;
 
-import org.janelia.thickness.lut.LUTRealTransform;
+import org.janelia.thickness.lut.AbstractLUTRealTransform;
 
 /**
  * @author hanslovskyp
@@ -35,14 +35,14 @@ public abstract class AbstractMultiVisitor implements Visitor {
 	}
 
 	abstract void actSelf( final int iteration, final ArrayImg<DoubleType, DoubleArray> matrix, final double[] lut,
-	final LUTRealTransform transform,
+	final AbstractLUTRealTransform transform,
 	final double[] multipliers,
 	final double[] weights,
 	final double[] estimatedFit );
 	
 	@Override
 	public void act( final int iteration, final ArrayImg<DoubleType, DoubleArray> matrix, final double[] lut,
-			final LUTRealTransform transform,
+			final AbstractLUTRealTransform transform,
 			final double[] multipliers,
 			final double[] weights,
 			final double[] estimatedFit ) {

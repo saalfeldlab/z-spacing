@@ -13,7 +13,7 @@ import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.type.numeric.real.DoubleType;
 
-import org.janelia.thickness.lut.LUTRealTransform;
+import org.janelia.thickness.lut.AbstractLUTRealTransform;
 
 /**
  * @author hanslovskyp
@@ -41,7 +41,7 @@ public class CorrelationFitTrackerVisitor extends AbstractMultiVisitor {
 	 */
 	@Override
 	void actSelf(final int iteration, final ArrayImg<DoubleType, DoubleArray> matrix,
-			final double[] lut, final LUTRealTransform transform,
+			final double[] lut, final AbstractLUTRealTransform transform,
 			final double[] multipliers,
 			final double[] weights,
 			final double[] estimatedFit ) {

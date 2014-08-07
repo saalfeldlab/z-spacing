@@ -21,7 +21,7 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
-import org.janelia.thickness.lut.LUTRealTransform;
+import org.janelia.thickness.lut.AbstractLUTRealTransform;
 import org.janelia.thickness.lut.SingleDimensionLUTRealTransform;
 import org.janelia.utility.CopyFromIntervalToInterval;
 
@@ -64,7 +64,7 @@ public class ApplyTransformToImageVisitor extends AbstractMultiVisitor {
 
 	@Override
 	void actSelf( final int iteration, final ArrayImg<DoubleType, DoubleArray> matrix, final double[] lut,
-			final LUTRealTransform transform,
+			final AbstractLUTRealTransform transform,
 			final double[] multipliers,
 			final double[] weights,
 			final double[] estimatedFit ) {
