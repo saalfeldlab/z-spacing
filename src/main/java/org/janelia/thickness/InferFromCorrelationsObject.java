@@ -2,6 +2,7 @@ package org.janelia.thickness;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import mpicbg.models.IllDefinedDataPointsException;
@@ -15,9 +16,11 @@ import net.imglib2.img.array.ArrayCursor;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
+import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.type.numeric.real.DoubleType;
+import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
@@ -25,7 +28,9 @@ import org.apache.commons.math.FunctionEvaluationException;
 import org.janelia.correlations.CorrelationsObjectInterface;
 import org.janelia.correlations.CorrelationsObjectInterface.Meta;
 import org.janelia.thickness.inference.visitor.Visitor;
+import org.janelia.thickness.lut.AbstractLUTRealTransform;
 import org.janelia.thickness.lut.LUTRealTransform;
+import org.janelia.thickness.lut.TransformRandomAccessibleInterval;
 import org.janelia.thickness.mediator.OpinionMediator;
 import org.janelia.utility.ConstantPair;
 
@@ -49,12 +54,20 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			result.multiplierGenerationRegularizerWeight = 0.01;
 			result.coordinateUpdateRegularizerWeight = 0.01;
 			result.shiftProportion = 0.5;
+			result.nIterations = 1;
+			result.nThreads = 1;
+			result.comparisonRange = 10;
+			result.neighborRegularizerWeight = 0.05;
 			return result;
 		}
 		
 		public double multiplierGenerationRegularizerWeight; // m_regularized = m * ( 1 - w ) + 1 * w
 		public double coordinateUpdateRegularizerWeight; // coordinate_regularized = predicted * ( 1 - w ) + original * w
 		public double shiftProportion; // actual_shift = shift * shiftProportion
+		public int nIterations; // number of iterations
+		public int nThreads; // number of threads
+		public int comparisonRange; // range for cross correlations
+		public double neighborRegularizerWeight;
 		
 		
 	}
@@ -99,7 +112,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			@Override
 			public void act(final int iteration,
 					final ArrayImg<DoubleType, DoubleArray> matrix, final double[] lut,
-					final LUTRealTransform transform,
+					final AbstractLUTRealTransform transform,
 					final double[] multipliers,
 					final double[] weights,
 					final double[] estimatedFit ) {
@@ -160,17 +173,185 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 		return coordinates;
 	}
 	
+	public ArrayImg<DoubleType, DoubleArray> estimateZCoordinatesLocally(
+			final int start,
+			final int stop,
+			final int step,
+			final double[] defaultCoordinates,
+			final Options options 
+			) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+		return estimateZCoordinatesLocally( start, stop, step, defaultCoordinates, new Visitor() {
+			
+			@Override
+			public void act(final int iteration, final ArrayImg<DoubleType, DoubleArray> matrix,
+					final double[] lut, final AbstractLUTRealTransform transform, final double[] multipliers,
+					final double[] weights, final double[] estimatedFit) {
+				// do not do anything
+			}
+		}, options );
+	}
 	
-	public RandomAccessibleInterval< double[] > estimateZCoordinatesLocally(
-			) {
+	
+	public ArrayImg<DoubleType, DoubleArray> estimateZCoordinatesLocally(
+			final int start,
+			final int stop,
+			final int step,
+			final double[] defaultCoordinates,
+			final Visitor visitor,
+			final Options options 
+			) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+		return estimateZCoordinatesLocally( start, start, stop, stop, step, step, defaultCoordinates, visitor, options );
+	}
+	
+	
+	public ArrayImg<DoubleType, DoubleArray> estimateZCoordinatesLocally(
+			final int startX,
+			final int startY,
+			final int stopX,
+			final int stopY,
+			final int stepX,
+			final int stepY,
+			final double[] defaultCoordinates,
+			final Options options 
+			) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+		return estimateZCoordinatesLocally(startX, startY, stopX, stopY, stepX, stepY, defaultCoordinates, new Visitor() {
+			
+			@Override
+			public void act(
+					final int iteration, 
+					final ArrayImg<DoubleType, DoubleArray> matrix,
+					final double[] lut, 
+					final AbstractLUTRealTransform transform, 
+					final double[] multipliers,
+					final double[] weights, 
+					final double[] estimatedFit) {
+				// do not do anything
+			}
+		},
+		options);
+	}
+	
+	
+	public ArrayImg<DoubleType, DoubleArray> estimateZCoordinatesLocally(
+			final int startX,
+			final int startY,
+			final int stopX,
+			final int stopY,
+			final int stepX,
+			final int stepY,
+			final double[] defaultCoordinates,
+			final Visitor visitor,
+			final Options options 
+			) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 		
-		return null;
+		final int nX = ( stopX - startX ) / stepX;
+		final int nY = ( stopY - startY ) / stepY;
+		
+		final double ownWeight = 1.0 - options.neighborRegularizerWeight;
+		
+		final double[] defaultWeights = new double[ defaultCoordinates.length ];
+		for (int i = 0; i < defaultWeights.length; i++) {
+			defaultWeights[i] = 1.0;
+		}
+		
+		
+		final ArrayList<AbstractLUTRealTransform> transforms = new ArrayList<AbstractLUTRealTransform>();
+		final TreeMap<ConstantPair< Integer, Integer >, double[] > coordinatesMap = new TreeMap<ConstantPair<Integer,Integer>, double[]>();
+		final TreeMap<ConstantPair< Integer, Integer >, double[] > weightsMap = new TreeMap<ConstantPair<Integer,Integer>, double[]>();
+		final TreeMap<ConstantPair< Integer, Integer >, ArrayImg<DoubleType, DoubleArray> > matrices = new TreeMap<ConstantPair<Integer,Integer>, ArrayImg<DoubleType,DoubleArray>>();
+		final TreeMap<ConstantPair<Integer, Integer>, ArrayImg<DoubleType, DoubleArray>> mediatedShiftsMap = new TreeMap<ConstantPair<Integer, Integer>, ArrayImg<DoubleType, DoubleArray> >();
+		
+		int x = startX;
+		int y = startY;
+		
+		for ( int ny = 0; ny < nY; ++ny ) {
+			x = startX;
+			for (int nx = 0; nx < nX; ++nx ) {
+				final ConstantPair<Integer, Integer> xy = new ConstantPair<Integer, Integer>( nx, ny );
+				final ArrayImg<DoubleType, DoubleArray> matrix = this.correlationsToMatrix( x, y );
+				if ( matrix == null ) {
+					System.out.println( "matrix == 0: " + x + "," + y );
+				}
+				matrices.put( xy, matrix );
+				final double[] localCoordinates = defaultCoordinates.clone();
+				transforms.add( new LUTRealTransform( localCoordinates, 2, 2 ) );
+				coordinatesMap.put( xy, localCoordinates );
+				weightsMap.put( xy, defaultWeights.clone() );
+				x += stepX;
+			}
+			y += stepY;
+		}
+		
+		final TransformRandomAccessibleInterval transformsAccessible = new TransformRandomAccessibleInterval( new long[] { nX, nY }, transforms );
+		final RandomAccess<AbstractLUTRealTransform> access = transformsAccessible.randomAccess();
+		
+		
+		for ( int iteration = 0; iteration < options.nIterations; ++iteration )
+		{
+			final TreeMap<ConstantPair<Integer, Integer>, double[]> previousCoordinates = new TreeMap<ConstantPair<Integer,Integer>, double[]>();
+			for ( final Entry<ConstantPair<Integer, Integer>, double[]> entry : coordinatesMap.entrySet() ) {
+				previousCoordinates.put( entry.getKey(), entry.getValue().clone() );
+			}
+			for ( int ny = 0; ny < nY; ++ny ) {
+				access.setPosition( ny, 1 );
+				for (int nx = 0; nx < nX; ++nx ) {
+					access.setPosition( nx, 0 );
+					final ConstantPair<Integer, Integer> xy = new ConstantPair<Integer, Integer>( nx, ny );
+					final double[] c = coordinatesMap.get( xy );
+					iterationStep( 
+							matrices.get( xy ), 
+							weightsMap.get( xy ), 
+							access.get(), 
+							c, 
+							c, 
+							ArrayImgs.doubles( c, c.length ), 
+							ArrayImgs.doubles( c.length ), 
+							options, 
+							visitor, 
+							iteration);
+					double weightSum = ownWeight;
+					for ( int z = 0; z < c.length; ++z ) {
+						c[ z ] *= ownWeight;
+					}
+					for ( int dy = -1; dy < 2; ++dy ) {
+						for ( int dx = -1; dx < 2; ++dx ) {
+							final int xPos = nx + dx;
+							final int yPos = ny + dy;
+							if ( ( dy == 0 && dx == 0 ) || xPos < 0 || yPos < 0 || xPos >= nX || yPos >= nY ) {
+								continue;
+							}
+							final double weight = options.neighborRegularizerWeight;
+							final double[] cNeighbor = previousCoordinates.get( new ConstantPair< Integer, Integer>( xPos, yPos ) );
+//							System.out.println( xPos + " " + yPos + " " + ( cNeighbor == null ) + " " + ( coordinatesMap.get( new ConstantPair< Integer, Integer>( xPos, yPos ) ) == null ) );
+							for ( int z = 0; z < c.length; ++z ) {
+								c[ z ] += weight*cNeighbor[ z ]; 
+							}
+							weightSum += weight;
+						}
+					}
+					for ( int z = 0; z < c.length; ++ z ) {
+						c[z] /= weightSum;
+					}
+				}
+			}
+		}
+		
+		
+		
+		final ArrayImg<DoubleType, DoubleArray> result = ArrayImgs.doubles( nX, nY, defaultCoordinates.length );
+		final ArrayCursor<DoubleType> resultCursor = result.cursor();
+		while( resultCursor.hasNext() ) {
+			resultCursor.fwd();
+			resultCursor.get().set( coordinatesMap.get( new ConstantPair<Integer, Integer>( resultCursor.getIntPosition( 0 ), resultCursor.getIntPosition( 1 ) ) )[ resultCursor.getIntPosition( 2 ) ] - resultCursor.getIntPosition( 2 )  );
+		}
+		
+		return result;
 	}
 	
 	
 	private void iterationStep( final ArrayImg<DoubleType, DoubleArray> matrix,
 			final double[] weights,
-			final LUTRealTransform transform,
+			final AbstractLUTRealTransform transform,
 			final double[] lut,
 			final double[] coordinateArr,
 			final ArrayImg< DoubleType, DoubleArray > coordinates,
@@ -263,6 +444,19 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 		 
 		
 		return matrix;
+	}
+	
+	public static ArrayImg<FloatType, FloatArray> convertToFloat( final ArrayImg<DoubleType, DoubleArray> input ) {
+		final long[] dims = new long[ input.numDimensions() ];
+		input.dimensions( dims );
+		final ArrayImg<FloatType, FloatArray> output = ArrayImgs.floats( dims );
+		final ArrayCursor<DoubleType> i = input.cursor();
+		final ArrayCursor<FloatType> o  = output.cursor();
+		
+		while( i.hasNext() ) {
+			o.next().set( i.next().getRealFloat() );
+		}
+		return output;
 	}
 	
 	

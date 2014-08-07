@@ -19,7 +19,7 @@ import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.Views;
 
 import org.apache.commons.math.stat.descriptive.moment.Variance;
-import org.janelia.thickness.lut.LUTRealTransform;
+import org.janelia.thickness.lut.AbstractLUTRealTransform;
 
 public class EstimateCorrelationsAtSamplePoints {
 	
@@ -27,10 +27,10 @@ public class EstimateCorrelationsAtSamplePoints {
 	
 	public static <M extends Model< M > > double[] estimateFromMatrix( final RandomAccessibleInterval< DoubleType > correlations, 
 			final double[] weights,
-			final LUTRealTransform transform,
+			final AbstractLUTRealTransform transform,
 			final double[] coordinates,
 			final int nIter,
-			final M model,
+			final M correlationFitModel,
 			final double[] variances) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 		
 		final double[] accumulativeShifts = new double[ coordinates.length ];
@@ -45,6 +45,8 @@ public class EstimateCorrelationsAtSamplePoints {
 		final RealRandomAccessible<DoubleType> source = Views.interpolate( Views.extendValue( correlations, new DoubleType( Double.NaN ) ), new NLinearInterpolatorFactory<DoubleType>());
 		
 		final RealTransformRealRandomAccessible<DoubleType, InverseRealTransform> source2 = RealViews.transformReal(source, transform);
+		
+		System.out.println( "correlations: " + ( correlations == null ) + " source: " + ( source == null ) + " transform: " + ( transform == null ) + " source2: " + ( source2 == null ) );
 		
 		
 		final RealRandomAccess<DoubleType> access   = source2.realRandomAccess();
@@ -93,10 +95,10 @@ public class EstimateCorrelationsAtSamplePoints {
 			for ( int k = 0; k < values.length; ++k ) {
 				values[k] = pointCollections.get( i ).get( k ).getP2().getW()[0];
 			}
-			model.fit( pointCollections.get( i ) );
+			correlationFitModel.fit( pointCollections.get( i ) );
 			
 			/* TODO inverts because LUTRealTransform can only increasing */
-			result[i] = -model.apply( ONE_DIMENSION_ZERO_POSITION )[ 0 ];
+			result[i] = -correlationFitModel.apply( ONE_DIMENSION_ZERO_POSITION )[ 0 ];
 			variances[i] = new Variance().evaluate( values );
 		}
 		
