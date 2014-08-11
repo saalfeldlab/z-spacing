@@ -38,10 +38,15 @@ public interface CorrelationsObjectInterface {
 	
 	public ArrayImg<DoubleType, DoubleArray> toMatrix( long x, long y );
 	
+	public ArrayImg<DoubleType, DoubleArray> toMatrix( long x, long y, long zMin,
+			long zMax );
+	
 	public long getzMin();
 	
 	public long getzMax();
 	
 	public TreeMap<Long, Meta> getMetaMap();
+
+	
 	
 }
