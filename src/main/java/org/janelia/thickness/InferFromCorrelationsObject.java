@@ -11,6 +11,7 @@ import mpicbg.models.NotEnoughDataPointsException;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.img.array.ArrayCursor;
 import net.imglib2.img.array.ArrayImg;
@@ -30,6 +31,7 @@ import org.janelia.correlations.CorrelationsObjectInterface.Meta;
 import org.janelia.thickness.inference.visitor.Visitor;
 import org.janelia.thickness.lut.AbstractLUTRealTransform;
 import org.janelia.thickness.lut.LUTRealTransform;
+import org.janelia.thickness.lut.SingleDimensionLUTRealTransformField;
 import org.janelia.thickness.lut.TransformRandomAccessibleInterval;
 import org.janelia.thickness.mediator.OpinionMediator;
 import org.janelia.utility.ConstantPair;
@@ -247,8 +249,6 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                 final int nX = ( stopX - startX ) / stepX;
                 final int nY = ( stopY - startY ) / stepY;
 
-                final double ownWeight = 1.0 - options.neighborRegularizerWeight;
-
                 final double[] defaultWeights = new double[ defaultCoordinates.length ];
                 for (int i = 0; i < defaultWeights.length; i++) {
                         defaultWeights[i] = 1.0;
@@ -269,9 +269,6 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                         for (int nx = 0; nx < nX; ++nx ) {
                                 final ConstantPair<Integer, Integer> xy = new ConstantPair<Integer, Integer>( nx, ny );
                                 final ArrayImg<DoubleType, DoubleArray> matrix = this.correlationsToMatrix( x, y );
-                                if ( matrix == null ) {
-                                        System.out.println( "matrix == 0: " + x + "," + y );
-                                }
                                 matrices.put( xy, matrix );
                                 final double[] localCoordinates = defaultCoordinates.clone();
                                 transforms.add( new LUTRealTransform( localCoordinates, 2, 2 ) );
@@ -309,10 +306,8 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                                                 options,
                                                 visitor,
                                                 iteration);
-                                        double weightSum = ownWeight;
-                                        for ( int z = 0; z < c.length; ++z ) {
-                                                c[ z ] *= ownWeight;
-                                        }
+                                        final double[] neighbors = new double[ c.length ];
+                                        int count = 0;
                                         for ( int dy = -1; dy < 2; ++dy ) {
                                                 for ( int dx = -1; dx < 2; ++dx ) {
                                                         final int xPos = nx + dx;
@@ -320,17 +315,16 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                                                         if ( ( dy == 0 && dx == 0 ) || xPos < 0 || yPos < 0 || xPos >= nX || yPos >= nY ) {
                                                                 continue;
                                                         }
-                                                        final double weight = options.neighborRegularizerWeight;
                                                         final double[] cNeighbor = previousCoordinates.get( new ConstantPair< Integer, Integer>( xPos, yPos ) );
-                                                        //                                                        System.out.println( xPos + " " + yPos + " " + ( cNeighbor == null ) + " " + ( coordinatesMap.get( new ConstantPair< Integer, Integer>( xPos, yPos ) ) == null ) );
                                                         for ( int z = 0; z < c.length; ++z ) {
-                                                                c[ z ] += weight*cNeighbor[ z ];
+                                                                neighbors[z] += cNeighbor[ z ];
                                                         }
-                                                        weightSum += weight;
+                                                        ++count;
                                                 }
                                         }
+                                        final double ownWeight = 1.0 - options.neighborRegularizerWeight;
                                         for ( int z = 0; z < c.length; ++ z ) {
-                                                c[z] /= weightSum;
+                                                c[z] = ownWeight*c[z] + options.neighborRegularizerWeight*neighbors[z] / count;
                                         }
                                 }
                         }
@@ -342,7 +336,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                 final ArrayCursor<DoubleType> resultCursor = result.cursor();
                 while( resultCursor.hasNext() ) {
                         resultCursor.fwd();
-                        resultCursor.get().set( coordinatesMap.get( new ConstantPair<Integer, Integer>( resultCursor.getIntPosition( 0 ), resultCursor.getIntPosition( 1 ) ) )[ resultCursor.getIntPosition( 2 ) ] - resultCursor.getIntPosition( 2 )  );
+                        resultCursor.get().set( coordinatesMap.get( new ConstantPair<Integer, Integer>( resultCursor.getIntPosition( 0 ), resultCursor.getIntPosition( 1 ) ) )[ resultCursor.getIntPosition( 2 ) ] ); // - resultCursor.getIntPosition( 2 )  );
                 }
 
                 return result;
@@ -457,6 +451,33 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                         o.next().set( i.next().getRealFloat() );
                 }
                 return output;
+        }
+
+
+
+        public static SingleDimensionLUTRealTransformField convertToTransformField2D( final ArrayImg< DoubleType, DoubleArray > input,
+                                                                                       final int stepX,
+                                                                                       final int stepY,
+                                                                                       final long width,
+                                                                                       final long height) {
+
+                final long d = input.dimension( 2 );
+                final double inverseStepX = 1.0/stepX;
+                final double inverseStepY = 1.0/stepY;
+
+                final ArrayImg<DoubleType, DoubleArray> tfs = ArrayImgs.doubles( new long[] { width, height, d } );
+                final ArrayCursor<DoubleType> cursor = tfs.cursor();
+                final RealRandomAccessible<DoubleType> interpolated = Views.interpolate( Views.extendBorder( input), new NLinearInterpolatorFactory<DoubleType>() );
+                final RealRandomAccess<DoubleType> iAccess = interpolated.realRandomAccess();
+                while ( cursor.hasNext() ) {
+                	cursor.fwd();
+                	iAccess.setPosition( cursor.getDoublePosition(0) * inverseStepX, 0 );
+                	iAccess.setPosition( cursor.getDoublePosition(1) * inverseStepY, 1 );
+                	iAccess.setPosition( cursor.getDoublePosition(2), 2 );
+                	cursor.get().set( iAccess.get() );
+                }
+
+                return new SingleDimensionLUTRealTransformField( 3, 3, tfs );
         }
 
 
