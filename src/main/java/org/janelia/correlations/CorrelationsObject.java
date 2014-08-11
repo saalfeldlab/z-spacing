@@ -214,20 +214,32 @@ public class CorrelationsObject implements CorrelationsObjectInterface {
 
 
 	@Override
-	public ArrayImg<DoubleType, DoubleArray> toMatrix( final long x, final long y ) {
+	public ArrayImg<DoubleType, DoubleArray> toMatrix( 
+			final long x, 
+			final long y) {
+		final Iterator<Long> iterator = this.metaMap.keySet().iterator();
+        final long zMin = iterator.next();
+        long zMaxTmp = zMin;
+
+        while ( iterator.hasNext() )
+                zMaxTmp = iterator.next();
+        final long zMax = zMaxTmp + 1;
+        return toMatrix( x, y, zMin, zMax );
+	}
+	
+	@Override
+	public ArrayImg<DoubleType, DoubleArray> toMatrix( 
+			final long x, 
+			final long y, 
+			final long zMin, 
+			final long zMax ) {
 		 final int nSlices = this.getMetaMap().size();
          final ArrayImg<DoubleType, DoubleArray> matrix = ArrayImgs.doubles( nSlices, nSlices );
          for ( final DoubleType m : matrix ) {
                  m.set( Double.NaN );
          }
          
-         final Iterator<Long> iterator = this.metaMap.keySet().iterator();
-         final long zMin = iterator.next();
-         long zMaxTmp = zMin;
-
-         while ( iterator.hasNext() )
-                 zMaxTmp = iterator.next();
-         final long zMax = zMaxTmp + 1;
+         
 
          for ( long zRef = zMin; zRef < zMax; ++zRef ) {
         	     final RandomAccessibleInterval<FloatType> correlationsAt = this.correlationsMap.get( zRef );
