@@ -196,23 +196,26 @@ if __name__ == "__main__":
     t0 = time.time()
     print t0 - t0
 
-    correlationRanges = range(5, 6, 7)
+    correlationRanges = range(5, 11, 7)
     # root = '/data/hanslovskyp/playground/pov-ray/variable_thickness_subset2/2200-2799/scale/0.04/200x200+100+100'
-    root = '/groups/saalfeld/home/hanslovskyp/playground/test_data/davi/intensity_corrected/crop/test/'
+    # root = '/groups/saalfeld/home/hanslovskyp/playground/test_data/davi/intensity_corrected/crop/test/'
+    root = '/data/hanslovskyp/jain-nobackup/30_data/'
+    # root = '/data/hanslovskyp/jain-nobackup/234_data_downscaled/'
     imgSource = FolderOpener().open( '%s/data' % root.rstrip('/') )
     stackSource = imgSource.getStack()
     conv = ImageConverter( imgSource )
     conv.convertToGray32()
-    nIterations = 1
+    nIterations = 10
     nThreads = 1
     scale = 1.0
     xyScale = 1.0
     doXYScale = False
-    step = 5
-    radius = [5, 5]
+    step = 2
+    radius = [10, 10]
     options = InferFromCorrelationsObject.Options.generateDefaultOptions()
     options.nIterations = nIterations
     options.nThreads = 1
+    options.neighborRegularizerWeight = 0.0
     # if you want to specify values for options, do:
     # options.multiplierGenerationRegularizerWeight = <value>
     # or equivalent
@@ -253,6 +256,8 @@ if __name__ == "__main__":
         print t1 - t0
              
         co = CorrelationsObject( CorrelationsObject.Options() )
+
+        
              
         coordinateBase = ArrayList()
              
@@ -285,7 +290,14 @@ if __name__ == "__main__":
              
         t3 = time.time()
         print t3 - t0
-             
+
+        matrix = co.toMatrix( 0, 0 )
+        print matrix.dimension( 0 ), matrix.dimension( 1 ), matrix.numDimensions()
+        ImgLib2Display.copyToImagePlus( InferFromCorrelationsObject.convertToFloat( matrix ) ).show()
+
+
+        import sys
+        sys.exit( 1 )
              
              
         inference = InferFromCorrelationsObject( co,
@@ -375,8 +387,25 @@ if __name__ == "__main__":
                                                         startingCoordinates,
                                                         options ) # no visitor for now, need to think of how to do this in the future
 
-        show = ImgLib2Display.copyToImagePlus( InferFromCorrelationsObject.convertToFloat( result ) )
-        show.show()
+        show  = ImgLib2Display.copyToImagePlus( InferFromCorrelationsObject.convertToFloat( result ) )
+        show2 = show.duplicate()
+        showStack = show2.getStack()
+        for i in xrange( showStack.getSize() ):
+            ip = showStack.getProcessor( i + 1 )
+            ip.add( -i )
+        show2.show()
+
+        tf = InferFromCorrelationsObject.convertToTransformField2D( result, step, step, img.getWidth(), img.getHeight() )
+        interpolated = Views.interpolate( Views.extendValue( ImagePlusImgs.from( imgSource), DoubleType( Double.NaN ) ), FloorInterpolatorFactory() )
+
+        resultImage = ImagePlusImgs.floats( imgSource.getWidth(), imgSource.getHeight(), imgSource.getStack().getSize() )
+        transformed = Views.interval( RealViews.transform( interpolated, tf ), resultImage )
+        
+        CopyFromIntervalToInterval.copyToRealType( transformed, resultImage )
+
+        ImageJFunctions.show( resultImage )
+        
+
              
              
         # array = jarray.zeros( result.dimension(0), 'd' )
