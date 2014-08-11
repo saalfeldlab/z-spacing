@@ -46,9 +46,6 @@ public class EstimateCorrelationsAtSamplePoints {
 		
 		final RealTransformRealRandomAccessible<DoubleType, InverseRealTransform> source2 = RealViews.transformReal(source, transform);
 		
-		System.out.println( "correlations: " + ( correlations == null ) + " source: " + ( source == null ) + " transform: " + ( transform == null ) + " source2: " + ( source2 == null ) );
-		
-		
 		final RealRandomAccess<DoubleType> access   = source2.realRandomAccess();
 		final RealRandomAccess<DoubleType> access2  = source2.realRandomAccess();
 		
