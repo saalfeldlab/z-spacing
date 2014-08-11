@@ -4,6 +4,8 @@ package org.janelia.correlations;
 import java.util.TreeMap;
 
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.array.ArrayImg;
+import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 
@@ -64,5 +66,14 @@ public class DummyCorrelationsObject implements CorrelationsObjectInterface {
 	public ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType>> extractDoubleCorrelationsAt(
 			final long x, final long y, final long z) {
 		return corrs.get( new ConstantTriple<Long, Long, Long>( x, y, z) );
+	}
+
+	/**
+	 * Is implementation of this method necessary for dummy?
+	 */
+	@Override
+	public ArrayImg<DoubleType, DoubleArray> toMatrix(final long x, final long y) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

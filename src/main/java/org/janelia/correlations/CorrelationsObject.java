@@ -1,10 +1,12 @@
 package org.janelia.correlations;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.TreeMap;
 
 import net.imglib2.Cursor;
 import net.imglib2.Pair;
+import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayCursor;
 import net.imglib2.img.array.ArrayImg;
@@ -209,6 +211,59 @@ public class CorrelationsObject implements CorrelationsObjectInterface {
 		
 		return new ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType> >( entryA, entryB );
 	}
+
+
+	@Override
+	public ArrayImg<DoubleType, DoubleArray> toMatrix( final long x, final long y ) {
+		 final int nSlices = this.getMetaMap().size();
+         final ArrayImg<DoubleType, DoubleArray> matrix = ArrayImgs.doubles( nSlices, nSlices );
+         for ( final DoubleType m : matrix ) {
+                 m.set( Double.NaN );
+         }
+         
+         final Iterator<Long> iterator = this.metaMap.keySet().iterator();
+         final long zMin = iterator.next();
+         long zMaxTmp = zMin;
+
+         while ( iterator.hasNext() )
+                 zMaxTmp = iterator.next();
+         final long zMax = zMaxTmp + 1;
+
+         for ( long zRef = zMin; zRef < zMax; ++zRef ) {
+        	     final RandomAccessibleInterval<FloatType> correlationsAt = this.correlationsMap.get( zRef );
+        	     System.out.println( x + " " + y + " " + zRef + " " + correlationsAt);
+        	 
+                 final long relativeZ = zRef - zMin;
+                 final IntervalView<DoubleType> row = Views.hyperSlice( matrix, 1, relativeZ);
+
+                 final RandomAccess<FloatType> correlationsAccess = correlationsAt.randomAccess();
+                 final RandomAccess<DoubleType> rowAccess         = row.randomAccess();
+                 
+                 correlationsAccess.setPosition( x, 0 );
+                 correlationsAccess.setPosition( y, 1 );
+                 correlationsAccess.setPosition( 0, 2 );
+
+                 final Meta meta = this.metaMap.get( zRef );
+
+                 rowAccess.setPosition( Math.max( meta.zCoordinateMin - zMin, 0 ), 0 );
+
+                 for ( long zComp = meta.zCoordinateMin; zComp < meta.zCoordinateMax; ++zComp ) {
+                         if ( zComp < zMin || zComp >= zMax ) {
+                                 correlationsAccess.fwd( 2 );
+                                 continue;
+                         }
+                         rowAccess.get().set( correlationsAccess.get().getRealDouble() );
+                         rowAccess.fwd( 0 );
+                         correlationsAccess.fwd( 2 );
+
+                 }
+
+         }
+
+
+         return matrix;
+	}
+	
 	
 }
  

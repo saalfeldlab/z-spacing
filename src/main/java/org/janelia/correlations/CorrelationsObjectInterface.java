@@ -3,6 +3,8 @@ package org.janelia.correlations;
 import java.util.TreeMap;
 
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.array.ArrayImg;
+import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 
@@ -33,6 +35,8 @@ public interface CorrelationsObjectInterface {
 	public ConstantPair<RandomAccessibleInterval<FloatType>, RandomAccessibleInterval<FloatType> > extractCorrelationsAt(long x, long y, long z);
 	
 	public ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType> > extractDoubleCorrelationsAt(long x, long y, long z);
+	
+	public ArrayImg<DoubleType, DoubleArray> toMatrix( long x, long y );
 	
 	public long getzMin();
 	
