@@ -38,6 +38,8 @@ public interface CorrelationsObjectInterface {
 	
 	public ArrayImg<DoubleType, DoubleArray> toMatrix( long x, long y );
 	
+	void toMatrix( final long x, final long y, RandomAccessibleInterval< DoubleType > matrix );
+	
 	public ArrayImg<DoubleType, DoubleArray> toMatrix( long x, long y, long zMin,
 			long zMax );
 	

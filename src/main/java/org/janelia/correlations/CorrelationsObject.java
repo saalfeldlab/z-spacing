@@ -235,45 +235,52 @@ public class CorrelationsObject implements CorrelationsObjectInterface {
 			final long zMax ) {
 		 final int nSlices = this.getMetaMap().size();
          final ArrayImg<DoubleType, DoubleArray> matrix = ArrayImgs.doubles( nSlices, nSlices );
-         for ( final DoubleType m : matrix ) {
-                 m.set( Double.NaN );
-         }
-         
-         
 
-         for ( long zRef = zMin; zRef < zMax; ++zRef ) {
-        	     final RandomAccessibleInterval<FloatType> correlationsAt = this.correlationsMap.get( zRef );
-        	     System.out.println( x + " " + y + " " + zRef + " " + correlationsAt);
-        	 
-                 final long relativeZ = zRef - zMin;
-                 final IntervalView<DoubleType> row = Views.hyperSlice( matrix, 1, relativeZ);
-
-                 final RandomAccess<FloatType> correlationsAccess = correlationsAt.randomAccess();
-                 final RandomAccess<DoubleType> rowAccess         = row.randomAccess();
-                 
-                 correlationsAccess.setPosition( x, 0 );
-                 correlationsAccess.setPosition( y, 1 );
-                 correlationsAccess.setPosition( 0, 2 );
-
-                 final Meta meta = this.metaMap.get( zRef );
-
-                 rowAccess.setPosition( Math.max( meta.zCoordinateMin - zMin, 0 ), 0 );
-
-                 for ( long zComp = meta.zCoordinateMin; zComp < meta.zCoordinateMax; ++zComp ) {
-                         if ( zComp < zMin || zComp >= zMax ) {
-                                 correlationsAccess.fwd( 2 );
-                                 continue;
-                         }
-                         rowAccess.get().set( correlationsAccess.get().getRealDouble() );
-                         rowAccess.fwd( 0 );
-                         correlationsAccess.fwd( 2 );
-
-                 }
-
-         }
-
+         this.toMatrix(zMax, y, matrix);
 
          return matrix;
+	}
+
+
+	@Override
+	public void toMatrix(final long x, final long y,
+			final RandomAccessibleInterval<DoubleType> matrix) {
+		for ( final DoubleType m : Views.flatIterable( matrix ) ) {
+            m.set( Double.NaN );
+    }
+    
+
+    for ( long zRef = zMin; zRef < zMax; ++zRef ) {
+   	     final RandomAccessibleInterval<FloatType> correlationsAt = this.correlationsMap.get( zRef );
+   	     System.out.println( x + " " + y + " " + zRef + " " + correlationsAt);
+   	 
+            final long relativeZ = zRef - zMin;
+            final IntervalView<DoubleType> row = Views.hyperSlice( matrix, 1, relativeZ);
+
+            final RandomAccess<FloatType> correlationsAccess = correlationsAt.randomAccess();
+            final RandomAccess<DoubleType> rowAccess         = row.randomAccess();
+            
+            correlationsAccess.setPosition( x, 0 );
+            correlationsAccess.setPosition( y, 1 );
+            correlationsAccess.setPosition( 0, 2 );
+
+            final Meta meta = this.metaMap.get( zRef );
+
+            rowAccess.setPosition( Math.max( meta.zCoordinateMin - zMin, 0 ), 0 );
+
+            for ( long zComp = meta.zCoordinateMin; zComp < meta.zCoordinateMax; ++zComp ) {
+                    if ( zComp < zMin || zComp >= zMax ) {
+                            correlationsAccess.fwd( 2 );
+                            continue;
+                    }
+                    rowAccess.get().set( correlationsAccess.get().getRealDouble() );
+                    rowAccess.fwd( 0 );
+                    correlationsAccess.fwd( 2 );
+
+            }
+
+    }
+
 	}
 	
 	
