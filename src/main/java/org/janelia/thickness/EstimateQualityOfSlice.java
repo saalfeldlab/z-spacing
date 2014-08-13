@@ -9,6 +9,8 @@ import mpicbg.models.Point;
 import mpicbg.models.PointMatch;
 import net.imglib2.Cursor;
 import net.imglib2.IterableInterval;
+import net.imglib2.RandomAccess;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.img.array.ArrayImg;
@@ -77,6 +79,71 @@ public class EstimateQualityOfSlice {
 			multipliers[ z ] = model.apply( ONE_DIMENSION_ONE_POSITION )[0] * inverseRegularizerWeight + regularizerWeight;
 			
 		}
+		return multipliers;
+	}
+	
+	public static < M extends Model< M > > double[] estimateFromMatrix(
+			final RandomAccessibleInterval< DoubleType > localMatrix,
+			final RandomAccessibleInterval< DoubleType > localWeights,
+			final M model,
+			final RandomAccessibleInterval< DoubleType > localCoordinates,
+			final RealRandomAccessible< DoubleType > correlationFit,
+			final double regularizerWeight
+			) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+		final double[] multipliers = new double[ (int) localWeights.dimension( 0 ) ];
+		final RealRandomAccess<DoubleType> fitRandomAccess    = correlationFit.realRandomAccess();
+		final RandomAccess<DoubleType> coordinateRandomAccess = localCoordinates.randomAccess();
+		
+		final double inverseRegularizerWeight = 1 - regularizerWeight;
+		
+		final RandomAccess<DoubleType> weightAccess = localWeights.randomAccess();
+		
+		
+		for ( int z = 0; z < localMatrix.dimension( 0 ); ++z ) {
+			
+			final IterableInterval<DoubleType> correlationsAtBin = Views.flatIterable( Views.hyperSlice( localMatrix, 0, z ) );
+			final ArrayList< PointMatch > pointMatches           = new ArrayList<PointMatch>();
+			
+			coordinateRandomAccess.setPosition( z, 0 );
+			final double refCoordinate = coordinateRandomAccess.get().get();
+			
+			final Cursor< DoubleType > correlationBinCursor = correlationsAtBin.localizingCursor();
+			while ( correlationBinCursor.hasNext() ) {
+				
+				final DoubleType tc = correlationBinCursor.next();
+				final int currentZ = correlationBinCursor.getIntPosition( 0 );
+				
+				if ( currentZ == z )
+					continue;
+				
+				weightAccess.setPosition( z, 0 );
+				
+				final double c = tc.get();
+				coordinateRandomAccess.setPosition( currentZ, 0);
+				fitRandomAccess.setPosition( coordinateRandomAccess.get().get() - refCoordinate, 0 );
+
+				final double fra = fitRandomAccess.get().get();
+				
+				if ( Double.isNaN( c ) || Double.isNaN( fra ) )
+					continue;
+				
+				/* TODO inverts because LUTRealTransform can only increasing */
+				pointMatches.add(
+						new PointMatch(
+								new Point( new float[]{ ( float )c } ),
+								new Point( new float[]{ -( float )fra } ),
+								weightAccess.get().getRealFloat()) );
+				
+			}
+	
+			model.fit( pointMatches );
+			
+			/* set factor regularized towards 1.0 */
+			multipliers[ z ] = model.apply( ONE_DIMENSION_ONE_POSITION )[0] * inverseRegularizerWeight + regularizerWeight;
+			
+		}
+		
+		
 		return multipliers;
 	}
 	
