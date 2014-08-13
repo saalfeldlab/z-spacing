@@ -29,8 +29,7 @@ public class SingleDimensionLUTGrid extends AbstractLUTGrid {
 			target[d] = source[d];
 			System.out.println( "Keeping dimension " + d + ": " + target[d]);
 		}
-		System.out.println( "Applying to dimension " + this.applyTransformToDimension + ": " + source[this.applyTransformToDimension] + " ~> " + target[this.applyTransformToDimension]);
-		target[this.applyTransformToDimension] = this.apply( source[this.applyTransformToDimension] );
+		target[this.applyTransformToDimension] = this.applyChecked( source[this.applyTransformToDimension] );
 	}
 
 	@Override
@@ -39,7 +38,7 @@ public class SingleDimensionLUTGrid extends AbstractLUTGrid {
 		for ( int d = 0; d < this.nNonTransformedCoordinates; ++d ) {
 			target[d] = source[d];
 		}
-		target[applyTransformToDimension] = (float) this.apply( source[applyTransformToDimension] );
+		target[applyTransformToDimension] = (float) this.applyChecked( source[applyTransformToDimension] );
 	}
 	
 	@Override
@@ -58,7 +57,7 @@ public class SingleDimensionLUTGrid extends AbstractLUTGrid {
 		for ( int d = 0; d < this.nNonTransformedCoordinates; ++d ) {
 			source[d] = target[d];
 		}
-		source[applyTransformToDimension] = this.applyInverse( target[applyTransformToDimension] );
+		source[applyTransformToDimension] = this.applyInverseChecked( target[applyTransformToDimension] );
 	}
 
 	@Override
@@ -67,7 +66,7 @@ public class SingleDimensionLUTGrid extends AbstractLUTGrid {
 		for ( int d = 0; d < this.nNonTransformedCoordinates; ++d ) {
 			source[d] = target[d];
 		}
-		source[applyTransformToDimension] = (float) this.applyInverse( target[applyTransformToDimension] );
+		source[applyTransformToDimension] = (float) this.applyInverseChecked( target[applyTransformToDimension] );
 	}
 
 	@Override
@@ -76,7 +75,7 @@ public class SingleDimensionLUTGrid extends AbstractLUTGrid {
 		for ( int d = 0; d < this.nNonTransformedCoordinates; ++d ) {
 			source.setPosition( target.getDoublePosition( d ), d );
 		}
-		source.setPosition( this.applyInverse( target.getDoublePosition( applyTransformToDimension ) ), 
+		source.setPosition( this.applyInverseChecked( target.getDoublePosition( applyTransformToDimension ) ), 
 				applyTransformToDimension );
 	}
 

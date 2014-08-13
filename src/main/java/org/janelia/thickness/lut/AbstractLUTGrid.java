@@ -21,6 +21,9 @@ public abstract class AbstractLUTGrid implements InvertibleRealTransform {
 	
 	protected final int numSourceDimensions; // number of input dimensions of the transform
 	protected final int numTargetDimensions; // number of output dimensions of the transform
+	/**
+	 * NOT THREADSAFE, AS TO ACCESS MEMBER -> THINK ABOUT CHANGING IT!!
+	 */
 	protected final int lutMaxIndex; // max index of the look-up table
 	protected final int nNonTransformedCoordinates; // number of grid dimensions (one less than lutArray.numDimensions())
 	protected final Dimensions dimensions; // actual grid dimensions
@@ -28,9 +31,11 @@ public abstract class AbstractLUTGrid implements InvertibleRealTransform {
 	final protected RealRandomAccessible< RealComposite< DoubleType > > coefficients; // interpolated composite of lutArray
 	final protected InterpolatorFactory< RealComposite< DoubleType >, RandomAccessible< RealComposite< DoubleType > > > interpolatorFactory = 
 			new NLinearInterpolatorFactory< RealComposite< DoubleType > >(); // how to interpolate for coefficients
+//			new NearestNeighborInterpolatorFactory<RealComposite<DoubleType>>();
 	protected RealRandomAccess<RealComposite<DoubleType>> access; // temporary variables 
 	protected RealComposite< DoubleType > currentLut; // temporary variables 
-
+	
+	
 	public AbstractLUTGrid(final int numSourceDimensions, final int numTargetDimensions,
 			final ArrayImg<DoubleType, DoubleArray> lutArray) {
 		super();
@@ -41,12 +46,13 @@ public abstract class AbstractLUTGrid implements InvertibleRealTransform {
 		final CompositeIntervalView<DoubleType, RealComposite<DoubleType>> collapsedSource = Views.collapseReal( lutArray );
 		this.dimensions = new FinalInterval( collapsedSource );
 		this.nNonTransformedCoordinates = this.dimensions.numDimensions();
-		this.lutMaxIndex = (int) (this.lutArray.dimension( this.nNonTransformedCoordinates ) );
-		final ExtendedRandomAccessibleInterval<RealComposite<DoubleType>, CompositeIntervalView<DoubleType, RealComposite<DoubleType>>> extendedCollapsedSource = Views.extendBorder( collapsedSource );
+		this.lutMaxIndex = (int) (this.lutArray.dimension( this.nNonTransformedCoordinates ) ) - 1;
+		final ExtendedRandomAccessibleInterval<RealComposite<DoubleType>, CompositeIntervalView<DoubleType, RealComposite<DoubleType>>> extendedCollapsedSource = 
+				Views.extendBorder( collapsedSource );
 		this.coefficients = Views.interpolate( extendedCollapsedSource, this.interpolatorFactory );
 		this.access = this.coefficients.realRandomAccess();
 		this.currentLut = this.access.get();
-		
+
 		
 	}
 
@@ -61,7 +67,6 @@ public abstract class AbstractLUTGrid implements InvertibleRealTransform {
 	}
 	
 	protected double apply( final double lutCoordinate ) {
-//		this.updateCoordinates( gridCoordinates );
 		this.currentLut = this.access.get();
 		
 		final int zFloor = ( int ) lutCoordinate;
@@ -85,6 +90,9 @@ public abstract class AbstractLUTGrid implements InvertibleRealTransform {
 			return -Double.MAX_VALUE;
 		else if ( lutCoordinate > this.lutMaxIndex )
 			return Double.MAX_VALUE;
+		else if ( lutCoordinate == this.lutMaxIndex ) {
+			return this.access.get().get( this.lutMaxIndex ).get();
+		}
 		else
 			return apply( lutCoordinate );
 	}
@@ -110,7 +118,8 @@ public abstract class AbstractLUTGrid implements InvertibleRealTransform {
 				max = i;
 			else
 				min = i;
-			i = ( ( max - min ) >> 1 ) + min;
+			// put i in between min and max: i <- 0.5 * (max + min)
+			i = ( ( max + min ) >> 1 );
 		}
 		while ( i != min );
 		return i;
@@ -157,19 +166,19 @@ public abstract class AbstractLUTGrid implements InvertibleRealTransform {
 	
 	protected void updateCoordinates( final double[] gridCoordinates ) {
 		for ( int d = 0; d < this.nNonTransformedCoordinates; ++d ) {
-			this.access.setPosition( gridCoordinates[d], d);
+			this.access.setPosition( gridCoordinates[d], d );
 		}
 	}
 	
 	protected void updateCoordinates( final float[] gridCoordinates ) {
 		for ( int d = 0; d < this.nNonTransformedCoordinates; ++d ) {
-			this.access.setPosition( gridCoordinates[d], d);
+			this.access.setPosition( gridCoordinates[d], d );
 		}
 	}
 	
 	protected void updateCoordinates(final RealLocalizable gridCoordinates ) {
 		for ( int d = 0; d < this.nNonTransformedCoordinates; ++d ) {
-			this.access.setPosition( gridCoordinates.getDoublePosition( d ), d);
+			this.access.setPosition( gridCoordinates.getDoublePosition( d ), d );
 		}
 	}
 
