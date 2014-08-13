@@ -379,7 +379,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 
                 this.shiftMediator.mediate( shifts, mediatedShifts );
 
-                final ArrayCursor<DoubleType> mediatedCursor = mediatedShifts.cursor();
+                final ArrayCursor<DoubleType> mediatedCursor   = mediatedShifts.cursor();
                 final ArrayCursor<DoubleType> coordinateCursor = coordinates.cursor();
 
 
