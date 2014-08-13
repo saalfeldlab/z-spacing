@@ -1,12 +1,25 @@
 package org.janelia.thickness;
 
-import java.util.Iterator;
+import ij.IJ;
 
+import java.util.ArrayList;
+import java.util.TreeMap;
+
+import mpicbg.models.IllDefinedDataPointsException;
 import mpicbg.models.Model;
+import mpicbg.models.NotEnoughDataPointsException;
+import net.imglib2.Cursor;
+import net.imglib2.ExtendedRandomAccessibleInterval;
+import net.imglib2.RandomAccessible;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.RealRandomAccessible;
 import net.imglib2.img.array.ArrayCursor;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
+import net.imglib2.interpolation.InterpolatorFactory;
+import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
+import net.imglib2.outofbounds.OutOfBounds;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
@@ -15,6 +28,7 @@ import org.janelia.correlations.CorrelationsObjectInterface;
 import org.janelia.thickness.inference.visitor.LocalVisitor;
 import org.janelia.thickness.lut.LUTGrid;
 import org.janelia.thickness.mediator.OpinionMediator;
+import org.janelia.utility.ConstantPair;
 
 
 public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > {
@@ -38,13 +52,8 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
 		this.measurementsMultiplierModel = measurementsMultiplierModel;
 		this.shiftMediator = shiftMediator;
 		this.correlationsObject = correlations;
-		final Iterator<Long> iterator = this.correlationsObject.getMetaMap().keySet().iterator();
-        zMin = iterator.next();
-        long zMaxTmp = zMin;
-
-        while ( iterator.hasNext() )
-                zMaxTmp = iterator.next();
-        zMax = zMaxTmp + 1;
+		this.zMin = this.correlationsObject.getzMin(); // Collections.min( this.correlationsObject.getMetaMap().keySet() );
+        this.zMax = this.correlationsObject.getzMax(); // Collections.max( this.correlationsObject.getMetaMap().keySet() );
 	}
 
 
@@ -82,8 +91,28 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
 			final int stopY,
 			final int stepX,
 			final int stepY,
+			final Options options ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+		return estimate(
+				startX, 
+				startY, 
+				stopX, 
+				stopY, 
+				stepX, 
+				stepY, 
+				new LocalVisitor() {
+				}, 
+				options);
+	}
+	
+	public ArrayImg< DoubleType, DoubleArray > estimate(
+			final int startX,
+			final int startY,
+			final int stopX,
+			final int stopY,
+			final int stepX,
+			final int stepY,
 			final LocalVisitor visitor,
-			final Options options ) {
+			final Options options ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 		
 		final int nX = ( stopX - startX ) / stepX;
         final int nY = ( stopY - startY ) / stepY;
@@ -126,22 +155,22 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
 			final ArrayImg<DoubleType, DoubleArray> coordinates,
 			final ArrayImg<DoubleType, DoubleArray> weights,
 			final LocalVisitor visitor,
-			final Options options ) {
+			final Options options ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 		
 		final int nX = ( stopX - startX ) / stepX;
         final int nY = ( stopY - startY ) / stepY;
-        final int nZ = (int) coordinates.dimension( 3 );
+        final int nZ = (int) coordinates.dimension( 2 );
         
-        final LUTGrid lutGrid = new LUTGrid( 3, 3, coordinates );
+        final LUTGrid lutGrid = new LUTGrid( 4, 4, coordinates );
         final ArrayImg<DoubleType, DoubleArray> matrices = ArrayImgs.doubles( nX, nY, nZ, nZ );
         
         for ( int y = 0; y < nY; ++y ) {
         	final IntervalView<DoubleType> ySliced = Views.hyperSlice( matrices, 1, y );
         	final int realY = startY + y*stepY;
         	for ( int x = 0; x < nX; ++x ) {
-        		final IntervalView<DoubleType> xSliced = Views.hyperSlice( ySliced, 0, x );
+        		final IntervalView<DoubleType> xySliced = Views.hyperSlice( ySliced, 0, x );
         		final int realX = startX + x*stepX;
-        		this.correlationsObject.toMatrix( realX, realY, xSliced );
+        		this.correlationsObject.toMatrix( realX, realY, xySliced );
         	}
         }
         
@@ -150,6 +179,7 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
         for ( int iteration = 0; iteration < options.nIterations; ++iteration ) {
         	copyDeep( coordinates, previousCoordinates );
         	for ( int y = 0; y < nY; ++y ) {
+        		IJ.log( String.format( "y=%d/%d", y, nY ));
         		for ( int x = 0; x < nX; ++x ) {
         			estimateCoordinatesAtXY( 
         					matrices,
@@ -167,7 +197,7 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
         	
         }
 		
-		return null;
+		return coordinates;
 	}
 	
 	
@@ -181,14 +211,90 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
 			final int y, 
 			final Options options, 
 			final LocalVisitor visitor, 
-			final int iteration) {
+			final int iteration) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 		
 		final IntervalView<DoubleType> localCoordinates = 
 				Views.hyperSlice( Views.hyperSlice( coordinates, 1, y), 0, x );
-		final IntervalView<DoubleType> localPreviousCoordinates = 
-				Views.hyperSlice( Views.hyperSlice( previousCoordinates, 1, y), 0, x );
 		final IntervalView<DoubleType> localWeights = 
 				Views.hyperSlice( Views.hyperSlice( weights, 1, y), 0, x );
+		final IntervalView<DoubleType> localMatrix = 
+				Views.hyperSlice( Views.hyperSlice( matrices, 1, y), 0, x );
+		
+		
+		final double[] variances = new double[ options.comparisonRange ];
+		
+		final double[] estimatedFit = EstimateCorrelationsAtSamplePoints.estimateFromMatrix( 
+				matrices, 
+				localWeights, 
+				lutGrid, 
+				localCoordinates,
+				options.comparisonRange, 
+				this.correlationFitModel, 
+				variances,
+				x,
+				y );
+		
+		
+		final double[] multipliers = EstimateQualityOfSlice.estimateFromMatrix(
+				localMatrix,
+				localWeights,
+				this.measurementsMultiplierModel,
+				localCoordinates,
+				mirrorAndExtend( estimatedFit, new NLinearInterpolatorFactory< DoubleType >() ),
+				options.multiplierGenerationRegularizerWeight );
+		
+		final TreeMap< Long, ArrayList< ConstantPair< Double, Double > > > shifts =
+				ShiftCoordinates.collectShiftsFromMatrix(
+						localCoordinates,
+						matrices,
+						localWeights,
+						multipliers,
+						lutGrid,
+						x,
+						y);
+		
+		final ArrayImg< DoubleType, DoubleArray > mediatedShifts = ArrayImgs.doubles( localCoordinates.dimension( 0 ) );
+		
+		this.shiftMediator.mediate( shifts, mediatedShifts );
+		
+        
+        
+        final ExtendedRandomAccessibleInterval<DoubleType, ArrayImg<DoubleType, DoubleArray>> extendedPreviousCoordinates = 
+        		Views.extendBorder( previousCoordinates );
+        
+        final Cursor<DoubleType> coordCursor               = Views.flatIterable( localCoordinates ).cursor();
+        final ArrayCursor<DoubleType> mediatedCursor       = mediatedShifts.cursor();
+        final OutOfBounds<DoubleType> previousAccess = extendedPreviousCoordinates.randomAccess();
+        
+        double previousPositionRegularizer;
+        
+        final DoubleType dummy = new DoubleType();
+        
+        final double newPositionWeight = 1.0 - options.coordinateUpdateRegularizerWeight;
+        
+        for ( int pos = 0; pos < localCoordinates.dimension( 0 ); ++pos ) {
+        	
+        	previousPositionRegularizer = 0.0;
+        	
+        	coordCursor.fwd();
+        	mediatedCursor.fwd();
+        	
+        	previousAccess.setPosition( pos, 2 );
+        	for ( int dy = -1; dy <= 1; ++dy ) {
+        		previousAccess.setPosition( y + dy, 1 );
+        		for ( int dx = -1; dx <= 1; ++dx ) {
+        			previousAccess.setPosition( x + dx, 0 );
+        			previousPositionRegularizer += previousAccess.get().get();
+        		}
+        	}
+        	previousPositionRegularizer /= 9.0;
+        	dummy.set( mediatedCursor.get().get() * options.shiftProportion );
+    		coordCursor.get().add( dummy );
+    		coordCursor.get().mul( newPositionWeight );
+    		dummy.set( previousPositionRegularizer * options.coordinateUpdateRegularizerWeight );
+    		coordCursor.get().add( dummy );
+        }
+        
 	}
 
 
@@ -199,6 +305,17 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
 		while ( s.hasNext() )
 			t.next().set( s.next () );
 	}
+	
+	private static RealRandomAccessible< DoubleType > mirrorAndExtend(
+            final double[] data,
+            final InterpolatorFactory< DoubleType, RandomAccessible< DoubleType > > interpolatorFactory )
+    {
+            final ArrayImg< DoubleType, DoubleArray > img = ArrayImgs.doubles( data, new long[]{ data.length } );
+            final RandomAccessible< DoubleType > mirror = Views.extendMirrorSingle( img );
+            final RandomAccessibleInterval< DoubleType > crop = Views.interval( mirror, new long[]{ 1 - data.length }, new long[]{ data.length - 1 } );
+            final RandomAccessible< DoubleType > extension = Views.extendValue( crop, new DoubleType( Double.NaN ) );
+            return Views.interpolate( extension, interpolatorFactory );
+    }
 	 
 
 }
