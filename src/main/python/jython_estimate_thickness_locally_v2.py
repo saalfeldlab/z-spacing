@@ -12,6 +12,7 @@ from ij.plugin import StackCombiner
 from ij.process import ImageConverter
 
 from java.lang import Double
+from java.lang import Float
 from java.lang import Long
 from java.lang import System
 
@@ -33,6 +34,7 @@ from net.imglib2.view import Views
 from net.imglib2.realtransform import RealViews
 from net.imglib2.img.imageplus import ImagePlusImgs
 from net.imglib2.type.numeric.real import DoubleType
+from net.imglib2.type.numeric.real import FloatType
 
 from org.janelia.models import ScaleModel
 from org.janelia.utility import ConstantPair
@@ -228,7 +230,7 @@ if __name__ == "__main__":
     stackSource = imgSource.getStack()
     conv = ImageConverter( imgSource )
     conv.convertToGray32()
-    nIterations = 10
+    nIterations = 20
     nThreads = 48
     scale = 1.0
     xyScale = 1.0
@@ -238,12 +240,13 @@ if __name__ == "__main__":
     options = EstimateThicknessLocally.Options.generateDefaultOptions()
     options.nIterations = nIterations
     options.nThreads = nThreads
-    options.neighborRegularizerWeight = 0.25
-    options.shiftProportion = 1.0
-    options.coordinateUpdateRegularizerWeight = 0.05
+    options.neighborRegularizerWeight = 0.5
+    options.shiftProportion = 0.3
+    options.coordinateUpdateRegularizerWeight = 0.01
     # if you want to specify values for options, do:
     # options.multiplierGenerationRegularizerWeight = <value>
     # or equivalent
+    interpolatorFactory = FloorInterpolatorFactory() # for rendering result image
 
     img = imgSource
     if doXYScale:
@@ -414,8 +417,7 @@ if __name__ == "__main__":
         metaString   = options.toString()
         metaString  += 'xyStep\t%d\n' % step
 
-        with open( metaPath, 'w' ) as f:
-            f.write( metaString )
+        
 
         show  = ImgLib2Display.copyToImagePlus( InferFromCorrelationsObject.convertToFloat( result ) )
         show2 = show.duplicate()
@@ -432,7 +434,7 @@ if __name__ == "__main__":
         reslicedPath       = resultFolder.rstrip('/') + '/reslicedCombined.tif'
 
         tf = InferFromCorrelationsObject.convertToTransformField2D( result, step, step, img.getWidth(), img.getHeight() )
-        interpolated = Views.interpolate( Views.extendValue( ImagePlusImgs.from( imgSource), DoubleType( Double.NaN ) ), FloorInterpolatorFactory() )
+        interpolated = Views.interpolate( Views.extendValue( ImagePlusImgs.from( imgSource), FloatType( Float.NaN ) ), interpolatorFactory )
 
         resultImage = ImagePlusImgs.floats( imgSource.getWidth(), imgSource.getHeight(), imgSource.getStack().getSize() )
         transformed = Views.interval( RealViews.transform( interpolated, tf ), resultImage )
@@ -441,6 +443,11 @@ if __name__ == "__main__":
 
         resultImagePlus = ImageJFunctions.wrap( resultImage, '' ).duplicate()
         # resultImagePlus.show()
+
+        metaString += 'InterpolatorFactory\t%s\n' % str( interpolatorFactory.getClass().getName() )
+
+        with open( metaPath, 'w' ) as f:
+            f.write( metaString )
 
         IJ.save( show, shiftsPath )
         IJ.save( show2, relativeShiftsPath )
