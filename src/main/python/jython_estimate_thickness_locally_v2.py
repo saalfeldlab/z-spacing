@@ -4,8 +4,11 @@ from __future__ import with_statement
 from ij import IJ
 from ij import ImagePlus
 from ij import ImageStack
+
 from ij.plugin import FolderOpener
+from ij.plugin import Slicer
 from ij.plugin import StackCombiner
+
 from ij.process import ImageConverter
 
 from java.lang import Double
@@ -426,6 +429,7 @@ if __name__ == "__main__":
         relativeShiftsPath = resultFolder.rstrip('/') + '/relativeShifts.tif'
         resultImagePath    = resultFolder.rstrip('/') + '/result.tif'
         combinedPath       = resultFolder.rstrip('/') + '/combined.tif'
+        reslicedPath       = resultFolder.rstrip('/') + '/reslicedCombined.tif'
 
         tf = InferFromCorrelationsObject.convertToTransformField2D( result, step, step, img.getWidth(), img.getHeight() )
         interpolated = Views.interpolate( Views.extendValue( ImagePlusImgs.from( imgSource), DoubleType( Double.NaN ) ), FloorInterpolatorFactory() )
@@ -442,9 +446,13 @@ if __name__ == "__main__":
         IJ.save( show2, relativeShiftsPath )
         IJ.save( resultImagePlus, resultImagePath )
 
-        combined = ImagePlus( 'combined', StackCombiner().combineHorizontally( imgSource.getStack(), resultImagePlus.getStack() ) )
+        combined           = ImagePlus( 'combined', StackCombiner().combineHorizontally( imgSource.duplicate().getStack(), resultImagePlus.duplicate().getStack() ) )
+        reslicedSource     = Slicer().reslice( imgSource )
+        reslicedResult     = Slicer().reslice( resultImagePlus )
+        combinedVertically = ImagePlus( 'combinedVertically', StackCombiner().combineVertically( reslicedSource.getStack(), reslicedResult.getStack() ) )
         
         IJ.save( combined, combinedPath )
+        IJ.save( combinedVertically, reslicedPath )
         
         combined.show()
              
