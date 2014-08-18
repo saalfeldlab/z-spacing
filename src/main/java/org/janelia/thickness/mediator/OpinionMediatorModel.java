@@ -25,6 +25,7 @@ public class OpinionMediatorModel< M extends Model<M> > implements OpinionMediat
 		this.model = model;
 	}
 
+	@Override
 	public ArrayImg<DoubleType, DoubleArray> mediate(
 			final TreeMap<Long, ArrayList<ConstantPair<Double, Double>>> shifts) {
 		
@@ -35,6 +36,7 @@ public class OpinionMediatorModel< M extends Model<M> > implements OpinionMediat
 		return mediate( shifts, result );
 	}
 
+	@Override
 	public ArrayImg<DoubleType, DoubleArray> mediate(
 			final TreeMap<Long, ArrayList<ConstantPair<Double, Double>>> shifts,
 			final ArrayImg<DoubleType, DoubleArray> result) {
@@ -46,7 +48,7 @@ public class OpinionMediatorModel< M extends Model<M> > implements OpinionMediat
 				final ArrayList<ConstantPair<Double, Double>> localShifts = shifts.get( (long) i );
 				final ArrayList<PointMatch> pointMatches = new ArrayList< PointMatch >();
 				
-				if ( localShifts == null ) {
+				if ( localShifts == null || localShifts.size() == 0 ) {
 					cursor.get().set( 0.0 );
 				}
 				
@@ -58,8 +60,10 @@ public class OpinionMediatorModel< M extends Model<M> > implements OpinionMediat
 						pointMatches.add( new PointMatch( new Point( new float[] { 0.0f } ), new Point( new float[] { new Float( l.getA() ) } ), new Float( l.getB() ) ) );
 					}
 					
+//					final M mc = model.copy();
 					try {
 						model.fit( pointMatches );
+						cursor.get().set( model.apply( new float[] { 0.0f } )[ 0 ] );
 					} catch (final NotEnoughDataPointsException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -67,12 +71,17 @@ public class OpinionMediatorModel< M extends Model<M> > implements OpinionMediat
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-					cursor.get().set( model.apply( new float[] { 0.0f } )[ 0 ] );
+					
 				}
 			}
 		}
 		
 		return null;
+	}
+	
+	@Override
+	public OpinionMediatorModel< M > copy() {
+		return new OpinionMediatorModel< M >( this.model.copy() );
 	}
 
 }

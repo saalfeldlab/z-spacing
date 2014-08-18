@@ -1,7 +1,5 @@
 package org.janelia.thickness;
 
-import ij.IJ;
-
 import java.util.ArrayList;
 import java.util.TreeMap;
 
@@ -10,20 +8,17 @@ import mpicbg.models.Model;
 import mpicbg.models.NotEnoughDataPointsException;
 import mpicbg.models.Point;
 import mpicbg.models.PointMatch;
-import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
-import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.realtransform.InverseRealTransform;
 import net.imglib2.realtransform.RealTransformRealRandomAccessible;
 import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.numeric.real.DoubleType;
-import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
 import org.apache.commons.math.stat.descriptive.moment.Variance;
@@ -119,7 +114,6 @@ public class EstimateCorrelationsAtSamplePoints {
 			final RandomAccessibleInterval< DoubleType > localCoordinates,
 			final int comparisonRange,
 			final M correlationFitModel,
-			final double[] variances,
 			final int x,
 			final int y ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 		
@@ -143,66 +137,38 @@ final TreeMap<Integer, ArrayList<PointMatch>> pointCollections = new TreeMap< In
 		
 		final int XX = 203;
 		
-		if ( x == XX && y == 0 ) {
-		
-			IJ.log( x + " " + matrices.numDimensions() + " vs " + 
-					source2.numDimensions() + 
-					" sourceDim=" + lutGrid.numSourceDimensions() + 
-					" targetDim=" + lutGrid.numTargetDimensions() );
-		
-			final IntervalView<DoubleType> v1 = Views.hyperSlice( Views.hyperSlice(matrices, 1, y), 0, x );
-			final IntervalView<DoubleType> v2 = Views.interval( Views.hyperSlice( Views.hyperSlice( Views.raster( source2 ), 1, y), 0, x), new FinalInterval( v1 ) );
-			ImageJFunctions.show( v1 );
-			ImageJFunctions.show( v2 );
-			IJ.log( String.format( "v1.dimension=(%d,%d)", v1.dimension( 0 ), v1.dimension( 1 ) ) );
-			IJ.log( String.format( "v2.dimension=(%d,%d)", v2.dimension( 0 ), v2.dimension( 1 ) ) );
-			final double[] a = new double[0];
-//			a[1] = 123;
-		}
+//		if ( x == XX && y == 0 ) {
+//		
+//			IJ.log( x + " " + matrices.numDimensions() + " vs " + 
+//					source2.numDimensions() + 
+//					" sourceDim=" + lutGrid.numSourceDimensions() + 
+//					" targetDim=" + lutGrid.numTargetDimensions() );
+//		
+//			final IntervalView<DoubleType> v1 = Views.hyperSlice( Views.hyperSlice(matrices, 1, y), 0, x );
+//			final IntervalView<DoubleType> v2 = Views.interval( Views.hyperSlice( Views.hyperSlice( Views.raster( source2 ), 1, y), 0, x), new FinalInterval( v1 ) );
+//			ImageJFunctions.show( v1 );
+//			ImageJFunctions.show( v2 );
+//			IJ.log( String.format( "v1.dimension=(%d,%d)", v1.dimension( 0 ), v1.dimension( 1 ) ) );
+//			IJ.log( String.format( "v2.dimension=(%d,%d)", v2.dimension( 0 ), v2.dimension( 1 ) ) );
+//			final double[] a = new double[0];
+////			a[1] = 123;
+//		}
 		
 		for ( int i = 0; i < matrices.dimension( 3 ); ++i ) {
 			
 			access1.setPosition( i, 3 );
 			access1.setPosition( i, 2 );
 		
-//			String str = "1 - [";
-//			for ( int d = 0; d < access1.numDimensions(); ++d ) {
-//				str += access1.getDoublePosition(d) + ",\t"; 
-//			}
-//			str = str.substring(0, str.length() - 2 ) + "]";
-//			IJ.log( str );
-			lutGrid.apply( access1, access1 );
-			access2.setPosition( access1 );
-//			str = "2 - [";
-//			for ( int d = 0; d < access1.numDimensions(); ++d ) {
-//				str += access1.getDoublePosition(d) + ",\t"; 
-//			}
-//			str = str.substring(0, str.length() - 2 ) + "]";
-//			IJ.log( str );
-			
 			wAccess1.setPosition( i, 0 );
 			wAccess2.setPosition( i, 0 );
+			
+			lutGrid.apply(access1, access1);
+			access2.setPosition(access1);
 			
 			for ( int k = 0; k <= comparisonRange; ++k ) {
 				
 				final double a1 = access1.get().get();
 				final double a2 = access2.get().get();
-				
-//				if ( x == XX ) {
-//					IJ.log( String.format( "x=%f,y=%f,i=%d,k=%d,a1=%f,a2=%f,a1z1=%f,a1z2=%f,a2z1=%f,a2z2=%f", 
-//							access1.getDoublePosition( 0 ),
-//							access1.getDoublePosition( 1 ),
-//							i,
-//							k,
-//							a1,
-//							a2,
-//							access1.getDoublePosition( 3 ),
-//							access1.getDoublePosition( 2 ),
-//							access2.getDoublePosition( 3 ),
-//							access2.getDoublePosition( 2 ) ) );
-//					
-//					
-//				}
 				
 				final double w1 = 1.0; // wAccess1.get().get();
 				final double w2 = 1.0; // wAccess2.get().get();
@@ -214,8 +180,6 @@ final TreeMap<Integer, ArrayList<PointMatch>> pointCollections = new TreeMap< In
 				}
 				
 				if ( ( ! Double.isNaN( a1 ) ) && ( ! Double.isNaN( w1 ) ) )
-//					if ( k == comparisonRange )
-//						IJ.log( "" + x + " " + y + " " + i + " " + k + " " + (i + k) );
 					points.add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new float[]{ (float)a1 } ), (float) w1 ) );
 				
 				if ( ( ! Double.isNaN( a2 ) ) && ( ! Double.isNaN( w2 ) ) )
@@ -231,16 +195,10 @@ final TreeMap<Integer, ArrayList<PointMatch>> pointCollections = new TreeMap< In
 		}
 		
 		for ( int i = 0; i < result.length; ++i ) {
-			final double[] values = new double[ pointCollections.get( i ).size() ];
-//			IJ.log( String.format( "(%d,%d): %d/%d - %d", x, y, i, result.length, values.length ) );
-			for ( int k = 0; k < values.length; ++k ) {
-				values[k] = pointCollections.get( i ).get( k ).getP2().getW()[0];
-			}
 			correlationFitModel.fit( pointCollections.get( i ) );
 			
 			/* TODO inverts because LUTRealTransform can only increasing */
 			result[i] = -correlationFitModel.apply( ONE_DIMENSION_ZERO_POSITION )[ 0 ];
-			variances[i] = new Variance().evaluate( values );
 		}
 		
 		

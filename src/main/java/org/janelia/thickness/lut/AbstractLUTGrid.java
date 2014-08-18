@@ -22,7 +22,7 @@ public abstract class AbstractLUTGrid implements InvertibleRealTransform {
 	protected final int numSourceDimensions; // number of input dimensions of the transform
 	protected final int numTargetDimensions; // number of output dimensions of the transform
 	/**
-	 * NOT THREADSAFE, AS TO ACCESS MEMBER -> THINK ABOUT CHANGING IT!!
+	 * NOT THREADSAFE, AS TO MEMBER access -> THINK ABOUT CHANGING IT!!
 	 */
 	protected final int lutMaxIndex; // max index of the look-up table
 	protected final int nNonTransformedCoordinates; // number of grid dimensions (one less than lutArray.numDimensions())

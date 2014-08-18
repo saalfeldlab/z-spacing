@@ -19,7 +19,7 @@ public class ScaleModel extends AbstractModel<ScaleModel> {
 	}
 	
 	public ScaleModel() {
-		this( 0.0f );
+		this( 1.0f );
 	}
 
 	@Override

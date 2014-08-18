@@ -132,7 +132,7 @@ public class LUTGrid extends AbstractLUTGrid {
 	}
 
 	@Override
-	public InvertibleRealTransform copy() {
+	public LUTGrid copy() {
 		return new LUTGrid(numSourceDimensions, numTargetDimensions, lutArray);
 	}
 	

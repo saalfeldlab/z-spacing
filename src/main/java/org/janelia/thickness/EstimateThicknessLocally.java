@@ -2,8 +2,12 @@ package org.janelia.thickness;
 
 import ij.IJ;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.TreeMap;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import mpicbg.models.IllDefinedDataPointsException;
 import mpicbg.models.Model;
@@ -16,7 +20,10 @@ import net.imglib2.RealRandomAccessible;
 import net.imglib2.img.array.ArrayCursor;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.array.ArrayRandomAccess;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
+import net.imglib2.img.list.ListImg;
+import net.imglib2.img.list.ListRandomAccess;
 import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.outofbounds.OutOfBounds;
@@ -27,6 +34,7 @@ import net.imglib2.view.Views;
 import org.janelia.correlations.CorrelationsObjectInterface;
 import org.janelia.thickness.inference.visitor.LocalVisitor;
 import org.janelia.thickness.lut.LUTGrid;
+import org.janelia.thickness.lut.LUTRealTransform;
 import org.janelia.thickness.mediator.OpinionMediator;
 import org.janelia.utility.ConstantPair;
 
@@ -80,6 +88,29 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
         public int comparisonRange; // range for cross correlations
         public double neighborRegularizerWeight;
 
+        @Override
+        public String toString() {
+          final StringBuilder sb = new StringBuilder();
+          sb.append("[");
+          sb.append(getClass().getName());
+          sb.append("]\n");
+          for ( final Field f : this.getClass().getDeclaredFields() ) {
+        	  sb.append( f.getName() );
+        	  sb.append( "\t" );
+        	  try {
+				final StringBuilder append = sb.append( f.get( this ) );
+			} catch (final IllegalArgumentException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (final IllegalAccessException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+        	  sb.append( "\n" );
+          }
+          
+          return sb.toString();
+        }
 
 	}
 	
@@ -161,40 +192,94 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
         final int nY = ( stopY - startY ) / stepY;
         final int nZ = (int) coordinates.dimension( 2 );
         
-        final LUTGrid lutGrid = new LUTGrid( 4, 4, coordinates );
         final ArrayImg<DoubleType, DoubleArray> matrices = ArrayImgs.doubles( nX, nY, nZ, nZ );
         
+       
+        final ListImg< RealRandomAccessible<DoubleType>> listMatrices = 
+        		new ListImg< RealRandomAccessible<DoubleType > >(
+        				new long[] { nX, nY}, 
+        				null );
+        final ListRandomAccess<RealRandomAccessible<DoubleType>> listRA = listMatrices.randomAccess();
         for ( int y = 0; y < nY; ++y ) {
         	final IntervalView<DoubleType> ySliced = Views.hyperSlice( matrices, 1, y );
         	final int realY = startY + y*stepY;
+        	listRA.setPosition( y,  1 );
         	for ( int x = 0; x < nX; ++x ) {
         		final IntervalView<DoubleType> xySliced = Views.hyperSlice( ySliced, 0, x );
         		final int realX = startX + x*stepX;
+        		listRA.setPosition( x, 0 );
         		this.correlationsObject.toMatrix( realX, realY, xySliced );
+        		final ArrayImg<DoubleType, DoubleArray> localMatrix = ArrayImgs.doubles( nZ + 1, nZ + 1 );
+        		this.correlationsObject.toMatrix( realX, realY, localMatrix );
+        		final ArrayRandomAccess<DoubleType> localAccess = localMatrix.randomAccess();
+        		for ( int d = 0; d < 2; ++d ) {
+        			final Cursor<DoubleType> extensionCursor = Views.flatIterable( Views.hyperSlice( localMatrix, d, nZ ) ).cursor();
+        			while ( extensionCursor.hasNext() ) {
+        				extensionCursor.fwd();
+        				final int currPos = extensionCursor.getIntPosition( 0 );
+        				localAccess.setPosition( nZ - 1, d );
+        				localAccess.setPosition( currPos, 1 - d );
+        				extensionCursor.get().set( localAccess.get() );
+        			}
+        		}
+        		final RealRandomAccessible<DoubleType> interpolatedExtended = Views.interpolate( 
+        				Views.extendValue(localMatrix, new DoubleType( Double.NaN ) ), 
+        				new NLinearInterpolatorFactory<DoubleType>() );
+        		listRA.set( interpolatedExtended );
         	}
         }
         
-        final ArrayImg< DoubleType, DoubleArray > previousCoordinates = ArrayImgs.doubles( nX, nY, nZ );
         
         for ( int iteration = 0; iteration < options.nIterations; ++iteration ) {
+        	
+        	final ArrayImg< DoubleType, DoubleArray > previousCoordinates = ArrayImgs.doubles( nX, nY, nZ );
         	copyDeep( coordinates, previousCoordinates );
+        	
+        	final ExecutorService executorService = Executors.newFixedThreadPool( options.nThreads );
+        	final ArrayList< Callable< Void > > tasks = new ArrayList<Callable< Void > >();
+        	
+        	
         	for ( int y = 0; y < nY; ++y ) {
-        		IJ.log( String.format( "y=%d/%d", y, nY ));
         		for ( int x = 0; x < nX; ++x ) {
-        			estimateCoordinatesAtXY( 
-        					matrices,
-        					coordinates,
-        					previousCoordinates,
-        					weights,
-        					lutGrid,
-        					x,
-        					y,
-        					options,
-        					visitor,
-        					iteration );
+        			
+        			final int finalX = x;
+        			final int finalY = y;
+        			final int finalIteration = iteration;
+        			final LUTGrid lutGridCopy = new LUTGrid( 4, 4, previousCoordinates );
+        			tasks.add( new Callable<Void>() {
+						@Override
+						public Void call() throws Exception {
+							estimateCoordinatesAtXY( 
+		        					matrices,
+		        					coordinates,
+		        					previousCoordinates,
+		        					weights,
+		        					lutGridCopy,
+		        					finalX,
+		        					finalY,
+		        					options,
+		        					visitor,
+		        					finalIteration );
+							return null;
+						}
+					});
+        			
         		}
         	}
         	
+        	try {
+				executorService.invokeAll( tasks );
+			} catch (final InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				throw new RuntimeException();
+			}
+        	executorService.shutdown();
+        	
+//        	final MaxColumnNormalization normalizer = new MaxColumnNormalization();
+//        	final AverageColumnNormalization normalizer = new AverageColumnNormalization();
+//        	normalizer.normalize( coordinates );
+        	IJ.log( "" + iteration + "/" + options.nIterations );
         }
 		
 		return coordinates;
@@ -215,22 +300,21 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
 		
 		final IntervalView<DoubleType> localCoordinates = 
 				Views.hyperSlice( Views.hyperSlice( coordinates, 1, y), 0, x );
+		final IntervalView<DoubleType> localPreviousCoordinates =
+				Views.hyperSlice( Views.hyperSlice( previousCoordinates, 1, y ), 0, x );
 		final IntervalView<DoubleType> localWeights = 
 				Views.hyperSlice( Views.hyperSlice( weights, 1, y), 0, x );
 		final IntervalView<DoubleType> localMatrix = 
 				Views.hyperSlice( Views.hyperSlice( matrices, 1, y), 0, x );
 		
 		
-		final double[] variances = new double[ options.comparisonRange ];
-		
 		final double[] estimatedFit = EstimateCorrelationsAtSamplePoints.estimateFromMatrix( 
 				matrices, 
 				localWeights, 
 				lutGrid, 
-				localCoordinates,
+				localPreviousCoordinates,
 				options.comparisonRange, 
-				this.correlationFitModel, 
-				variances,
+				this.correlationFitModel.copy(), // copy for thread safety
 				x,
 				y );
 		
@@ -238,25 +322,28 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
 		final double[] multipliers = EstimateQualityOfSlice.estimateFromMatrix(
 				localMatrix,
 				localWeights,
-				this.measurementsMultiplierModel,
-				localCoordinates,
+				this.measurementsMultiplierModel.copy(), // copy for thread safety
+				localPreviousCoordinates,
 				mirrorAndExtend( estimatedFit, new NLinearInterpolatorFactory< DoubleType >() ),
 				options.multiplierGenerationRegularizerWeight );
 		
 		final TreeMap< Long, ArrayList< ConstantPair< Double, Double > > > shifts =
 				ShiftCoordinates.collectShiftsFromMatrix(
-						localCoordinates,
-						matrices,
+						localPreviousCoordinates,
+						localMatrix,
 						localWeights,
 						multipliers,
-						lutGrid,
+						new LUTRealTransform( estimatedFit, 1, 1 ),
 						x,
 						y);
+//		IJ.log( ("AFTER SHIFT" ) );
 		
 		final ArrayImg< DoubleType, DoubleArray > mediatedShifts = ArrayImgs.doubles( localCoordinates.dimension( 0 ) );
 		
-		this.shiftMediator.mediate( shifts, mediatedShifts );
-		
+		// copy for thread safety
+//		IJ.log( "BEFORE MEDIATE" );
+		this.shiftMediator.copy().mediate( shifts, mediatedShifts );
+//		IJ.log( "AFTER MEDIATE" );
         
         
         final ExtendedRandomAccessibleInterval<DoubleType, ArrayImg<DoubleType, DoubleArray>> extendedPreviousCoordinates = 
@@ -264,13 +351,14 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
         
         final Cursor<DoubleType> coordCursor               = Views.flatIterable( localCoordinates ).cursor();
         final ArrayCursor<DoubleType> mediatedCursor       = mediatedShifts.cursor();
-        final OutOfBounds<DoubleType> previousAccess = extendedPreviousCoordinates.randomAccess();
+        final OutOfBounds<DoubleType> previousAccess       = extendedPreviousCoordinates.randomAccess();
         
         double previousPositionRegularizer;
         
         final DoubleType dummy = new DoubleType();
         
-        final double newPositionWeight = 1.0 - options.coordinateUpdateRegularizerWeight;
+        final double newPositionVsNeighborWeight = 1.0 - options.neighborRegularizerWeight;
+        final double newPositionVsGridWeight     = 1.0 - options.coordinateUpdateRegularizerWeight;
         
         for ( int pos = 0; pos < localCoordinates.dimension( 0 ); ++pos ) {
         	
@@ -279,20 +367,44 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
         	coordCursor.fwd();
         	mediatedCursor.fwd();
         	
+        	int count = 0;
+        	
         	previousAccess.setPosition( pos, 2 );
-        	for ( int dy = -1; dy <= 1; ++dy ) {
-        		previousAccess.setPosition( y + dy, 1 );
-        		for ( int dx = -1; dx <= 1; ++dx ) {
-        			previousAccess.setPosition( x + dx, 0 );
-        			previousPositionRegularizer += previousAccess.get().get();
-        		}
+        	
+        	for ( int dXY = -1; dXY <= 1; dXY += 2 ) {
+        		previousAccess.setPosition( x, 0 );
+        		previousAccess.setPosition( y + dXY, 1 );
+        		previousPositionRegularizer += previousAccess.get().get();
+        		++count;
+        		
+        		previousAccess.setPosition( y, 1 );
+        		previousAccess.setPosition( x + dXY, 0 );
+        		previousPositionRegularizer += previousAccess.get().get();
+        		++count;
         	}
-        	previousPositionRegularizer /= 9.0;
+        	
+//        	for ( int dy = -1; dy <= 1; ++dy ) {
+//        		previousAccess.setPosition( y + dy, 1 );
+//        		for ( int dx = -1; dx <= 1; ++dx ) {
+//        			previousAccess.setPosition( x + dx, 0 );
+//        			previousPositionRegularizer += previousAccess.get().get();
+//        			++count;
+//        		}
+//        	}
+        	
+        	final DoubleType c = coordCursor.get();
+        	previousPositionRegularizer /= count;
+        	// shift coordinate as estimated
         	dummy.set( mediatedCursor.get().get() * options.shiftProportion );
-    		coordCursor.get().add( dummy );
-    		coordCursor.get().mul( newPositionWeight );
-    		dummy.set( previousPositionRegularizer * options.coordinateUpdateRegularizerWeight );
-    		coordCursor.get().add( dummy );
+    		c.add( dummy );
+    		// regularize wrt to z bin
+    		dummy.set( options.coordinateUpdateRegularizerWeight * coordCursor.getIntPosition( 0 ) );
+    		c.mul( newPositionVsGridWeight );
+    		c.add( dummy );
+    		// regularize wrt to previous neighbor positions
+    		c.mul( newPositionVsNeighborWeight );
+    		dummy.set( previousPositionRegularizer * options.neighborRegularizerWeight );
+    		c.add( dummy );
         }
         
 	}
@@ -303,7 +415,7 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
 		final ArrayCursor<DoubleType> s = source.cursor();
 		final ArrayCursor<DoubleType> t = target.cursor();
 		while ( s.hasNext() )
-			t.next().set( s.next () );
+			t.next().set( s.next().get() );
 	}
 	
 	private static RealRandomAccessible< DoubleType > mirrorAndExtend(
@@ -317,5 +429,10 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
             return Views.interpolate( extension, interpolatorFactory );
     }
 	 
+	
+	public static void main( final String[] args ) {
+		final Options options = Options.generateDefaultOptions();
+		System.out.println( options.toString() );
+	}
 
 }
