@@ -68,10 +68,8 @@ def create_with_counter_if_existing( path, count = 0 ):
     newPath = path.rstrip('/')
     if count != 0:
         newPath = newPath + '-' + str(count)
-    # need trailing slash for os.makedirs
-    newPath = newPath + '/'
     try:
-        os.makedirs( os.path.dirname( newPath ) )
+        os.makedirs( newPath )
         return newPath
     except OSError, exception:
         if exception.errno == errno.EEXIST:
