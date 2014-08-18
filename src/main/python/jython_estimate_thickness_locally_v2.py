@@ -71,7 +71,6 @@ def create_with_counter_if_existing( path, count = 0 ):
     # need trailing slash for os.makedirs
     newPath = newPath + '/'
     try:
-        print newPath, count
         os.makedirs( os.path.dirname( newPath ) )
         return newPath
     except OSError, exception:
