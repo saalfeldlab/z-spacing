@@ -21,7 +21,7 @@ public abstract class AbstractColumnNormalization implements
 				while( cursor.hasNext() ) {
 					final T current = cursor.get();
 					// + baseVal or + refernceShift or + baseVal - refernceShift or what?
-					current.setReal( ( current.getRealDouble() - baseVal )*scalingFactor + baseVal - referenceShift );
+					current.setReal( ( current.getRealDouble() )*scalingFactor  );
 					cursor.fwd();
 				}
 			}

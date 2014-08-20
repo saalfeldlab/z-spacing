@@ -6,6 +6,7 @@ from ij import ImagePlus
 from ij import ImageStack
 
 from ij.plugin import FolderOpener
+from ij.plugin import ImageCalculator
 from ij.plugin import Slicer
 from ij.plugin import StackCombiner
 
@@ -22,6 +23,8 @@ from java.util import TreeMap
 from mpicbg.ij.integral import BlockPMCC
 from mpicbg.models import TranslationModel1D
 from mpicbg.ij.util import Filter
+
+from net.imglib2.algorithm.gauss3 import Gauss3
 
 from net.imglib2.img.array import ArrayImgs
 from net.imglib2.img.display.imagej import ImageJFunctions
@@ -221,7 +224,7 @@ if __name__ == "__main__":
     t0 = time.time()
     print t0 - t0
 
-    correlationRanges = range(8, 11, 7)
+    correlationRanges = range(8, 16, 70)
     # root = '/data/hanslovskyp/playground/pov-ray/variable_thickness_subset2/2200-2799/scale/0.04/200x200+100+100'
     # root = '/groups/saalfeld/home/hanslovskyp/playground/test_data/davi/intensity_corrected/crop/test/'
     root = '/data/hanslovskyp/jain-nobackup/234_data_downscaled/crop-150x150+75+175'
@@ -230,23 +233,26 @@ if __name__ == "__main__":
     stackSource = imgSource.getStack()
     conv = ImageConverter( imgSource )
     conv.convertToGray32()
-    nIterations = 20
+    nIterations = 5
     nThreads = 48
     scale = 1.0
     xyScale = 1.0
     doXYScale = False
-    step = 1
+    step = 2
     radius = [4, 4]
     options = EstimateThicknessLocally.Options.generateDefaultOptions()
     options.nIterations = nIterations
     options.nThreads = nThreads
-    options.neighborRegularizerWeight = 0.5
-    options.shiftProportion = 0.3
-    options.coordinateUpdateRegularizerWeight = 0.01
+    options.neighborRegularizerWeight = 0.7
+    options.shiftProportion = 0.5
+    options.coordinateUpdateRegularizerWeight = 0.05
     # if you want to specify values for options, do:
     # options.multiplierGenerationRegularizerWeight = <value>
     # or equivalent
     interpolatorFactory = FloorInterpolatorFactory() # for rendering result image
+
+    infoString  = '\n[information]\n'
+    infoString += 'cross-correlation-block-radius\t%s\n' % str( radius )
 
     img = imgSource
     if doXYScale:
@@ -411,11 +417,17 @@ if __name__ == "__main__":
         t5 = time.time()
         print t5 - t4
 
+        #resultSmoothed2D = ArrayImgs.doubles( result.dimension( 0 ), result.dimension( 1 ), result.dimension( 2 ) )
+        #sigma=[1.5,1.5,0.00000001]
+        #Gauss3.gauss( sigma, result, resultSmoothed2D )
+        #result = resultSmoothed2D
+        #infoString += 'GaussianConvolutionSigma = [%f,%f,%f]\n' % tuple( sigma )
+
         resultFolder = root.rstrip('/') + '/' + str( datetime.datetime.now() ).split('.')[0]
         resultFolder = create_with_counter_if_existing( resultFolder )
         metaPath     = resultFolder.rstrip('/') + '/meta'
         metaString   = options.toString()
-        metaString  += 'xyStep\t%d\n' % step
+        infoString  += 'xyStep\t%d\n' % step
 
         
 
@@ -432,6 +444,7 @@ if __name__ == "__main__":
         resultImagePath    = resultFolder.rstrip('/') + '/result.tif'
         combinedPath       = resultFolder.rstrip('/') + '/combined.tif'
         reslicedPath       = resultFolder.rstrip('/') + '/reslicedCombined.tif'
+        differencePath     = resultFolder.rstrip('/') + '/difference.tif'
 
         tf = InferFromCorrelationsObject.convertToTransformField2D( result, step, step, img.getWidth(), img.getHeight() )
         interpolated = Views.interpolate( Views.extendValue( ImagePlusImgs.from( imgSource), FloatType( Float.NaN ) ), interpolatorFactory )
@@ -442,10 +455,11 @@ if __name__ == "__main__":
         CopyFromIntervalToInterval.copyToRealType( transformed, resultImage )
 
         resultImagePlus = ImageJFunctions.wrap( resultImage, '' ).duplicate()
+
         # resultImagePlus.show()
 
-        metaString += 'InterpolatorFactory\t%s\n' % str( interpolatorFactory.getClass().getName() )
-
+        infoString += 'InterpolatorFactory\t%s\n' % str( interpolatorFactory.getClass().getName() )
+        metaString += infoString
         with open( metaPath, 'w' ) as f:
             f.write( metaString )
 
@@ -462,6 +476,11 @@ if __name__ == "__main__":
         IJ.save( combinedVertically, reslicedPath )
         
         combined.show()
+
+        ic = ImageCalculator()
+        difference = ic.run( "Subtract create 32-bit stack", resultImagePlus, imgSource )
+        difference.hide()
+        IJ.save( difference, differencePath )
              
              
         # array = jarray.zeros( result.dimension(0), 'd' )

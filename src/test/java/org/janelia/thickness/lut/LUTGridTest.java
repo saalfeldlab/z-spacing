@@ -57,7 +57,7 @@ public class LUTGridTest {
 		Assert.assertArrayEquals( sourceDouble, resultDouble, 0.0 );
 		Assert.assertArrayEquals( sourceFloat, resultFloat, 0.0f );
 		for ( int d  =  0; d < sourceRealPoint.numDimensions(); ++d ) {
-			Assert.assertEquals(sourceRealPoint.getDoublePosition( d ), resultRealPoint.getDoublePosition( d ), 0.0000000001 );
+			Assert.assertEquals(sourceRealPoint.getDoublePosition( d ), resultRealPoint.getDoublePosition( d ), 0.00000001 );
 		}
 	}
 

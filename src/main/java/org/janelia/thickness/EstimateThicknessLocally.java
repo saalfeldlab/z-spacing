@@ -14,6 +14,7 @@ import mpicbg.models.Model;
 import mpicbg.models.NotEnoughDataPointsException;
 import net.imglib2.Cursor;
 import net.imglib2.ExtendedRandomAccessibleInterval;
+import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
@@ -36,6 +37,10 @@ import org.janelia.thickness.inference.visitor.LocalVisitor;
 import org.janelia.thickness.lut.LUTGrid;
 import org.janelia.thickness.lut.LUTRealTransform;
 import org.janelia.thickness.mediator.OpinionMediator;
+import org.janelia.thickness.normalization.AverageAndStandardDeviationNormalization;
+import org.janelia.thickness.normalization.AverageColumnNormalization;
+import org.janelia.thickness.normalization.MaxColumnNormalization;
+import org.janelia.thickness.normalization.NormalizationInterface;
 import org.janelia.utility.ConstantPair;
 
 
@@ -276,8 +281,10 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
 			}
         	executorService.shutdown();
         	
-//        	final MaxColumnNormalization normalizer = new MaxColumnNormalization();
-//        	final AverageColumnNormalization normalizer = new AverageColumnNormalization();
+        	NormalizationInterface normalizer;
+        	normalizer = new MaxColumnNormalization();
+        	normalizer = new AverageColumnNormalization();
+        	normalizer = new AverageAndStandardDeviationNormalization();
 //        	normalizer.normalize( coordinates );
         	IJ.log( "" + iteration + "/" + options.nIterations );
         }
@@ -349,9 +356,12 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
         final ExtendedRandomAccessibleInterval<DoubleType, ArrayImg<DoubleType, DoubleArray>> extendedPreviousCoordinates = 
         		Views.extendBorder( previousCoordinates );
         
-        final Cursor<DoubleType> coordCursor               = Views.flatIterable( localCoordinates ).cursor();
-        final ArrayCursor<DoubleType> mediatedCursor       = mediatedShifts.cursor();
-        final OutOfBounds<DoubleType> previousAccess       = extendedPreviousCoordinates.randomAccess();
+        final Cursor<DoubleType> coordCursor                = Views.flatIterable( localCoordinates ).cursor();
+        final ArrayCursor<DoubleType> mediatedCursor        = mediatedShifts.cursor();
+        final OutOfBounds<DoubleType> previousAccess        = extendedPreviousCoordinates.randomAccess();
+        final RandomAccess<DoubleType> neighborCoordAccess1 = localCoordinates.randomAccess();
+        final RandomAccess<DoubleType> neighborCoordAccess2 = localCoordinates.randomAccess();
+
         
         double previousPositionRegularizer;
         
@@ -360,16 +370,50 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
         final double newPositionVsNeighborWeight = 1.0 - options.neighborRegularizerWeight;
         final double newPositionVsGridWeight     = 1.0 - options.coordinateUpdateRegularizerWeight;
         
+        double accumulatedShift = 0.0;
+        
         for ( int pos = 0; pos < localCoordinates.dimension( 0 ); ++pos ) {
         	
         	previousPositionRegularizer = 0.0;
         	
         	coordCursor.fwd();
         	mediatedCursor.fwd();
+        	neighborCoordAccess1.setPosition( coordCursor );
+        	neighborCoordAccess2.setPosition( coordCursor );
+
+        	neighborCoordAccess1.fwd( 0 );
+        	neighborCoordAccess2.bck( 0 );
+        	
+        	final DoubleType c = coordCursor.get();
+        	
+        	double estimatedRelativeShift = mediatedCursor.get().get() * options.shiftProportion + accumulatedShift;
+        	
+        	
+        	final double fwdVal;
+        	if ( pos < localCoordinates.dimension( 0 ) - 1 ) {
+        		fwdVal = neighborCoordAccess1.get().get();
+        	} else {
+        		fwdVal = Double.NaN;
+        	}
+        	
+        	final double bckVal;
+        	if ( pos > 0 ) {
+        		bckVal = neighborCoordAccess2.get().get();
+        	} else {
+        		bckVal = Double.NaN;
+        	}
+        	final double curVal = c.get();
+        	
+        	
+        	final double previousValue = c.get();
+        	double tmpNewPosition = previousValue + estimatedRelativeShift;
+        	
+        	
         	
         	int count = 0;
         	
         	previousAccess.setPosition( pos, 2 );
+        	
         	
         	for ( int dXY = -1; dXY <= 1; dXY += 2 ) {
         		previousAccess.setPosition( x, 0 );
@@ -383,28 +427,43 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
         		++count;
         	}
         	
-//        	for ( int dy = -1; dy <= 1; ++dy ) {
-//        		previousAccess.setPosition( y + dy, 1 );
-//        		for ( int dx = -1; dx <= 1; ++dx ) {
-//        			previousAccess.setPosition( x + dx, 0 );
-//        			previousPositionRegularizer += previousAccess.get().get();
-//        			++count;
-//        		}
-//        	}
         	
-        	final DoubleType c = coordCursor.get();
         	previousPositionRegularizer /= count;
-        	// shift coordinate as estimated
-        	dummy.set( mediatedCursor.get().get() * options.shiftProportion );
-    		c.add( dummy );
-    		// regularize wrt to z bin
-    		dummy.set( options.coordinateUpdateRegularizerWeight * coordCursor.getIntPosition( 0 ) );
-    		c.mul( newPositionVsGridWeight );
-    		c.add( dummy );
-    		// regularize wrt to previous neighbor positions
-    		c.mul( newPositionVsNeighborWeight );
-    		dummy.set( previousPositionRegularizer * options.neighborRegularizerWeight );
-    		c.add( dummy );
+        	
+        	tmpNewPosition = options.coordinateUpdateRegularizerWeight * pos + newPositionVsGridWeight*tmpNewPosition;
+        	
+        	double diff;
+        	if ( pos > 0 && tmpNewPosition < bckVal ) {
+        		diff = bckVal - ( curVal + accumulatedShift );
+        		estimatedRelativeShift = Math.max( estimatedRelativeShift, diff * options.shiftProportion );
+        	} else if ( pos < localCoordinates.dimension( 0 ) - 1 && tmpNewPosition > fwdVal ) {
+        		diff = fwdVal - ( curVal + accumulatedShift );
+        		estimatedRelativeShift = Math.min( estimatedRelativeShift, diff * options.shiftProportion );
+        	} // leave shift untouched otherwise
+        	
+        	c.set( tmpNewPosition );
+        	
+        	accumulatedShift = tmpNewPosition - curVal;
+        	
+        	
+        	
+//        	final DoubleType c = coordCursor.get();
+        	
+        	
+//        	// shift coordinate as estimated
+//        	dummy.set( estimatedRelativeShift + accumulatedShift );
+//    		c.add( dummy );
+//    		// regularize wrt to z bin
+//    		final double zBin = coordCursor.getDoublePosition( 0 );
+//    		dummy.set( options.coordinateUpdateRegularizerWeight * zBin );
+//    		c.mul( newPositionVsGridWeight );
+//    		c.add( dummy );
+//    		// regularize wrt to previous neighbor positions
+//    		c.mul( newPositionVsNeighborWeight );
+//    		dummy.set( previousPositionRegularizer * options.neighborRegularizerWeight );
+//    		c.add( dummy );
+//    		// need '=' instead of '+=' here, accumulated shift already taken into account
+//    		accumulatedShift = c.get() - zBin;
         }
         
 	}

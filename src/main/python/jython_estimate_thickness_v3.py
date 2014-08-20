@@ -196,7 +196,7 @@ if __name__ == "__main__":
     t0 = time.time()
     print t0 - t0
 
-    correlationRanges = range(10, 61, 10)
+    correlationRanges = range(10, 11, 10)
     root = '/data/hanslovskyp/playground/pov-ray/constant_thickness=5/850-1149/scale/0.05/250x250+125+125'
     imgSource = FolderOpener().open( '%s/data' % root.rstrip('/') )
     stackSource = imgSource.getStack()
