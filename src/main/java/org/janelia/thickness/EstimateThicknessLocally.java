@@ -480,9 +480,9 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
 	}
 	
 	
-	public void copyDeep( final ListImg< double[] > source, final ListImg< double[] > target) {
-		ListCursor<double[]> s = source.cursor();
-		ListCursor<double[]> t = target.cursor();
+	public static < N extends Number > void copyDeep( final ListImg< N[] > source, final ListImg< N[] > target) {
+		final ListCursor<N[]> s = source.cursor();
+		final ListCursor<N[]> t = target.cursor();
 		
 		assert source.numDimensions() == target.numDimensions(): "Source and target dimensions do not agree.";
 		for ( int d = 0; d < source.numDimensions(); ++d ) {
@@ -491,8 +491,8 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
 		assert source.firstElement().length == target.firstElement().length: "Source and target dimensions do not agree.";
 		
 		while( s.hasNext() ) {
-			double[] sArr = s.next();
-			double[] tArr = t.next();
+			final N[] sArr = s.next();
+			final N[] tArr = t.next();
 			for (int i = 0; i < tArr.length; i++) {
 				tArr[i] = sArr[i];
 			}
