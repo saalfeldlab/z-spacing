@@ -4,6 +4,7 @@ import net.imglib2.Dimensions;
 import net.imglib2.ExtendedRandomAccessibleInterval;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessible;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealLocalizable;
 import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
@@ -27,7 +28,7 @@ public abstract class AbstractLUTGrid implements InvertibleRealTransform {
 	protected final int lutMaxIndex; // max index of the look-up table
 	protected final int nNonTransformedCoordinates; // number of grid dimensions (one less than lutArray.numDimensions())
 	protected final Dimensions dimensions; // actual grid dimensions
-	protected final ArrayImg< DoubleType, DoubleArray > lutArray; // look-up tables
+	protected final RandomAccessibleInterval< DoubleType > lutArray; // look-up tables
 	final protected RealRandomAccessible< RealComposite< DoubleType > > coefficients; // interpolated composite of lutArray
 	final protected InterpolatorFactory< RealComposite< DoubleType >, RandomAccessible< RealComposite< DoubleType > > > interpolatorFactory = 
 			new NLinearInterpolatorFactory< RealComposite< DoubleType > >(); // how to interpolate for coefficients
@@ -37,7 +38,7 @@ public abstract class AbstractLUTGrid implements InvertibleRealTransform {
 	
 	
 	public AbstractLUTGrid(final int numSourceDimensions, final int numTargetDimensions,
-			final ArrayImg<DoubleType, DoubleArray> lutArray) {
+			final RandomAccessibleInterval< DoubleType > lutArray) {
 		super();
 		this.numSourceDimensions = numSourceDimensions;
 		this.numTargetDimensions = numTargetDimensions;

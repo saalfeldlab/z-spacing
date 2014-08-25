@@ -3,6 +3,7 @@ package org.janelia.thickness.lut;
 import ij.ImageJ;
 import ij.ImagePlus;
 import net.imglib2.FinalInterval;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealLocalizable;
 import net.imglib2.RealPositionable;
 import net.imglib2.RealRandomAccessible;
@@ -27,7 +28,7 @@ public class LUTGrid extends AbstractLUTGrid {
 	public LUTGrid(
 			final int numSourceDimensions, 
 			final int numTargetDimensions,
-			final ArrayImg<DoubleType, DoubleArray> lutArray) {
+			final RandomAccessibleInterval< DoubleType > lutArray) {
 		super(numSourceDimensions, 
 				numTargetDimensions, 
 				lutArray);
