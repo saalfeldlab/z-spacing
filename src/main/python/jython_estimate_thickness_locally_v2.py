@@ -233,19 +233,19 @@ if __name__ == "__main__":
     stackSource = imgSource.getStack()
     conv = ImageConverter( imgSource )
     conv.convertToGray32()
-    nIterations = 5
+    nIterations = 2
     nThreads = 48
     scale = 1.0
     xyScale = 1.0
     doXYScale = False
-    step = 2
-    radius = [4, 4]
+    step = 4
+    radius = [16, 16]
     options = EstimateThicknessLocally.Options.generateDefaultOptions()
     options.nIterations = nIterations
     options.nThreads = nThreads
-    options.neighborRegularizerWeight = 0.7
-    options.shiftProportion = 0.5
-    options.coordinateUpdateRegularizerWeight = 0.05
+    options.neighborRegularizerWeight = 0.1
+    options.shiftProportion = 0.8
+    options.coordinateUpdateRegularizerWeight = 0.01
     # if you want to specify values for options, do:
     # options.multiplierGenerationRegularizerWeight = <value>
     # or equivalent
@@ -406,7 +406,8 @@ if __name__ == "__main__":
              
         # result = inference.estimateZCoordinates( 0, 0, startingCoordinates, matrixTracker, options )
         t4 = time.time()        
-        result = inference.estimate( 0, 0, img.getWidth(), img.getHeight(), step, step, options )
+        # result = inference.estimate( 0, 0, img.getWidth(), img.getHeight(), step, step, options )
+        result = inference.estimateWithListImgs( 0, 0, img.getWidth(), img.getHeight(), step, step, options )
         # result = inference.estimate( 0, # startX
         #                              0, # startY
         #                              img.getWidth(), # stopX
@@ -417,11 +418,11 @@ if __name__ == "__main__":
         t5 = time.time()
         print t5 - t4
 
-        #resultSmoothed2D = ArrayImgs.doubles( result.dimension( 0 ), result.dimension( 1 ), result.dimension( 2 ) )
-        #sigma=[1.5,1.5,0.00000001]
-        #Gauss3.gauss( sigma, result, resultSmoothed2D )
-        #result = resultSmoothed2D
-        #infoString += 'GaussianConvolutionSigma = [%f,%f,%f]\n' % tuple( sigma )
+        resultSmoothed2D = ArrayImgs.doubles( result.dimension( 0 ), result.dimension( 1 ), result.dimension( 2 ) )
+        sigma=[0.5, 0.5,0.0001]
+        Gauss3.gauss( sigma, result, resultSmoothed2D )
+        result = resultSmoothed2D
+        infoString += 'GaussianConvolutionSigma = [%f,%f,%f]\n' % tuple( sigma )
 
         resultFolder = root.rstrip('/') + '/' + str( datetime.datetime.now() ).split('.')[0]
         resultFolder = create_with_counter_if_existing( resultFolder )

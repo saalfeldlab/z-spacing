@@ -31,8 +31,9 @@ def generateDefaultOptionsAndOrderedKeys():
     
 
 
-# doing CorrelationsCreator in here instead of importing from estimate.py
-# didn't find BlockPMCC ~> WHY?
+# doing CorrelationsCreator in here instead of importing from estimation.py
+# didn't find BlockPMCC when importing from estimation.py ~> WHY?
+# might be a jython issue
 
 # python built-in
 import errno

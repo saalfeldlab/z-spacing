@@ -44,6 +44,7 @@ import org.janelia.thickness.normalization.AverageColumnNormalization;
 import org.janelia.thickness.normalization.MaxColumnNormalization;
 import org.janelia.thickness.normalization.NormalizationInterface;
 import org.janelia.utility.ConstantPair;
+import org.janelia.utility.CopyToRandomAccessibleInterval;
 
 
 public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > {
@@ -295,6 +296,316 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
 	}
 	
 	
+	public ArrayImg< DoubleType, DoubleArray > estimateWithListImgs(
+			final int startX,
+			final int startY,
+			final int stopX,
+			final int stopY,
+			final int stepX,
+			final int stepY,
+			final Options options ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+		
+		return estimateWithListImgs(startX, 
+				startY, 
+				stopX, 
+				stopY, 
+				stepX, 
+				stepY, 
+				new LocalVisitor() {
+				}, 
+				options);
+	}
+	
+	
+	public ArrayImg< DoubleType, DoubleArray > estimateWithListImgs(
+			final int startX,
+			final int startY,
+			final int stopX,
+			final int stopY,
+			final int stepX,
+			final int stepY,
+			final LocalVisitor visitor,
+			final Options options ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+		
+		final int nX  = ( stopX - startX ) / stepX;
+        final int nY  = ( stopY - startY ) / stepY;
+        final long nZ = this.zMax - this.zMin;
+        
+        final long[] dim = new long[] { nX, nY };
+        
+        final double[] startingCoordinatesPrototype = new double[ (int) nZ ];
+        final double[] startingWeightsPrototype     = new double[ (int) nZ ];
+        
+        for (int i = 0; i < startingWeightsPrototype.length; i++) {
+			startingWeightsPrototype[ i ] = 1.0;
+			startingCoordinatesPrototype[ i] = i;
+		}
+        final ListImg<double[]> coordinates = new ListImg< double[] >( dim, startingCoordinatesPrototype );
+        final ListImg<double[]> weights     = new ListImg< double[] >( dim, startingWeightsPrototype );
+        
+        final ListCursor<double[]> c = coordinates.cursor();
+        final ListCursor<double[]> w = weights.cursor();
+        
+        while ( c.hasNext() ) {
+        	c.fwd();
+        	w.fwd();
+        	c.set( startingCoordinatesPrototype );
+        	w.set( startingWeightsPrototype );
+        }
+        
+		
+		return estimate( startX, startY, stopX, stopY, stepX, stepY, coordinates, weights, visitor, options );
+	}
+	
+	
+	public ArrayImg< DoubleType, DoubleArray > estimate(
+			final int startX,
+			final int startY,
+			final int stopX,
+			final int stopY,
+			final int stepX,
+			final int stepY,
+			final ListImg< double[] > coordinates,
+			final ListImg< double[] > weights,
+			final LocalVisitor visitor,
+			final Options options ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+		
+		final int nX = ( stopX - startX ) / stepX;
+        final int nY = ( stopY - startY ) / stepY;
+        final int nZ = coordinates.firstElement().length;
+        
+        final long[] dim = new long[] { nX, nY };
+        final LUTRealTransform type = new LUTRealTransform( coordinates.firstElement(), 2, 2);
+        final ListImg<LUTRealTransform> lutTransforms = new ListImgFactory< LUTRealTransform >().create(dim, type);
+        
+       
+        final ListImg< RandomAccessibleInterval<DoubleType>> matrices = 
+        		new ListImg< RandomAccessibleInterval<DoubleType > >(
+        				dim, 
+        				null );
+       final ListRandomAccess<RandomAccessibleInterval<DoubleType>> ra = matrices.randomAccess();
+        for ( int y = 0; y < nY; ++y ) {
+        	final int realY = startY + y*stepY;
+        	ra.setPosition( y,  1 );
+        	for ( int x = 0; x < nX; ++x ) {
+        		final int realX = startX + x*stepX;
+        		ra.setPosition( x, 0 );
+        		// extract correlation matrix at xy from correlation object
+        		final ArrayImg<DoubleType, DoubleArray> localMatrix = ArrayImgs.doubles( nZ, nZ );
+        		this.correlationsObject.toMatrix( realX, realY, localMatrix );
+        		ra.set( localMatrix );
+        	}
+        }
+        
+        
+        for ( int iteration = 0; iteration < options.nIterations; ++iteration ) {
+        	
+        	final ListImg< double[] > previousCoordinates = new ListImgFactory< double[] >().create( dim, coordinates.firstElement() );
+        	copyDeep( coordinates, previousCoordinates );
+        	
+        	final ExecutorService executorService = Executors.newFixedThreadPool( options.nThreads );
+        	final ArrayList< Callable< Void > > tasks = new ArrayList<Callable< Void > >();
+        	
+        	final ListRandomAccess<double[]> coordinateAccess         = coordinates.randomAccess();
+        	final ListRandomAccess<double[]> previousCoordinateAccess = previousCoordinates.randomAccess();
+        	final ListRandomAccess<LUTRealTransform> lutRandomAccess   = lutTransforms.randomAccess();
+        	final ListRandomAccess<double[]> weightAccess             = weights.randomAccess();
+        	
+        	final ListRandomAccess<RandomAccessibleInterval<DoubleType>> matrixAccess = matrices.randomAccess();
+        	
+        	
+        	
+        	
+        	for ( int y = 0; y < nY; ++y ) {
+        		coordinateAccess.setPosition( y, 1 );
+        		previousCoordinateAccess.setPosition( y, 1 );
+        		lutRandomAccess.setPosition( y, 1 );
+        		matrixAccess.setPosition( y, 1 );
+        		weightAccess.setPosition( y, 1 );
+        		for ( int x = 0; x < nX; ++x ) {
+        			coordinateAccess.setPosition( x, 0 );
+        			previousCoordinateAccess.setPosition( x, 0 );
+        			lutRandomAccess.setPosition( x, 0 );
+        			matrixAccess.setPosition( x, 0 );
+        			weightAccess.setPosition( x, 0 );
+        			final int finalX = x;
+        			final int finalY = y;
+        			final int finalIteration = iteration;
+        			final double[] localZCoordinates = coordinateAccess.get();
+        			final double[] previousLocalZCoordinates = previousCoordinateAccess.get();
+        			final LUTRealTransform localLUT = lutRandomAccess.get();
+        			final RandomAccessibleInterval<DoubleType> localMatrix = matrixAccess.get();
+        			final double[] localWeights = weightAccess.get();
+        			tasks.add( new Callable<Void>() {
+						@Override
+						public Void call() throws Exception {
+							estimateCoordinatesAtXY( 
+		        					localMatrix,
+		        					localZCoordinates,
+		        					previousLocalZCoordinates,
+		        					new ArrayList< double[] >(), // add neighbors for regularization here!!! TODO
+		        					localWeights,
+		        					localLUT,
+		        					finalX,
+		        					finalY,
+		        					options,
+		        					visitor,
+		        					finalIteration );
+							return null;
+						}
+					});
+        			
+        		}
+        	}
+        	
+        	try {
+				executorService.invokeAll( tasks );
+			} catch (final InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				throw new RuntimeException();
+			}
+        	executorService.shutdown();
+        	
+        	NormalizationInterface normalizer;
+        	normalizer = new MaxColumnNormalization();
+        	normalizer = new AverageColumnNormalization();
+        	normalizer = new AverageAndStandardDeviationNormalization();
+//        	normalizer.normalize( coordinates );
+        	IJ.log( "" + iteration + "/" + options.nIterations );
+        }
+		final ArrayImg<DoubleType, DoubleArray> coordinatesDoubleArray = ArrayImgs.doubles( nX, nY, nZ );
+		CopyToRandomAccessibleInterval.copy( coordinates, coordinatesDoubleArray );
+		return coordinatesDoubleArray;
+	}
+	
+	
+	public void estimateCoordinatesAtXY(
+			final RandomAccessibleInterval< DoubleType > localMatrix,
+			final double[] localZCoordinates, 
+			final double[] previousLocalZCoordinates,
+			final ArrayList< double[] > localNeighborZCoordinates,
+			final double[] localWeights, 
+			final LUTRealTransform localLUT, 
+			final int x,
+			final int y, 
+			final Options options, 
+			final LocalVisitor visitor,
+			final int iteration) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+		
+		final double[] estimatedFit = EstimateCorrelationsAtSamplePoints.estimateFromMatrix(
+				localMatrix, 
+				localWeights, 
+				localLUT, 
+				localZCoordinates, 
+				options.comparisonRange, 
+				correlationFitModel);
+		
+		
+		final double[] multipliers = EstimateQualityOfSlice.estimateFromMatrix(
+				localMatrix,
+				ArrayImgs.doubles( localWeights, localWeights.length ),
+				this.measurementsMultiplierModel.copy(), // copy for thread safety
+				ArrayImgs.doubles( previousLocalZCoordinates, previousLocalZCoordinates.length ),
+				mirrorAndExtend( estimatedFit, new NLinearInterpolatorFactory< DoubleType >() ),
+				options.multiplierGenerationRegularizerWeight );
+		
+		final TreeMap< Long, ArrayList< ConstantPair< Double, Double > > > shifts =
+				ShiftCoordinates.collectShiftsFromMatrix(
+						previousLocalZCoordinates,
+						localMatrix,
+						localWeights,
+						multipliers,
+						localLUT );
+//		IJ.log( ("AFTER SHIFT" ) );
+		
+		final ArrayImg< DoubleType, DoubleArray > mediatedShifts = ArrayImgs.doubles( previousLocalZCoordinates.length );
+		
+		// copy for thread safety
+//		IJ.log( "BEFORE MEDIATE" );
+		this.shiftMediator.copy().mediate( shifts, mediatedShifts );
+//		IJ.log( "AFTER MEDIATE" );
+        
+        
+        final ExtendedRandomAccessibleInterval<DoubleType, ArrayImg<DoubleType, DoubleArray>> extendedPreviousCoordinates = 
+        		Views.extendBorder( ArrayImgs.doubles( previousLocalZCoordinates, previousLocalZCoordinates.length ) );
+        
+        final ArrayCursor<DoubleType> mediatedCursor        = mediatedShifts.cursor();
+
+        
+        final double newPositionVsNeighborWeight = 1.0 - options.neighborRegularizerWeight;
+        final double newPositionVsGridWeight     = 1.0 - options.coordinateUpdateRegularizerWeight;
+        
+        double accumulatedShift = 0.0;
+        
+        final int maxPos = localZCoordinates.length - 1;
+        
+        final int previousRegularizerCount = localNeighborZCoordinates.size() + 1;
+        
+        for ( int pos = 0; pos < localZCoordinates.length; ++pos ) {
+        	
+        	double previousPositionRegularizer = 0.0;
+        	mediatedCursor.fwd();
+
+        	
+        	final double estimatedRelativeShift = mediatedCursor.get().get() * options.shiftProportion + accumulatedShift;
+        	
+        	
+        	final double fwdVal;
+        	if ( pos < maxPos ) {
+        		fwdVal = localZCoordinates[ pos + 1 ];
+        	} else {
+        		fwdVal = Double.MAX_VALUE;
+        	}
+        	
+        	final double bckVal;
+        	if ( pos > 0 ) {
+        		bckVal = localZCoordinates[ pos - 1 ];
+        	} else {
+        		bckVal = -Double.MAX_VALUE;
+        	}
+        	final double curVal = localZCoordinates[ pos ];
+        	
+        	
+        	final double previousValue = localZCoordinates[ pos ];
+        	double tmpNewPosition = previousValue + estimatedRelativeShift;
+        	
+        	
+        	
+        	
+        	previousPositionRegularizer += previousLocalZCoordinates[ pos ];
+        	
+        	for ( final double[] neighbor : localNeighborZCoordinates ) {
+        		previousPositionRegularizer += neighbor[ pos ];
+        	}
+
+        	
+        	previousPositionRegularizer /= previousRegularizerCount;
+        	
+        	tmpNewPosition = options.coordinateUpdateRegularizerWeight * pos + 
+        			tmpNewPosition * newPositionVsGridWeight;
+        	tmpNewPosition = options.neighborRegularizerWeight * previousPositionRegularizer + 
+        			tmpNewPosition * newPositionVsNeighborWeight;
+        	
+        	double diff;
+        	if ( tmpNewPosition < bckVal ) {
+        		diff = bckVal - ( curVal );
+//        		estimatedRelativeShift = Math.max( estimatedRelativeShift, diff * options.shiftProportion );
+        		tmpNewPosition = curVal + diff * options.shiftProportion; 
+        	} else if ( tmpNewPosition > fwdVal ) {
+        		diff = fwdVal - ( curVal );
+//        		estimatedRelativeShift = Math.min( estimatedRelativeShift, diff * options.shiftProportion );
+        		tmpNewPosition = curVal + diff * options.shiftProportion;
+        	} // leave shift untouched otherwise
+        	
+        	localZCoordinates[ pos ] = tmpNewPosition;
+        	
+        	accumulatedShift = tmpNewPosition - curVal;
+
+        }
+		
+	}
+
 	private void estimateCoordinatesAtXY(
 			final ArrayImg<DoubleType, DoubleArray> matrices,
 			final ArrayImg<DoubleType, DoubleArray> coordinates,
@@ -365,8 +676,6 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
         final RandomAccess<DoubleType> neighborCoordAccess2 = localCoordinates.randomAccess();
 
         
-        double previousPositionRegularizer;
-        
         final DoubleType dummy = new DoubleType();
         
         final double newPositionVsNeighborWeight = 1.0 - options.neighborRegularizerWeight;
@@ -376,7 +685,7 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
         
         for ( int pos = 0; pos < localCoordinates.dimension( 0 ); ++pos ) {
         	
-        	previousPositionRegularizer = 0.0;
+        	double previousPositionRegularizer = 0.0;
         	
         	coordCursor.fwd();
         	mediatedCursor.fwd();
@@ -388,21 +697,21 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
         	
         	final DoubleType c = coordCursor.get();
         	
-        	double estimatedRelativeShift = mediatedCursor.get().get() * options.shiftProportion + accumulatedShift;
+        	final double estimatedRelativeShift = mediatedCursor.get().get() * options.shiftProportion + accumulatedShift;
         	
         	
         	final double fwdVal;
         	if ( pos < localCoordinates.dimension( 0 ) - 1 ) {
         		fwdVal = neighborCoordAccess1.get().get();
         	} else {
-        		fwdVal = Double.NaN;
+        		fwdVal = Double.MAX_VALUE;
         	}
         	
         	final double bckVal;
         	if ( pos > 0 ) {
         		bckVal = neighborCoordAccess2.get().get();
         	} else {
-        		bckVal = Double.NaN;
+        		bckVal = -Double.MAX_VALUE;
         	}
         	final double curVal = c.get();
         	
@@ -415,6 +724,10 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
         	int count = 0;
         	
         	previousAccess.setPosition( pos, 2 );
+        	previousAccess.setPosition( x, 0 );
+        	previousAccess.setPosition( y, 1 );
+        	previousPositionRegularizer += previousAccess.get().get();
+        	++count;
         	
         	
         	for ( int dXY = -1; dXY <= 1; dXY += 2 ) {
@@ -429,18 +742,22 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
         		++count;
         	}
         	
-        	
         	previousPositionRegularizer /= count;
         	
-        	tmpNewPosition = options.coordinateUpdateRegularizerWeight * pos + newPositionVsGridWeight*tmpNewPosition;
+        	tmpNewPosition = options.coordinateUpdateRegularizerWeight * pos + 
+        			tmpNewPosition * newPositionVsGridWeight;
+        	tmpNewPosition = options.neighborRegularizerWeight * previousPositionRegularizer + 
+        			tmpNewPosition * newPositionVsNeighborWeight;
         	
         	double diff;
-        	if ( pos > 0 && tmpNewPosition < bckVal ) {
-        		diff = bckVal - ( curVal + accumulatedShift );
-        		estimatedRelativeShift = Math.max( estimatedRelativeShift, diff * options.shiftProportion );
-        	} else if ( pos < localCoordinates.dimension( 0 ) - 1 && tmpNewPosition > fwdVal ) {
-        		diff = fwdVal - ( curVal + accumulatedShift );
-        		estimatedRelativeShift = Math.min( estimatedRelativeShift, diff * options.shiftProportion );
+        	if ( tmpNewPosition < bckVal ) {
+        		diff = bckVal - ( curVal );
+//        		estimatedRelativeShift = Math.max( estimatedRelativeShift, diff * options.shiftProportion );
+        		tmpNewPosition = curVal + diff * options.shiftProportion; 
+        	} else if ( tmpNewPosition > fwdVal ) {
+        		diff = fwdVal - ( curVal );
+//        		estimatedRelativeShift = Math.min( estimatedRelativeShift, diff * options.shiftProportion );
+        		tmpNewPosition = curVal + diff * options.shiftProportion;
         	} // leave shift untouched otherwise
         	
         	c.set( tmpNewPosition );
@@ -491,11 +808,9 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
 		assert source.firstElement().length == target.firstElement().length: "Source and target dimensions do not agree.";
 		
 		while( s.hasNext() ) {
-			final double[] sArr = s.next();
-			final double[] tArr = t.next();
-			for (int i = 0; i < tArr.length; i++) {
-				tArr[i] = sArr[i];
-			}
+			s.fwd();
+			t.fwd();
+			t.set( s.get().clone() );
 		}
 			
 	}

@@ -5,9 +5,6 @@ import java.util.TreeMap;
 
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.array.ArrayImg;
-import net.imglib2.img.array.ArrayRandomAccess;
-import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.type.numeric.real.DoubleType;
 
 import org.janelia.thickness.lut.LUTRealTransform;
@@ -17,12 +14,12 @@ public class ShiftCoordinates {
 	
 	public static TreeMap< Long, ArrayList< ConstantPair<Double, Double> > > collectShiftsFromMatrix(
 			final double[] coordinates, 
-			final ArrayImg< DoubleType, DoubleArray > correlations, 
+			final RandomAccessibleInterval< DoubleType > correlations, 
 			final double[] weights,
 			final double[] multipliers,
 			final LUTRealTransform lut ) {
 		
-		final ArrayRandomAccess<DoubleType> corrAccess = correlations.randomAccess();
+		final RandomAccess<DoubleType> corrAccess = correlations.randomAccess();
 		
 		final TreeMap<Long, ArrayList<ConstantPair<Double, Double> > > weightedShifts = new TreeMap< Long, ArrayList< ConstantPair<Double, Double> > >();
 		

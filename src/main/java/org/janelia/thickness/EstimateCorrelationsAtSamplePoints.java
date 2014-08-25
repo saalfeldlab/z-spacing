@@ -21,7 +21,6 @@ import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.Views;
 
-import org.apache.commons.math.stat.descriptive.moment.Variance;
 import org.janelia.thickness.lut.AbstractLUTRealTransform;
 import org.janelia.thickness.lut.LUTGrid;
 
@@ -92,15 +91,10 @@ public class EstimateCorrelationsAtSamplePoints {
 		}
 		
 		for ( int i = 0; i < result.length; ++i ) {
-			final double[] values = new double[ pointCollections.get( i ).size() ];
-			for ( int k = 0; k < values.length; ++k ) {
-				values[k] = pointCollections.get( i ).get( k ).getP2().getW()[0];
-			}
 			correlationFitModel.fit( pointCollections.get( i ) );
 			
 			/* TODO inverts because LUTRealTransform can only increasing */
 			result[i] = -correlationFitModel.apply( ONE_DIMENSION_ZERO_POSITION )[ 0 ];
-			variances[i] = new Variance().evaluate( values );
 		}
 		
 		return result;
@@ -203,6 +197,17 @@ final TreeMap<Integer, ArrayList<PointMatch>> pointCollections = new TreeMap< In
 		
 		
 		return result;
+	}
+	
+	
+	public static <M extends Model< M > > double[] estimateFromMatrix( final RandomAccessibleInterval< DoubleType > correlations, 
+			final double[] weights,
+			final AbstractLUTRealTransform transform,
+			final double[] coordinates,
+			final int nIter,
+			final M correlationFitModel ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+		
+		return estimateFromMatrix(correlations, weights, transform, coordinates, nIter, correlationFitModel, new double[0]);
 	}
 
 }
