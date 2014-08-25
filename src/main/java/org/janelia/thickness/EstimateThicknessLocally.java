@@ -23,7 +23,9 @@ import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.array.ArrayRandomAccess;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
+import net.imglib2.img.list.ListCursor;
 import net.imglib2.img.list.ListImg;
+import net.imglib2.img.list.ListImgFactory;
 import net.imglib2.img.list.ListRandomAccess;
 import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
@@ -475,6 +477,27 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
 		final ArrayCursor<DoubleType> t = target.cursor();
 		while ( s.hasNext() )
 			t.next().set( s.next().get() );
+	}
+	
+	
+	public void copyDeep( final ListImg< double[] > source, final ListImg< double[] > target) {
+		ListCursor<double[]> s = source.cursor();
+		ListCursor<double[]> t = target.cursor();
+		
+		assert source.numDimensions() == target.numDimensions(): "Source and target dimensions do not agree.";
+		for ( int d = 0; d < source.numDimensions(); ++d ) {
+			assert source.dimension( d ) == target.dimension( d ): "Source and target dimensions do not agree.";
+		}
+		assert source.firstElement().length == target.firstElement().length: "Source and target dimensions do not agree.";
+		
+		while( s.hasNext() ) {
+			double[] sArr = s.next();
+			double[] tArr = t.next();
+			for (int i = 0; i < tArr.length; i++) {
+				tArr[i] = sArr[i];
+			}
+		}
+			
 	}
 	
 	private static RealRandomAccessible< DoubleType > mirrorAndExtend(
