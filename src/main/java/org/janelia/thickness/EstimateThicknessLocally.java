@@ -349,8 +349,8 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
         while ( c.hasNext() ) {
         	c.fwd();
         	w.fwd();
-        	c.set( startingCoordinatesPrototype );
-        	w.set( startingWeightsPrototype );
+        	c.set( startingCoordinatesPrototype.clone() );
+        	w.set( startingWeightsPrototype.clone() );
         }
         
 		
