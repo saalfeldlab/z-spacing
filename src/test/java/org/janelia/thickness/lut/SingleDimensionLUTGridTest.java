@@ -3,8 +3,13 @@
  */
 package org.janelia.thickness.lut;
 
+import net.imglib2.Cursor;
 import net.imglib2.RealPoint;
+import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.basictypeaccess.array.DoubleArray;
+import net.imglib2.type.numeric.real.DoubleType;
+import net.imglib2.view.Views;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -16,13 +21,13 @@ import org.junit.Test;
  */
 public class SingleDimensionLUTGridTest {
 	
-	private final double[] sourceDouble = new double[] { 0.0, 0.0, 2.0 };
-	private final float[] sourceFloat   = new float[] { 0.0f, 0.0f, 1.0f };
-	private final double[] sourceOffGrid = new double[] { 0.0, 0.0, 2.6 };
+	private final double[] sourceDouble = new double[] { 1.0, 1.0, 2.0 };
+	private final float[] sourceFloat   = new float[] { 1.0f, 1.0f, 1.0f };
+	private final double[] sourceOffGrid = new double[] { 1.0, 1.0, 2.6 };
 	private final RealPoint sourceRealPoint = new RealPoint( sourceOffGrid );
-	private final double[] targetDouble = new double[] { 0.0, 0.0, 5.5 };
-	private final float[] targetFloat  = new float[] { 0.0f, 0.0f, 3.5f };
-	private final double[] targetOffGrid = new double[] { 0.0, 0.0, 5.8 };
+	private final double[] targetDouble = new double[] { 1.0, 1.0, 5.5 };
+	private final float[] targetFloat  = new float[] { 1.0f, 1.0f, 3.5f };
+	private final double[] targetOffGrid = new double[] { 1.0, 1.0, 5.8 };
 	private final RealPoint targetRealPoint = new RealPoint( targetOffGrid );
 	
 	private final double[] DoubleSourceDouble = sourceDouble.clone();
@@ -35,35 +40,22 @@ public class SingleDimensionLUTGridTest {
 	
 	
 	// 3 x 3 x 4 transform lut with same entries all over the place
-	private final SingleDimensionLUTGrid tf1 = new SingleDimensionLUTGrid( 3, 3, ArrayImgs.doubles( new double[] { 1.0, 2.0, 5.5, 6.0, 
-			1.0, 2.0, 5.5, 6.0, 
-			1.0, 2.0, 5.5, 6.0,
-			1.0, 2.0, 5.5, 6.0,
-			1.0, 2.0, 5.5, 6.0,
-			1.0, 2.0, 5.5, 6.0,
-			1.0, 2.0, 5.5, 6.0,
-			1.0, 2.0, 5.5, 6.0
-			,1.0, 2.0, 5.5, 6.0}, 3, 3, 4 ), 2 );
-	private final SingleDimensionLUTGrid tf2 = new SingleDimensionLUTGrid( 3, 3, ArrayImgs.doubles( new double[] { 1.0, 3.5, 4.5, 5.0,
-			1.0, 3.5, 4.5, 5.0,
-			1.0, 3.5, 4.5, 5.0,
-			1.0, 3.5, 4.5, 5.0,
-			1.0, 3.5, 4.5, 5.0,
-			1.0, 3.5, 4.5, 5.0,
-			1.0, 3.5, 4.5, 5.0,
-			1.0, 3.5, 4.5, 5.0,
-			1.0, 3.5, 4.5, 5.0}, 3, 3, 4 ), 2 );	
+	private SingleDimensionLUTGrid tf1;
+	private SingleDimensionLUTGrid tf2;	
 
 	final double s1 = 2.0;
 	final double s2 = 3.0;
 	
-	final SingleDimensionLUTGrid copy1 = tf1.reScale( s1 );
-	final SingleDimensionLUTGrid copy2 = tf2.reScale( s2 );
+	private SingleDimensionLUTGrid copy1;
+	private SingleDimensionLUTGrid copy2;
 	
 	
 	private final double[] resultDouble = new double[ 3 ];
 	private final float[] resultFloat = new float[ 3 ];
 	private final RealPoint resultRealPoint = new RealPoint( 3 );
+	
+	private final ArrayImg< DoubleType, DoubleArray> lut1 = ArrayImgs.doubles( 3, 3, 4 );
+	private final ArrayImg< DoubleType, DoubleArray> lut2 = ArrayImgs.doubles( 3, 3, 4 );
 	
 	
 	@Before
@@ -78,6 +70,26 @@ public class SingleDimensionLUTGridTest {
 			DoubleTargetFloat[i]  *= s2;
 			DoubleTargetRealPoint.setPosition( s1*DoubleTargetRealPoint.getDoublePosition(i), i);
 		}
+		
+		final double[] arr1 = new double[] { 1.0, 2.0, 5.5, 6.0 };
+		final double[] arr2 = new double[] { 1.0, 3.5, 4.5, 5.0 };
+		
+		final Cursor<DoubleType> c1 = Views.flatIterable( Views.hyperSlice( Views.hyperSlice( lut1, 1, 1), 0, 1) ).cursor();
+		final Cursor<DoubleType> c2 = Views.flatIterable( Views.hyperSlice( Views.hyperSlice( lut2, 1, 1), 0, 1) ).cursor();
+		
+		
+		for (int i = 0; i < arr2.length; i++) {
+			c1.fwd();
+			c2.fwd();
+			c1.get().set( arr1[i] );
+			c2.get().set( arr2[i] );
+		}
+		
+		tf1 = new SingleDimensionLUTGrid( 3, 3, lut1, 2 );
+		tf2 = new SingleDimensionLUTGrid( 3, 3, lut2, 2 );
+		
+		copy1 = tf1.reScale( s1 );
+		copy2 = tf2.reScale( s2 );
 	}
 	
 
