@@ -13,7 +13,6 @@ import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.realtransform.AffineTransform;
 import net.imglib2.realtransform.InvertibleRealTransform;
 import net.imglib2.realtransform.RealViews;
-import net.imglib2.realtransform.Scale;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.Views;
 import net.imglib2.view.composite.CompositeIntervalView;
@@ -38,7 +37,6 @@ public abstract class AbstractLUTGrid implements InvertibleRealTransform {
 	protected RealComposite< DoubleType > currentLut; // temporary variables
 	protected double[] scale;
 	protected double[] shift;
-	protected final Scale scaleTransform;
 	
 	public AbstractLUTGrid(final int numSourceDimensions, final int numTargetDimensions,
 			final RandomAccessibleInterval< DoubleType > lutArray ) {
@@ -65,7 +63,6 @@ public abstract class AbstractLUTGrid implements InvertibleRealTransform {
 		copyAndFillIfNecessary( scale, this.scale );
 		copyAndFillIfNecessary( shift, this.shift );
 		
-		this.scaleTransform = new Scale( this.scale );
 		final AffineTransform affine = new AffineTransform( this.nNonTransformedCoordinates );
 		final double[][] affineMatrix = new double[ this.nNonTransformedCoordinates + 1 ][];
 		for ( int i = 0; i < nNonTransformedCoordinates + 1; ++i ) {
@@ -80,7 +77,6 @@ public abstract class AbstractLUTGrid implements InvertibleRealTransform {
 		
 		final ExtendedRandomAccessibleInterval<RealComposite<DoubleType>, CompositeIntervalView<DoubleType, RealComposite<DoubleType>>> extendedCollapsedSource = 
 				Views.extendBorder( collapsedSource );
-//		this.coefficients = RealViews.transform( Views.interpolate( extendedCollapsedSource, this.interpolatorFactory ), this.scaleTransform );
 		this.coefficients = RealViews.transform( Views.interpolate( extendedCollapsedSource, this.interpolatorFactory ), affine );
 		this.access = this.coefficients.realRandomAccess();
 		this.currentLut = this.access.get();
@@ -106,14 +102,7 @@ public abstract class AbstractLUTGrid implements InvertibleRealTransform {
 		final double floorVal = this.currentLut.get( zFloor ).get();
 		final double nextVal  = this.currentLut.get( zFloor + 1 ).get();
 		final double dz = lutCoordinate - zFloor;
-		
-//		System.out.println( String.format("lutCoordinate=%f, zFloor=%d, floorVal=%f, nextVal=%f, dz=%f, return=%f",
-//				lutCoordinate,
-//				zFloor,
-//				floorVal,
-//				nextVal,
-//				dz,
-//				( nextVal - floorVal ) * dz + floorVal));
+
 		return ( nextVal - floorVal ) * dz + floorVal;
 		
 	}
@@ -215,50 +204,6 @@ public abstract class AbstractLUTGrid implements InvertibleRealTransform {
 		}
 	}
 	
-	
-//	protected void setScale( final double[] scale ) {
-//		if ( scale.length == nNonTransformedCoordinates )
-//			this.scale = scale.clone();
-//		else {
-//			this.scale = new double[ nNonTransformedCoordinates ];
-//			for (int i = 0; i < Math.min( nNonTransformedCoordinates, scale.length ); ++i ) {
-//				this.scale[i] = scale[i];
-//			}
-//			if ( scale.length == 1 ) {
-//				for ( int i = scale.length; i < nNonTransformedCoordinates; ++i ) {
-//					this.scale[i] = scale[0];
-//				}
-//			}
-//			else if ( scale.length < nNonTransformedCoordinates ) {
-//				for ( int i = scale.length; i < nNonTransformedCoordinates; ++i ) {
-//					this.scale[i] = 1.0;
-//				}
-//			}
-//		}
-//		this.scaleTransform = new Scale( this.scale );
-//	}
-//	
-//	protected void setShift( final double[] shift ) {
-//		if ( scale.length == nNonTransformedCoordinates )
-//			this.shift = shift.clone();
-//		else {
-//			this.shift = new double[ nNonTransformedCoordinates ];
-//			for (int i = 0; i < Math.min( nNonTransformedCoordinates, shift.length ); ++i ) {
-//				this.shift[i] = shift[i];
-//			}
-//			if ( shift.length == 1 ) {
-//				for ( int i = shift.length; i < nNonTransformedCoordinates; ++i ) {
-//					this.shift[i] = shift[0];
-//				}
-//			}
-//			else if ( shift.length < nNonTransformedCoordinates ) {
-//				for ( int i = shift.length; i < nNonTransformedCoordinates; ++i ) {
-//					this.shift[i] = 1.0;
-//				}
-//			}
-//		}
-//		this.scaleTransform = new Scale( this.scale );
-//	}
 	
 	protected void copyAndFillIfNecessary( final double[] source, final double[] target ) {
 		final int range = Math.min( source.length, target.length );

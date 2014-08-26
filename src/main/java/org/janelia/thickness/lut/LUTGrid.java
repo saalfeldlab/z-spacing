@@ -50,11 +50,9 @@ public class LUTGrid extends AbstractLUTGrid {
 		this.updateCoordinates( source );
 		for ( int d = 0; d < this.nNonTransformedCoordinates; ++d ) {
 			target[d] = source[d];
-//			IJ.log( String.format( "1SAME:\t %d: %f ~> %f", d, source[d], target[d] ) );
 		}
 		for ( int d = this.nNonTransformedCoordinates; d < target.length; ++d) {
 			target[d] = this.applyChecked( source[d] );
-//			IJ.log( String.format( "1MODIFED:\t %d: %f ~> %f", d, source[d], target[d] ) );
 		}
 	}
 
@@ -63,11 +61,9 @@ public class LUTGrid extends AbstractLUTGrid {
 		this.updateCoordinates( source );
 		for ( int d = 0; d < this.nNonTransformedCoordinates; ++d ) {
 			target[d] = source[d];
-//			IJ.log( String.format( "2SAME:\t %d: %f ~> %f", d, source[d], target[d] ) );
 		}
 		for ( int d = this.nNonTransformedCoordinates; d < target.length; ++d) {
 			target[d] = (float) this.applyChecked( source[d] );
-//			IJ.log( String.format( "2MODIFED:\t %d: %f ~> %f", d, source[d], target[d] ) );
 		}
 	}
 	
@@ -76,51 +72,38 @@ public class LUTGrid extends AbstractLUTGrid {
 		this.updateCoordinates( source );
 		for ( int d = 0; d < this.nNonTransformedCoordinates; ++d ) {
 			target.setPosition( source.getDoublePosition( d ), d);
-//			IJ.log( String.format( "3SAME:\t %d: %f ~> %f", d, source.getDoublePosition(d), source.getDoublePosition(d) ) );
 		}
 		for ( int d = this.nNonTransformedCoordinates; d < target.numDimensions(); ++d ) {
 			target.setPosition( this.applyChecked( source.getDoublePosition( d ) ), d);
-//			IJ.log( String.format( "3MODIFED:\t %d: %f ~> %f", d, source.getDoublePosition(d), this.applyInverseChecked( source.getDoublePosition(d) ) ) );
 		}
 	}
 
 	@Override
 	public void applyInverse(final double[] source, final double[] target) {
 		this.updateCoordinates( target );
-//		String LOG_STRING = "";
 		for ( int d = 0; d < this.nNonTransformedCoordinates; ++d ) {
 			source[d] = target[d];
 		}
 		for ( int d = this.nNonTransformedCoordinates; d < target.length; ++d ) {
 			source[d] = this.applyInverseChecked( target[d] );
-//			if ( (int) target[ 0 ] == 203 )
-//				LOG_STRING += String.format( "1MODIFED:\t %d: %f ~> %f", d, target[d], source[d] );
 		}
-//		if ( (int) target[ 0 ] == 203 )
-//			IJ.log( LOG_STRING );
 	}
 
 	@Override
 	public void applyInverse(final float[] source, final float[] target) {
 		this.updateCoordinates( target );
-//		String LOG_STRING = "";
 		for ( int d = 0; d < this.nNonTransformedCoordinates; ++d ) {
 			source[d] = target[d];
 		}
 		for ( int d = this.nNonTransformedCoordinates; d < target.length; ++d ) {
 			source[d] = (float) this.applyInverseChecked( target[d] );
-//			if ( (int) target[ 0 ] == 203 )
-//				LOG_STRING += String.format( "2MODIFED:\t %d: %f ~> %f", d, target[d], source[d] );
 		}
-//		if ( (int) target[ 0 ] == 203 )
-//			IJ.log( LOG_STRING );
 	}
 
 	@Override
 	public void applyInverse(final RealPositionable source, final RealLocalizable target) {
 		final double epsilon = 1e-10;
 		this.updateCoordinates( target );
-//		String LOG_STRING = "";
 		for ( int d = 0; d < this.nNonTransformedCoordinates; ++d ) {
 			final double pos  = target.getDoublePosition( d );
 			final double dPos = pos - epsilon;
@@ -130,12 +113,7 @@ public class LUTGrid extends AbstractLUTGrid {
 			final double pos  = this.applyInverseChecked( target.getDoublePosition( d ) );
 			final double dPos = pos - epsilon;
 			source.setPosition( dPos > 0 ? dPos : pos, d );
-//			if ( (int) target.getDoublePosition( 2 ) == 319 && (int) target.getDoublePosition( 3 ) == 235 )
-//				LOG_STRING += String.format( "3MODIFED:\t %d: %f ~> %f", d, target.getDoublePosition(d), this.applyInverseChecked( target.getDoublePosition(d) ) ) + "   ";
 		}
-//		if ( (int) target.getDoublePosition( 2 ) == 319 && (int) target.getDoublePosition( 3 ) == 235 )
-//			IJ.log( LOG_STRING );
-//			System.out.println( LOG_STRING );
 	}
 
 	@Override
