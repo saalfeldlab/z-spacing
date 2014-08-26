@@ -101,4 +101,8 @@ public class SingleDimensionLUTGrid extends AbstractLUTGrid {
 				scale);
 	}
 
+	public SingleDimensionLUTGrid reScale( final double... scale) {
+		return new SingleDimensionLUTGrid(applyTransformToDimension, applyTransformToDimension, lutArray, applyTransformToDimension, scale);
+	}
+
 }
