@@ -10,6 +10,7 @@ import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
+import net.imglib2.realtransform.AffineTransform;
 import net.imglib2.realtransform.InvertibleRealTransform;
 import net.imglib2.realtransform.RealViews;
 import net.imglib2.realtransform.Scale;
@@ -36,16 +37,17 @@ public abstract class AbstractLUTGrid implements InvertibleRealTransform {
 	protected RealRandomAccess<RealComposite<DoubleType>> access; // temporary variables 
 	protected RealComposite< DoubleType > currentLut; // temporary variables
 	protected double[] scale;
-	protected Scale scaleTransform;
+	protected double[] shift;
+	protected final Scale scaleTransform;
 	
 	public AbstractLUTGrid(final int numSourceDimensions, final int numTargetDimensions,
 			final RandomAccessibleInterval< DoubleType > lutArray ) {
-		this(numSourceDimensions, numTargetDimensions, lutArray, 1.0);
+		this(numSourceDimensions, numTargetDimensions, lutArray, new double[] {1.0}, new double[] {0.0} );
 	}
 	
 	
 	public AbstractLUTGrid(final int numSourceDimensions, final int numTargetDimensions,
-			final RandomAccessibleInterval< DoubleType > lutArray, final double... scale ) {
+			final RandomAccessibleInterval< DoubleType > lutArray, final double[] scale, final double[] shift ) {
 		super();
 		this.numSourceDimensions = numSourceDimensions;
 		this.numTargetDimensions = numTargetDimensions;
@@ -58,11 +60,28 @@ public abstract class AbstractLUTGrid implements InvertibleRealTransform {
 		this.lutMaxIndex = (int) (this.lutArray.dimension( this.nNonTransformedCoordinates ) ) - 1;
 		
 		// generate scale transform to allow for generating interpolated high-res LUT from low-res LUT
-		setScale( scale );
+		this.scale = new double[ this.nNonTransformedCoordinates ];
+		this.shift = new double[ this.nNonTransformedCoordinates ];
+		copyAndFillIfNecessary( scale, this.scale );
+		copyAndFillIfNecessary( shift, this.shift );
+		
+		this.scaleTransform = new Scale( this.scale );
+		final AffineTransform affine = new AffineTransform( this.nNonTransformedCoordinates );
+		final double[][] affineMatrix = new double[ this.nNonTransformedCoordinates + 1 ][];
+		for ( int i = 0; i < nNonTransformedCoordinates + 1; ++i ) {
+			affineMatrix[ i ] = new double[ nNonTransformedCoordinates + 1 ]; // initialized to zero
+			if ( i < nNonTransformedCoordinates ) {
+				affineMatrix[ i ][ i ] = this.scale[ i ];
+				affineMatrix[ i ][ nNonTransformedCoordinates ] = this.shift[ i ];
+			} else
+				affineMatrix[ i ][ i ] = 1.0;
+		}
+		affine.set( affineMatrix );
 		
 		final ExtendedRandomAccessibleInterval<RealComposite<DoubleType>, CompositeIntervalView<DoubleType, RealComposite<DoubleType>>> extendedCollapsedSource = 
 				Views.extendBorder( collapsedSource );
-		this.coefficients = RealViews.transform( Views.interpolate( extendedCollapsedSource, this.interpolatorFactory ), this.scaleTransform );
+//		this.coefficients = RealViews.transform( Views.interpolate( extendedCollapsedSource, this.interpolatorFactory ), this.scaleTransform );
+		this.coefficients = RealViews.transform( Views.interpolate( extendedCollapsedSource, this.interpolatorFactory ), affine );
 		this.access = this.coefficients.realRandomAccess();
 		this.currentLut = this.access.get();
 		
@@ -197,26 +216,59 @@ public abstract class AbstractLUTGrid implements InvertibleRealTransform {
 	}
 	
 	
-	public void setScale( final double... scale ) {
-		if ( scale.length == nNonTransformedCoordinates )
-			this.scale = scale.clone();
-		else {
-			this.scale = new double[ nNonTransformedCoordinates ];
-			for (int i = 0; i < Math.min( nNonTransformedCoordinates, scale.length ); ++i ) {
-				this.scale[i] = scale[i];
-			}
-			if ( scale.length == 1 ) {
-				for ( int i = scale.length; i < nNonTransformedCoordinates; ++i ) {
-					this.scale[i] = scale[0];
-				}
-			}
-			else if ( scale.length < nNonTransformedCoordinates ) {
-				for ( int i = scale.length; i < nNonTransformedCoordinates; ++i ) {
-					this.scale[i] = 1.0;
-				}
-			}
+//	protected void setScale( final double[] scale ) {
+//		if ( scale.length == nNonTransformedCoordinates )
+//			this.scale = scale.clone();
+//		else {
+//			this.scale = new double[ nNonTransformedCoordinates ];
+//			for (int i = 0; i < Math.min( nNonTransformedCoordinates, scale.length ); ++i ) {
+//				this.scale[i] = scale[i];
+//			}
+//			if ( scale.length == 1 ) {
+//				for ( int i = scale.length; i < nNonTransformedCoordinates; ++i ) {
+//					this.scale[i] = scale[0];
+//				}
+//			}
+//			else if ( scale.length < nNonTransformedCoordinates ) {
+//				for ( int i = scale.length; i < nNonTransformedCoordinates; ++i ) {
+//					this.scale[i] = 1.0;
+//				}
+//			}
+//		}
+//		this.scaleTransform = new Scale( this.scale );
+//	}
+//	
+//	protected void setShift( final double[] shift ) {
+//		if ( scale.length == nNonTransformedCoordinates )
+//			this.shift = shift.clone();
+//		else {
+//			this.shift = new double[ nNonTransformedCoordinates ];
+//			for (int i = 0; i < Math.min( nNonTransformedCoordinates, shift.length ); ++i ) {
+//				this.shift[i] = shift[i];
+//			}
+//			if ( shift.length == 1 ) {
+//				for ( int i = shift.length; i < nNonTransformedCoordinates; ++i ) {
+//					this.shift[i] = shift[0];
+//				}
+//			}
+//			else if ( shift.length < nNonTransformedCoordinates ) {
+//				for ( int i = shift.length; i < nNonTransformedCoordinates; ++i ) {
+//					this.shift[i] = 1.0;
+//				}
+//			}
+//		}
+//		this.scaleTransform = new Scale( this.scale );
+//	}
+	
+	protected void copyAndFillIfNecessary( final double[] source, final double[] target ) {
+		final int range = Math.min( source.length, target.length );
+		for ( int i = 0; i < range; ++i ) {
+			target[i] = source[i];
 		}
-		this.scaleTransform = new Scale( this.scale );
+		for ( int i = range; i < target.length; ++i ) {
+			target[ i ] = source[ source.length - 1 ];
+		}
 	}
+
 
 }

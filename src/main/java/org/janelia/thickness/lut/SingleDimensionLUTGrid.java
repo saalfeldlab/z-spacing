@@ -16,7 +16,7 @@ public class SingleDimensionLUTGrid extends AbstractLUTGrid {
 			final int numTargetDimensions,
 			final RandomAccessibleInterval< DoubleType > lutArray, 
 			final int applyTransformToDimension) {
-		this(numSourceDimensions, numTargetDimensions, lutArray, applyTransformToDimension, 1.0);
+		this(numSourceDimensions, numTargetDimensions, lutArray, applyTransformToDimension, new double[] { 1.0 }, new double[] { 0.0 } );
 	}
 	
 	public SingleDimensionLUTGrid(
@@ -24,8 +24,9 @@ public class SingleDimensionLUTGrid extends AbstractLUTGrid {
 			final int numTargetDimensions,
 			final RandomAccessibleInterval< DoubleType > lutArray, 
 			final int applyTransformToDimension,
-			final double... scale ) {
-		super(numSourceDimensions, numTargetDimensions, lutArray, scale);
+			final double[] scale,
+			final double[] shift) {
+		super(numSourceDimensions, numTargetDimensions, lutArray, scale, shift);
 		this.applyTransformToDimension = applyTransformToDimension;
 		assert this.applyTransformToDimension >= this.nNonTransformedCoordinates;
 	}
@@ -97,11 +98,16 @@ public class SingleDimensionLUTGrid extends AbstractLUTGrid {
 				applyTransformToDimension, 
 				lutArray, 
 				applyTransformToDimension,
-				scale);
+				scale,
+				shift);
 	}
 
 	public SingleDimensionLUTGrid reScale( final double... scale) {
-		return new SingleDimensionLUTGrid(applyTransformToDimension, applyTransformToDimension, lutArray, applyTransformToDimension, scale);
+		return new SingleDimensionLUTGrid(applyTransformToDimension, applyTransformToDimension, lutArray, applyTransformToDimension, scale, shift);
+	}
+	
+	public SingleDimensionLUTGrid reShift( final double... shift) {
+		return new SingleDimensionLUTGrid(applyTransformToDimension, applyTransformToDimension, lutArray, applyTransformToDimension, scale, shift);
 	}
 
 }

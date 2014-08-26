@@ -39,8 +39,9 @@ public class LUTGrid extends AbstractLUTGrid {
 			final int numSourceDimensions,
 			final int numTargetDimensions,
 			final RandomAccessibleInterval< DoubleType > lutArray,
-			final double... scale ) {
-		super(numSourceDimensions, numTargetDimensions, lutArray, scale);
+			final double[] scale,
+			final double[] shift) {
+		super(numSourceDimensions, numTargetDimensions, lutArray, scale, shift);
 	}
 	
 
@@ -144,11 +145,15 @@ public class LUTGrid extends AbstractLUTGrid {
 
 	@Override
 	public LUTGrid copy() {
-		return new LUTGrid(numSourceDimensions, numTargetDimensions, lutArray, scale );
+		return new LUTGrid(numSourceDimensions, numTargetDimensions, lutArray, scale, shift );
 	}
 	
 	public LUTGrid reScale( final double... scale ) {
-		return new LUTGrid(numSourceDimensions, numTargetDimensions, lutArray, scale);
+		return new LUTGrid(numSourceDimensions, numTargetDimensions, lutArray, scale, shift);
+	}
+	
+	public LUTGrid reShift( final double... shift ) {
+		return new LUTGrid(numSourceDimensions, numTargetDimensions, lutArray, scale, shift);
 	}
 	
 	final static public void main( final String[] args ) {
