@@ -40,6 +40,10 @@ public class LUTGridTest {
 	private final float[] DoubleTargetFloat   = targetFloat.clone();
 	private final RealPoint DoubleTargetRealPoint = new RealPoint( targetOffGrid.clone() );
 	
+	private final double[] ShiftedTargetDouble = targetDouble.clone();
+	private final float[] ShiftedTargetFloat   = targetFloat.clone();
+	private final RealPoint ShiftedTargetRealPoint = new RealPoint( targetOffGrid.clone() );
+	
 	// 3 x 3 x 4 transform lut with same entries all over the place
 	private LUTGrid tf1;
 	private LUTGrid tf2;
@@ -50,8 +54,14 @@ public class LUTGridTest {
 	final double s1 = 2.0;
 	final double s2 = 3.0;
 	
+	final double[] sh1 = { 0.5, 0.0 }; // shift along one axis by 0.5 -> result is 0.5 * expected value
+	final double sh2 = 1.0; // shift along two axis by 1.0 -> result is 0.0
+	
 	LUTGrid copy1;
 	LUTGrid copy2;
+	
+	LUTGrid shift1;
+	LUTGrid shift2;
 	
 	private final double[] resultDouble = new double[ 4 ];
 	private final float[] resultFloat = new float[ 4 ];
@@ -68,6 +78,11 @@ public class LUTGridTest {
 			DoubleTargetDouble[i] *= s1;
 			DoubleTargetFloat[i]  *= s2;
 			DoubleTargetRealPoint.setPosition( s1*DoubleTargetRealPoint.getDoublePosition(i), i);
+		}
+		for ( int i = 2; i < 4; ++i ) {
+			ShiftedTargetDouble[ i ] = ( 1 - sh1[0] ) * ShiftedTargetDouble[ i ] + sh1[0] * 0.0;
+			ShiftedTargetFloat[ i ] = (float) (( 1 - sh2 ) * ShiftedTargetFloat[ i ] + sh2 * 0.0f);
+			ShiftedTargetRealPoint.setPosition( ( 1 - sh1[0] ) * ShiftedTargetRealPoint.getDoublePosition( i ) + sh1[0] * 0.0, i );
 		}
 		
 		final double[] arr1 = new double[] { 1.0, 2.0, 5.5, 6.0 };
@@ -89,6 +104,9 @@ public class LUTGridTest {
 		
 		copy1 = tf1.reScale( s1 );
 		copy2 = tf2.reScale( s2 );
+		
+		shift1 = tf1.reShift( sh1 );
+		shift2 = tf1.reShift( sh2 );
 		
 	}
 
@@ -116,6 +134,17 @@ public class LUTGridTest {
 		for ( int d = 0; d < DoubleTargetRealPoint.numDimensions(); ++d )
 		{
 			Assert.assertEquals( DoubleTargetRealPoint.getDoublePosition(d), resultRealPoint.getDoublePosition(d), 0.0 );
+		}
+		
+		
+		shift1.apply( sourceDouble, resultDouble );
+		shift1.apply( sourceRealPoint, resultRealPoint );
+		shift2.apply( sourceFloat, resultFloat );
+		Assert.assertArrayEquals( ShiftedTargetDouble, resultDouble, 0.0 );
+		Assert.assertArrayEquals( ShiftedTargetFloat, resultFloat, 0.0f );
+		for ( int d = 0; d < ShiftedTargetRealPoint.numDimensions(); ++d )
+		{
+			Assert.assertEquals( ShiftedTargetRealPoint.getDoublePosition(d), resultRealPoint.getDoublePosition(d), 0.0 );
 		}
 	}
 	
