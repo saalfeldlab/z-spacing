@@ -56,8 +56,8 @@ public class LUTGridTest {
 	final double s1 = 2.0;
 	final double s2 = 3.0;
 	
-	final LUTGrid copy1 = tf1.reScale();
-	final LUTGrid copy2 = tf2.reScale();
+	final LUTGrid copy1 = tf1.reScale( 1./s1 );
+	final LUTGrid copy2 = tf2.reScale( 1./s2);
 	
 	private final double[] resultDouble = new double[ 4 ];
 	private final float[] resultFloat = new float[ 4 ];
