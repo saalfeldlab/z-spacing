@@ -83,6 +83,7 @@ public abstract class AbstractLUTGrid implements InvertibleRealTransform {
 		this.currentLut = this.access.get();
 		
 		final int zFloor = ( int ) lutCoordinate;
+		
 		final double floorVal = this.currentLut.get( zFloor ).get();
 		final double nextVal  = this.currentLut.get( zFloor + 1 ).get();
 		final double dz = lutCoordinate - zFloor;
@@ -204,7 +205,12 @@ public abstract class AbstractLUTGrid implements InvertibleRealTransform {
 			for (int i = 0; i < Math.min( nNonTransformedCoordinates, scale.length ); ++i ) {
 				this.scale[i] = scale[i];
 			}
-			if ( scale.length < nNonTransformedCoordinates ) {
+			if ( scale.length == 1 ) {
+				for ( int i = scale.length; i < nNonTransformedCoordinates; ++i ) {
+					this.scale[i] = scale[0];
+				}
+			}
+			else if ( scale.length < nNonTransformedCoordinates ) {
 				for ( int i = scale.length; i < nNonTransformedCoordinates; ++i ) {
 					this.scale[i] = 1.0;
 				}

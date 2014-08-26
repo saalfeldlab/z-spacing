@@ -35,7 +35,6 @@ public class SingleDimensionLUTGrid extends AbstractLUTGrid {
 		this.updateCoordinates( source );
 		for ( int d = 0; d < this.nNonTransformedCoordinates; ++d ) {
 			target[d] = source[d];
-			System.out.println( "Keeping dimension " + d + ": " + target[d]);
 		}
 		target[this.applyTransformToDimension] = this.applyChecked( source[this.applyTransformToDimension] );
 	}

@@ -3,8 +3,23 @@
  */
 package org.janelia.thickness.lut;
 
+import java.io.IOException;
+
+import net.imglib2.Cursor;
+import net.imglib2.ExtendedRandomAccessibleInterval;
 import net.imglib2.RealPoint;
+import net.imglib2.RealRandomAccess;
+import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.basictypeaccess.array.DoubleArray;
+import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
+import net.imglib2.realtransform.InverseRealTransform;
+import net.imglib2.realtransform.RealTransformRandomAccessible;
+import net.imglib2.realtransform.RealViews;
+import net.imglib2.type.numeric.real.DoubleType;
+import net.imglib2.view.Views;
+import net.imglib2.view.composite.CompositeIntervalView;
+import net.imglib2.view.composite.RealComposite;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -34,16 +49,16 @@ public class LUTGridTest {
 	private final RealPoint DoubleTargetRealPoint = new RealPoint( targetOffGrid.clone() );
 	
 	// 3 x 3 x 4 transform lut with same entries all over the place
-	private final LUTGrid tf1 = new LUTGrid( 4, 4, ArrayImgs.doubles( new double[] { 1.0, 2.0, 5.5, 6.0, 
-			1.0, 2.0, 5.5, 6.0, 
+	private LUTGrid tf1 = new LUTGrid( 4, 4, ArrayImgs.doubles( new double[] { 1.0, 2.0, 3.0, 5.0, 
+			1.0, 2.0, 3.0, 5.0, 
+			1.0, 2.0, 3.0, 5.0,
+			1.0, 2.0, 3.0, 5.0,
 			1.0, 2.0, 5.5, 6.0,
-			1.0, 2.0, 5.5, 6.0,
-			1.0, 2.0, 5.5, 6.0,
-			1.0, 2.0, 5.5, 6.0,
-			1.0, 2.0, 5.5, 6.0,
-			1.0, 2.0, 5.5, 6.0
-			,1.0, 2.0, 5.5, 6.0}, 3, 3, 4 ) );
-	private final LUTGrid tf2 = new LUTGrid( 4, 4, ArrayImgs.doubles( new double[] { 1.0, 3.5, 4.5, 5.0,
+			1.0, 2.0, 3.0, 5.0,
+			1.0, 2.0, 3.0, 5.0,
+			1.0, 2.0, 3.0, 5.0
+			,1.0, 2.0, 3.0, 5.0}, 3, 3, 4 ) );
+	private LUTGrid tf2 = new LUTGrid( 4, 4, ArrayImgs.doubles( new double[] { 1.0, 3.5, 4.5, 5.0,
 			1.0, 3.5, 4.5, 5.0,
 			1.0, 3.5, 4.5, 5.0,
 			1.0, 3.5, 4.5, 5.0,
@@ -53,18 +68,21 @@ public class LUTGridTest {
 			1.0, 3.5, 4.5, 5.0,
 			1.0, 3.5, 4.5, 5.0}, 3, 3, 4 ) );
 	
+	private final ArrayImg< DoubleType, DoubleArray> lut1 = ArrayImgs.doubles( 3, 3, 4 );
+	private final ArrayImg< DoubleType, DoubleArray> lut2 = ArrayImgs.doubles( 3, 3, 4 );
+	
 	final double s1 = 2.0;
 	final double s2 = 3.0;
 	
-	final LUTGrid copy1 = tf1.reScale( 1./s1 );
-	final LUTGrid copy2 = tf2.reScale( 1./s2);
+	LUTGrid copy1 = tf1.reScale( s1 );
+	LUTGrid copy2 = tf2.reScale( s2 );
 	
 	private final double[] resultDouble = new double[ 4 ];
 	private final float[] resultFloat = new float[ 4 ];
 	private final RealPoint resultRealPoint = new RealPoint( 4 );
 
 	@Before
-	public void setUp() {
+	public void setUp() throws IOException {
 		
 		for ( int i = 0; i < 2; ++i ) {
 			DoubleSourceDouble[i] *= s1;
@@ -75,6 +93,36 @@ public class LUTGridTest {
 			DoubleTargetFloat[i]  *= s2;
 			DoubleTargetRealPoint.setPosition( s1*DoubleTargetRealPoint.getDoublePosition(i), i);
 		}
+		
+		final double[] arr1 = new double[] { 1.0, 2.0, 5.5, 6.0 };
+		final double[] arr2 = new double[] { 1.0, 3.5, 4.5, 5.0 };
+		
+		final Cursor<DoubleType> c1 = Views.flatIterable( Views.hyperSlice( Views.hyperSlice( lut1, 1, 1), 0, 1) ).cursor();
+		final Cursor<DoubleType> c2 = Views.flatIterable( Views.hyperSlice( Views.hyperSlice( lut2, 1, 1), 0, 1) ).cursor();
+		
+		
+		
+		for (int i = 0; i < arr2.length; i++) {
+			c1.fwd();
+			c2.fwd();
+			c1.get().set( arr1[i] );
+			c2.get().set( arr2[i] );
+		}
+		
+		tf1 = new LUTGrid( 4, 4, lut1 );
+		tf2 = new LUTGrid( 4, 4, lut2 );
+		
+		copy1 = tf1.reScale( s1 );
+		copy2 = tf2.reScale( s2 );
+		
+		final CompositeIntervalView<DoubleType, RealComposite<DoubleType>> collapsedSource = Views.collapseReal( lut1 );
+		final ExtendedRandomAccessibleInterval<RealComposite<DoubleType>, CompositeIntervalView<DoubleType, RealComposite<DoubleType>>> extendedCollapsedSource = Views.extendBorder( collapsedSource );
+		final RealTransformRandomAccessible<RealComposite<DoubleType>, InverseRealTransform> coefficients = RealViews.transform( Views.interpolate( extendedCollapsedSource, new NLinearInterpolatorFactory<RealComposite<DoubleType>>()), new net.imglib2.realtransform.Scale( s1, s1) );
+		
+		final RealRandomAccess<RealComposite<DoubleType>> ra = coefficients.realRandomAccess();
+		
+		ra.setPosition( new int[] { 2, 2 } );
+		
 	}
 
 

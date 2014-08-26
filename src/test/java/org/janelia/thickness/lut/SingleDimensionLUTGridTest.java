@@ -57,8 +57,8 @@ public class SingleDimensionLUTGridTest {
 	final double s1 = 2.0;
 	final double s2 = 3.0;
 	
-	final SingleDimensionLUTGrid copy1 = tf1.reScale( 1./s1 );
-	final SingleDimensionLUTGrid copy2 = tf2.reScale( 1./s2 );
+	final SingleDimensionLUTGrid copy1 = tf1.reScale( s1 );
+	final SingleDimensionLUTGrid copy2 = tf2.reScale( s2 );
 	
 	
 	private final double[] resultDouble = new double[ 3 ];
