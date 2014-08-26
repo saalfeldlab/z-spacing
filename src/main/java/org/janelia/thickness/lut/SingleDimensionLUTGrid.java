@@ -3,8 +3,6 @@ package org.janelia.thickness.lut;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealLocalizable;
 import net.imglib2.RealPositionable;
-import net.imglib2.img.array.ArrayImg;
-import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.realtransform.InverseRealTransform;
 import net.imglib2.realtransform.InvertibleRealTransform;
 import net.imglib2.type.numeric.real.DoubleType;
@@ -18,7 +16,16 @@ public class SingleDimensionLUTGrid extends AbstractLUTGrid {
 			final int numTargetDimensions,
 			final RandomAccessibleInterval< DoubleType > lutArray, 
 			final int applyTransformToDimension) {
-		super(numSourceDimensions, numTargetDimensions, lutArray);
+		this(numSourceDimensions, numTargetDimensions, lutArray, applyTransformToDimension, 1.0);
+	}
+	
+	public SingleDimensionLUTGrid(
+			final int numSourceDimensions,
+			final int numTargetDimensions,
+			final RandomAccessibleInterval< DoubleType > lutArray, 
+			final int applyTransformToDimension,
+			final double... scale ) {
+		super(numSourceDimensions, numTargetDimensions, lutArray, scale);
 		this.applyTransformToDimension = applyTransformToDimension;
 		assert this.applyTransformToDimension >= this.nNonTransformedCoordinates;
 	}
@@ -90,7 +97,8 @@ public class SingleDimensionLUTGrid extends AbstractLUTGrid {
 		return new SingleDimensionLUTGrid(applyTransformToDimension, 
 				applyTransformToDimension, 
 				lutArray, 
-				applyTransformToDimension);
+				applyTransformToDimension,
+				scale);
 	}
 
 }

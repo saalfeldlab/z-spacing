@@ -7,6 +7,7 @@ import net.imglib2.RealPoint;
 import net.imglib2.img.array.ArrayImgs;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -15,22 +16,66 @@ import org.junit.Test;
  */
 public class LUTGridTest {
 	
-	private final double[] sourceDouble = new double[] { 0.0, 0.0, 2.0, 2.0 };
-	private final float[] sourceFloat   = new float[] { 0.0f, 0.0f, 1.0f, 1.0f };
-	private final double[] sourceOffGrid = new double[] { 0.0, 0.0, 2.6, 2.6 };
+	private final double[] sourceDouble = new double[] { 1.0, 1.0, 2.0, 2.0 };
+	private final float[] sourceFloat   = new float[] { 1.0f, 1.0f, 1.0f, 1.0f };
+	private final double[] sourceOffGrid = new double[] { 1.0, 1.0, 2.6, 2.6 };
 	private final RealPoint sourceRealPoint = new RealPoint( sourceOffGrid );
-	private final double[] targetDouble = new double[] { 0.0, 0.0, 5.5, 5.5 };
-	private final float[] targetFloat  = new float[] { 0.0f, 0.0f, 3.5f, 3.5f };
-	private final double[] targetOffGrid = new double[] { 0.0, 0.0, 5.8, 5.8 };
+	private final double[] targetDouble = new double[] { 1.0, 1.0, 5.5, 5.5 };
+	private final float[] targetFloat  = new float[] { 1.0f, 1.0f, 3.5f, 3.5f };
+	private final double[] targetOffGrid = new double[] { 1.0, 1.0, 5.8, 5.8 };
 	private final RealPoint targetRealPoint = new RealPoint( targetOffGrid );
 	
-	private final LUTGrid tf1 = new LUTGrid( 4, 4, ArrayImgs.doubles( new double[] { 1.0, 2.0, 5.5, 6.0 }, 1, 1, 4 ) );
-	private final LUTGrid tf2 = new LUTGrid( 4, 4, ArrayImgs.doubles( new double[] { 1.0, 3.5, 4.5, 5.0 }, 1, 1, 4 ) );
+	private final double[] DoubleSourceDouble = sourceDouble.clone();
+	private final float[] DoubleSourceFloat   = sourceFloat.clone();
+	private final RealPoint DoubleSourceRealPoint = new RealPoint( sourceOffGrid.clone() );
+	
+	private final double[] DoubleTargetDouble = targetDouble.clone();
+	private final float[] DoubleTargetFloat   = targetFloat.clone();
+	private final RealPoint DoubleTargetRealPoint = new RealPoint( targetOffGrid.clone() );
+	
+	// 3 x 3 x 4 transform lut with same entries all over the place
+	private final LUTGrid tf1 = new LUTGrid( 4, 4, ArrayImgs.doubles( new double[] { 1.0, 2.0, 5.5, 6.0, 
+			1.0, 2.0, 5.5, 6.0, 
+			1.0, 2.0, 5.5, 6.0,
+			1.0, 2.0, 5.5, 6.0,
+			1.0, 2.0, 5.5, 6.0,
+			1.0, 2.0, 5.5, 6.0,
+			1.0, 2.0, 5.5, 6.0,
+			1.0, 2.0, 5.5, 6.0
+			,1.0, 2.0, 5.5, 6.0}, 3, 3, 4 ) );
+	private final LUTGrid tf2 = new LUTGrid( 4, 4, ArrayImgs.doubles( new double[] { 1.0, 3.5, 4.5, 5.0,
+			1.0, 3.5, 4.5, 5.0,
+			1.0, 3.5, 4.5, 5.0,
+			1.0, 3.5, 4.5, 5.0,
+			1.0, 3.5, 4.5, 5.0,
+			1.0, 3.5, 4.5, 5.0,
+			1.0, 3.5, 4.5, 5.0,
+			1.0, 3.5, 4.5, 5.0,
+			1.0, 3.5, 4.5, 5.0}, 3, 3, 4 ) );
+	
+	final double s1 = 2.0;
+	final double s2 = 3.0;
+	
+	final LUTGrid copy1 = tf1.reScale();
+	final LUTGrid copy2 = tf2.reScale();
 	
 	private final double[] resultDouble = new double[ 4 ];
 	private final float[] resultFloat = new float[ 4 ];
 	private final RealPoint resultRealPoint = new RealPoint( 4 );
 
+	@Before
+	public void setUp() {
+		
+		for ( int i = 0; i < 2; ++i ) {
+			DoubleSourceDouble[i] *= s1;
+			DoubleSourceFloat[i]  *= s2;
+			DoubleSourceRealPoint.setPosition( s1*DoubleSourceRealPoint.getDoublePosition(i), i);
+			
+			DoubleTargetDouble[i] *= s1;
+			DoubleTargetFloat[i]  *= s2;
+			DoubleTargetRealPoint.setPosition( s1*DoubleTargetRealPoint.getDoublePosition(i), i);
+		}
+	}
 
 
 	@Test
@@ -45,6 +90,21 @@ public class LUTGridTest {
 		{
 			Assert.assertEquals( targetRealPoint.getDoublePosition(d), resultRealPoint.getDoublePosition(d), 0.0 );
 		}
+		
+		
+		copy1.apply( DoubleSourceDouble, resultDouble );
+		copy1.apply( DoubleSourceRealPoint, resultRealPoint );
+		copy2.apply( DoubleSourceFloat, resultFloat );
+		
+		Assert.assertArrayEquals( DoubleTargetDouble, resultDouble, 0.0 );
+		Assert.assertArrayEquals( DoubleTargetFloat, resultFloat, 0.0f );
+		for ( int d = 0; d < DoubleTargetRealPoint.numDimensions(); ++d )
+		{
+			Assert.assertEquals( DoubleTargetRealPoint.getDoublePosition(d), resultRealPoint.getDoublePosition(d), 0.0 );
+		}
+		
+		
+		
 	}
 	
 	
@@ -58,6 +118,17 @@ public class LUTGridTest {
 		Assert.assertArrayEquals( sourceFloat, resultFloat, 0.0f );
 		for ( int d  =  0; d < sourceRealPoint.numDimensions(); ++d ) {
 			Assert.assertEquals(sourceRealPoint.getDoublePosition( d ), resultRealPoint.getDoublePosition( d ), 0.00000001 );
+		}
+		
+		
+		copy1.applyInverse( resultDouble, DoubleTargetDouble );
+		copy1.applyInverse( resultRealPoint, DoubleTargetRealPoint );
+		copy2.applyInverse( resultFloat, DoubleTargetFloat );
+		
+		Assert.assertArrayEquals( DoubleSourceDouble, resultDouble, 0.0 );
+		Assert.assertArrayEquals( DoubleSourceFloat, resultFloat, 0.0f );
+		for ( int d  =  0; d < DoubleSourceRealPoint.numDimensions(); ++d ) {
+			Assert.assertEquals( DoubleSourceRealPoint.getDoublePosition( d ), resultRealPoint.getDoublePosition( d ), 0.00000001 );
 		}
 	}
 
