@@ -2,6 +2,7 @@ package org.janelia.thickness.normalization;
 
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.list.ListImg;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
@@ -24,6 +25,17 @@ public abstract class AbstractColumnNormalization implements
 					current.setReal( ( current.getRealDouble() )*scalingFactor  );
 					cursor.fwd();
 				}
+			}
+		}
+	}
+	
+	public void normalize(
+			final ListImg< double[] > input,
+			final double scalingFactor,
+			final double referenceShift ) {
+		for ( final double[] arr : input ) {
+			for (int i = 0; i < arr.length; i++) {
+				arr[ i ] = arr[ i ] * scalingFactor; 
 			}
 		}
 	}
