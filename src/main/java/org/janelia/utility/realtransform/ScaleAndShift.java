@@ -21,21 +21,6 @@ public class ScaleAndShift implements InvertibleRealTransform {
 	
 
 	/**
-	 * @param inverse
-	 * @param scales
-	 * @param shifts
-	 * @param nDim
-	 */
-	public ScaleAndShift(final ScaleAndShift inverse, final double[] scales,
-			final double[] shifts, final int nDim) {
-		super();
-		this.inverse = inverse;
-		this.scales = scales;
-		this.shifts = shifts;
-		this.nDim = nDim;
-	}
-
-	/**
 	 * @param shifts
 	 * @param scales
 	 */
@@ -47,6 +32,23 @@ public class ScaleAndShift implements InvertibleRealTransform {
 		this.nDim   = shifts.length;
 		this.inverse = this.inverse();
 	}
+	
+	
+	/**
+	 * @param inverse
+	 * @param scales
+	 * @param shifts
+	 * @param nDim
+	 */
+	private ScaleAndShift(final ScaleAndShift inverse, final double[] scales,
+			final double[] shifts, final int nDim) {
+		super();
+		this.inverse = inverse;
+		this.scales = scales;
+		this.shifts = shifts;
+		this.nDim = nDim;
+	}
+	
 
 	/* (non-Javadoc)
 	 * @see net.imglib2.realtransform.RealTransform#numSourceDimensions()
