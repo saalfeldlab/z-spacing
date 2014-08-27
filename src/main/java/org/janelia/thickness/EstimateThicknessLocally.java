@@ -370,13 +370,25 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
 			final LocalVisitor visitor,
 			final Options options ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 		
-		final int nX = ( stopX - startX ) / stepX;
-        final int nY = ( stopY - startY ) / stepY;
+		final int nX = (int) coordinates.dimension( 0 );
+        final int nY = (int) coordinates.dimension( 1 );
         final int nZ = coordinates.firstElement().length;
         
         final long[] dim = new long[] { nX, nY };
         final LUTRealTransform type = new LUTRealTransform( coordinates.firstElement(), 2, 2);
         final ListImg<LUTRealTransform> lutTransforms = new ListImgFactory< LUTRealTransform >().create(dim, type);
+        
+        // fill lutTransforms
+        {
+	        final ListCursor<LUTRealTransform> lC = lutTransforms.cursor();
+	        final ListCursor<double[]> cC        = coordinates.cursor();
+	        
+	        while ( cC.hasNext() ) {
+	        	lC.fwd();
+	        	cC.fwd();
+	        	lC.set( new LUTRealTransform( cC.get(), 2, 2 ) );
+	        }
+        }
         
        
         final ListImg< RandomAccessibleInterval<DoubleType>> matrices = 
