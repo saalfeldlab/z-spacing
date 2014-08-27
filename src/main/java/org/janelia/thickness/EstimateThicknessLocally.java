@@ -539,16 +539,13 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
 						localMatrix,
 						localWeights,
 						multipliers,
-						localLUT );
-//		IJ.log( ("AFTER SHIFT" ) );
+						new LUTRealTransform( estimatedFit, 1, 1 ) // own lut for (inverse of) fit, do not mix up with lut for coordinate shifts!
+						);
 		
 		final ArrayImg< DoubleType, DoubleArray > mediatedShifts = ArrayImgs.doubles( previousLocalZCoordinates.length );
 		
 		// copy for thread safety
-//		IJ.log( "BEFORE MEDIATE" );
 		this.shiftMediator.copy().mediate( shifts, mediatedShifts );
-//		IJ.log( "AFTER MEDIATE" );
-        
         
         final ExtendedRandomAccessibleInterval<DoubleType, ArrayImg<DoubleType, DoubleArray>> extendedPreviousCoordinates = 
         		Views.extendBorder( ArrayImgs.doubles( previousLocalZCoordinates, previousLocalZCoordinates.length ) );
