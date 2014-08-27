@@ -451,11 +451,22 @@ public class EstimateThicknessLocally< M extends Model<M>, L extends Model<L> > 
         			tasks.add( new Callable<Void>() {
 						@Override
 						public Void call() throws Exception {
+							
+							final ArrayList<double[]> previousNeighborCoordinates = new ArrayList< double[] >();
+							final OutOfBounds<double[]> previousNeighborAccess = Views.extendBorder( previousCoordinates ).randomAccess();
+							for ( int d = 0; d < 2; ++d ) {
+								for ( int pos = -1; pos <= 1; pos += 2 ) {
+									previousNeighborAccess.setPosition( previousCoordinateAccess );
+									previousNeighborAccess.setPosition( previousNeighborAccess.getIntPosition(d) + pos, d);
+									previousNeighborCoordinates.add( previousNeighborAccess.get() );
+								}
+							}
+							
 							estimateCoordinatesAtXY( 
 		        					localMatrix,
 		        					localZCoordinates,
 		        					previousLocalZCoordinates,
-		        					new ArrayList< double[] >(), // add neighbors for regularization here!!! TODO
+		        					previousNeighborCoordinates, // add neighbors for regularization here!!! TODO
 		        					localWeights,
 		        					localLUT,
 		        					finalX,
