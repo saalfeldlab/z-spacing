@@ -8,8 +8,9 @@ import net.imglib2.realtransform.InvertibleRealTransformSequence;
 import net.imglib2.realtransform.Scale;
 import net.imglib2.realtransform.Translation;
 
-import org.apache.commons.math.stat.descriptive.moment.Mean;
-import org.apache.commons.math.stat.descriptive.moment.Variance;
+import org.janelia.utility.benchmark.Benchmark;
+import org.janelia.utility.benchmark.InverseTransformExecutor;
+import org.janelia.utility.benchmark.TransformExecutor;
 
 
 public class ScaleAndShiftBenchmark {
@@ -146,9 +147,10 @@ public class ScaleAndShiftBenchmark {
 		
 		// forward transforms
 		// affine
-		final double[] affineRuntimes = collectRuntimesForward( affine, sourcePoint, affineResult, nWarmupIterations, nRepetitions, nIterations );
-		final double affineMean = new Mean().evaluate( affineRuntimes );
-		final double affineVar  = new Variance().evaluate( affineRuntimes, affineMean );
+		final Benchmark affineBenchmark = new Benchmark( new TransformExecutor( sourcePoint, affineResult, affine ) );
+		affineBenchmark.evaluate(nWarmupIterations, nRepetitions, nIterations);
+		final double affineMean = affineBenchmark.getMean();
+		final double affineVar  = affineBenchmark.getVar();
 		final double affineStd  = Math.sqrt( affineVar );
 		if ( useCsv )
 			resultString += String.format( "%f%s%f%s", affineMean, separator, affineStd, separator );
@@ -156,9 +158,10 @@ public class ScaleAndShiftBenchmark {
 			resultString += "affine:\t\t" + affineMean + " (" + affineStd + ")\n";
 		
 		// scale and shift
-		final double[] sasRuntimes = collectRuntimesForward( sas, sourcePoint, sasResult, nWarmupIterations, nRepetitions, nIterations );
-		final double sasMean = new Mean().evaluate( sasRuntimes );
-		final double sasVar  = new Variance().evaluate( sasRuntimes, sasMean );
+		final Benchmark sasBenchmark = new Benchmark( new TransformExecutor( sourcePoint, sasResult, sas) );
+		sasBenchmark.evaluate(nWarmupIterations, nRepetitions, nIterations);
+		final double sasMean = sasBenchmark.getMean();
+		final double sasVar  = sasBenchmark.getVar();
 		final double sasStd  = Math.sqrt( sasVar );
 		if ( useCsv )
 			resultString += String.format( "%f%s%f%s", sasMean, separator, sasStd, separator );
@@ -166,9 +169,10 @@ public class ScaleAndShiftBenchmark {
 			resultString += "sas:\t\t" + sasMean + " (" + sasStd + ")\n";
 		
 		// chain of scale and translation
-		final double[] chainRuntimes = collectRuntimesForward( chain, sourcePoint, chainResult, nWarmupIterations, nRepetitions, nIterations );
-		final double chainMean = new Mean().evaluate( chainRuntimes );
-		final double chainVar  = new Variance().evaluate( chainRuntimes, chainMean );
+		final Benchmark chainBenchmark = new Benchmark( new TransformExecutor( sourcePoint, chainResult, chain) );
+		chainBenchmark.evaluate(nWarmupIterations, nRepetitions, nIterations);
+		final double chainMean = chainBenchmark.getMean();
+		final double chainVar  = chainBenchmark.getVar();
 		final double chainStd  = Math.sqrt( chainVar );
 		if ( useCsv )
 			resultString += String.format( "%f%s%f%s", chainMean, separator, chainStd, separator );
@@ -178,13 +182,10 @@ public class ScaleAndShiftBenchmark {
 		
 		// inverse transforms
 		// affine
-//		final double[] affineInverseRuntimes = collectRuntimes( 
-//				new InverseTransformExecutor( affineResult, sourcePoint, affine ), 
-//				nWarmupIterations, 
-//				nRepetitions);
-		final double[] affineInverseRuntimes = collectRuntimesInverse( affine, affineResult, sourcePoint, nWarmupIterations, nRepetitions, nIterations );
-		final double affineInverseMean = new Mean().evaluate( affineInverseRuntimes );
-		final double affineInverseVar  = new Variance().evaluate( affineInverseRuntimes, affineInverseMean );
+		final Benchmark affineInverseBenchmark = new Benchmark( new InverseTransformExecutor( affineResult, sourcePoint, affine ) );
+		affineInverseBenchmark.evaluate(nWarmupIterations, nRepetitions, nIterations);
+		final double affineInverseMean = affineInverseBenchmark.getMean();
+		final double affineInverseVar  = affineInverseBenchmark.getVar();
 		final double affineInverseStd  = Math.sqrt( affineInverseVar );
 		if ( useCsv )
 			resultString += String.format( "%f%s%f%s", affineInverseMean, separator, affineInverseStd, separator );
@@ -192,13 +193,10 @@ public class ScaleAndShiftBenchmark {
 			resultString += "affine-inverse:\t\t" + affineInverseMean + " (" + affineInverseStd + ")\n";
 		
 		// scale and shift
-//		final double[] sasInverseRuntimes = collectRuntimes( 
-//				new InverseTransformExecutor( sasResult, sourcePoint, sas ), 
-//				nWarmupIterations, 
-//				nRepetitions);
-		final double[] sasInverseRuntimes = collectRuntimesInverse( sas, sasResult, sourcePoint, nWarmupIterations, nRepetitions, nIterations );
-		final double sasInverseMean = new Mean().evaluate( sasInverseRuntimes );
-		final double sasInverseVar  = new Variance().evaluate( sasInverseRuntimes, sasInverseMean );
+		final Benchmark sasInverseBenchmark = new Benchmark( new InverseTransformExecutor( sasResult, sourcePoint, sas ) );
+		sasInverseBenchmark.evaluate(nWarmupIterations, nRepetitions, nIterations);
+		final double sasInverseMean = sasInverseBenchmark.getMean();
+		final double sasInverseVar  = sasInverseBenchmark.getVar();
 		final double sasInverseStd  = Math.sqrt( sasInverseVar );
 		if ( useCsv )
 			resultString += String.format( "%f%s%f%s", sasInverseMean, separator, sasInverseStd, separator );
@@ -206,13 +204,10 @@ public class ScaleAndShiftBenchmark {
 			resultString += "sas-inverse:\t\t" + sasInverseMean + " (" + sasInverseStd + ")\n";
 		
 		// chain of scale and translation
-//		final double[] chainInverseRuntimes = collectRuntimes( 
-//				new InverseTransformExecutor( chainResult, sourcePoint, chain ), 
-//				nWarmupIterations, 
-//				nRepetitions);
-		final double[] chainInverseRuntimes = collectRuntimesInverse( chain, chainResult, sourcePoint, nWarmupIterations, nRepetitions, nIterations );
-		final double chainInverseMean = new Mean().evaluate( chainInverseRuntimes );
-		final double chainInverseVar  = new Variance().evaluate( chainInverseRuntimes, chainInverseMean );
+		final Benchmark chainInverseBenchmark = new Benchmark( new InverseTransformExecutor( chainResult, sourcePoint, chain ) );
+		chainInverseBenchmark.evaluate(nWarmupIterations, nRepetitions, nIterations);
+		final double chainInverseMean = chainInverseBenchmark.getMean();
+		final double chainInverseVar  = chainInverseBenchmark.getVar();
 		final double chainInverseStd  = Math.sqrt( chainInverseVar );
 		if ( useCsv )
 			resultString += String.format( "%f%s%f", chainInverseMean, separator, chainInverseStd );
