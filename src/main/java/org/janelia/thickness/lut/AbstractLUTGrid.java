@@ -69,8 +69,6 @@ public abstract class AbstractLUTGrid implements InvertibleRealTransform {
 				Views.extendBorder( collapsedSource );
 		this.coefficients = RealViews.transform( Views.interpolate( extendedCollapsedSource, this.interpolatorFactory ), scaleAndShift );
 		this.access = this.coefficients.realRandomAccess();
-		System.out.println( this.scale.length + " " + this.shift.length + " " 
-		+ this.nNonTransformedCoordinates + " " + this.access.numDimensions() );
 		this.currentLut = this.access.get();
 		
 	}
