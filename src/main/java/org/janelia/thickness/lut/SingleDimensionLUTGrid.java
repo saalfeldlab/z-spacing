@@ -103,11 +103,25 @@ public class SingleDimensionLUTGrid extends AbstractLUTGrid {
 	}
 
 	public SingleDimensionLUTGrid reScale( final double... scale) {
-		return new SingleDimensionLUTGrid(applyTransformToDimension, applyTransformToDimension, lutArray, applyTransformToDimension, scale, shift);
+		final double[] sc = new double[ this.scale.length ];
+		for (int i = 0; i < scale.length; i++) {
+			sc[i] = scale[i];
+		}
+		for ( int i = scale.length; i < sc.length; ++i ) {
+			sc[i] = scale[scale.length-1];
+		}
+		return new SingleDimensionLUTGrid(applyTransformToDimension, applyTransformToDimension, lutArray, applyTransformToDimension, sc, shift);
 	}
 	
 	public SingleDimensionLUTGrid reShift( final double... shift) {
-		return new SingleDimensionLUTGrid(applyTransformToDimension, applyTransformToDimension, lutArray, applyTransformToDimension, scale, shift);
+		final double[] sh = new double[ this.shift.length ];
+		for (int i = 0; i < shift.length; i++) {
+			sh[i] = shift[i];
+		}
+		for ( int i = shift.length; i < sh.length; ++i ) {
+			sh[i] = shift[shift.length-1];
+		}
+		return new SingleDimensionLUTGrid(applyTransformToDimension, applyTransformToDimension, lutArray, applyTransformToDimension, scale, sh);
 	}
 
 }
