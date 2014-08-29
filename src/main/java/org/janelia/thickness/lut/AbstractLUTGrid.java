@@ -10,13 +10,14 @@ import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
-import net.imglib2.realtransform.AffineTransform;
 import net.imglib2.realtransform.InvertibleRealTransform;
 import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.Views;
 import net.imglib2.view.composite.CompositeIntervalView;
 import net.imglib2.view.composite.RealComposite;
+
+import org.janelia.utility.realtransform.ScaleAndShift;
 
 public abstract class AbstractLUTGrid implements InvertibleRealTransform {
 	
@@ -63,22 +64,13 @@ public abstract class AbstractLUTGrid implements InvertibleRealTransform {
 		copyAndFillIfNecessary( scale, this.scale );
 		copyAndFillIfNecessary( shift, this.shift );
 		
-		final AffineTransform affine = new AffineTransform( this.nNonTransformedCoordinates );
-		final double[][] affineMatrix = new double[ this.nNonTransformedCoordinates + 1 ][];
-		for ( int i = 0; i < nNonTransformedCoordinates + 1; ++i ) {
-			affineMatrix[ i ] = new double[ nNonTransformedCoordinates + 1 ]; // initialized to zero
-			if ( i < nNonTransformedCoordinates ) {
-				affineMatrix[ i ][ i ] = this.scale[ i ];
-				affineMatrix[ i ][ nNonTransformedCoordinates ] = this.shift[ i ];
-			} else
-				affineMatrix[ i ][ i ] = 1.0;
-		}
-		affine.set( affineMatrix );
-		
+		final ScaleAndShift scaleAndShift = new ScaleAndShift( this.scale, this.shift);
 		final ExtendedRandomAccessibleInterval<RealComposite<DoubleType>, CompositeIntervalView<DoubleType, RealComposite<DoubleType>>> extendedCollapsedSource = 
 				Views.extendBorder( collapsedSource );
-		this.coefficients = RealViews.transform( Views.interpolate( extendedCollapsedSource, this.interpolatorFactory ), affine );
+		this.coefficients = RealViews.transform( Views.interpolate( extendedCollapsedSource, this.interpolatorFactory ), scaleAndShift );
 		this.access = this.coefficients.realRandomAccess();
+		System.out.println( this.scale.length + " " + this.shift.length + " " 
+		+ this.nNonTransformedCoordinates + " " + this.access.numDimensions() );
 		this.currentLut = this.access.get();
 		
 	}
