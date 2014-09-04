@@ -389,25 +389,35 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 
                 this.shiftMediator.mediate( shifts, mediatedShifts );
 
-                final ArrayCursor<DoubleType> mediatedCursor   = mediatedShifts.cursor();
-                final ArrayCursor<DoubleType> coordinateCursor = coordinates.cursor();
+                final ArrayCursor<DoubleType> mediatedCursor = mediatedShifts.cursor();
 
+                for ( int ijk = 0; mediatedCursor.hasNext(); ++ijk ) {
 
-                int ijk = 0;
-
-
-                while ( mediatedCursor.hasNext() ) {
-
-                        coordinateCursor.fwd();
                         mediatedCursor.fwd();
-
+                        
                         lut[ijk] += options.shiftProportion * mediatedCursor.get().get();
-                        lut[ijk] *= inverseCoordinateUpdateRegularizerWeight;
-                        lut[ijk] += options.coordinateUpdateRegularizerWeight * ijk;
-
-                        ++ijk;
-
+//                        lut[ijk] *= inverseCoordinateUpdateRegularizerWeight;
+//                        lut[ijk] += options.coordinateUpdateRegularizerWeight * ijk;
                 }
+                
+                final float[] floatLut = new float[ lut.length ]; final float[] arange = new float[ lut.length ];
+                final float[] floatWeights = new float[ lut.length ];
+                for (int i = 0; i < arange.length; i++) {
+					arange[i] = i;
+					floatLut[i] = (float) lut[i];
+					floatWeights[i] = 1.0f;
+				}
+                final AffineModel1D coordinatesFitModel = new AffineModel1D();
+                
+           
+                coordinatesFitModel.fit( new float[][]{floatLut}, new float[][]{arange}, floatWeights );
+                
+                final double[] affineArray = new double[ 2 ];
+                coordinatesFitModel.toArray( affineArray );
+                
+                for (int i = 0; i < lut.length; i++) {
+					lut[i] = affineArray[0] * lut[i] + affineArray[1];
+				}
 
                 visitor.act( n + 1, matrix, lut, transform, multipliers, weights, estimatedFit );
         }
