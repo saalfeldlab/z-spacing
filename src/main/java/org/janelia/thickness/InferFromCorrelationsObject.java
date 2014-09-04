@@ -1,10 +1,13 @@
 package org.janelia.thickness;
 
+import ij.IJ;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
+import mpicbg.models.AffineModel1D;
 import mpicbg.models.IllDefinedDataPointsException;
 import mpicbg.models.Model;
 import mpicbg.models.NotEnoughDataPointsException;
@@ -253,6 +256,12 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                 for (int i = 0; i < defaultWeights.length; i++) {
                         defaultWeights[i] = 1.0;
                 }
+                
+                final double[] arange = new double[ defaultCoordinates.length ];
+                for (int i = 0; i < arange.length; i++) {
+					arange[i] = i;
+				}
+                final AffineModel1D coordinatesFit = new AffineModel1D();
 
 
                 final ArrayList<AbstractLUTRealTransform> transforms = new ArrayList<AbstractLUTRealTransform>();
@@ -328,6 +337,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                                         }
                                 }
                         }
+                        IJ.showProgress( iteration, options.nIterations );
                 }
 
 
