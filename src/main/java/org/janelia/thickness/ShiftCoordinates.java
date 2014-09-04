@@ -57,7 +57,7 @@ public class ShiftCoordinates {
 				/* current location */
 				final double shift = ( k < i ) ? rel - reference[ 0 ] : rel + reference[ 0 ];
 				
-				localShifts.add( new ConstantPair<Double, Double>( shift, weights[ i ] ) );
+				localShifts.add( new ConstantPair<Double, Double>( shift, weights[ i ] * 1.0 / ( Math.abs( i - k ) + 1 ) ) );
 				
 			}
 		}
