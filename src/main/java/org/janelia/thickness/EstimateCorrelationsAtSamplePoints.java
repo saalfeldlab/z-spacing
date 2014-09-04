@@ -43,14 +43,16 @@ public class EstimateCorrelationsAtSamplePoints {
 			accumulativeShifts[ i ] = accumulativeShifts[ i - 1 ] + coordinates[ i ] - i;
 		}
 		
+		
+		
 		final TreeMap<Integer, ArrayList<PointMatch>> pointCollections = new TreeMap< Integer, ArrayList<PointMatch>>();
 		
 		final RealRandomAccessible<DoubleType> source = Views.interpolate( Views.extendValue( correlations, new DoubleType( Double.NaN ) ), new NLinearInterpolatorFactory<DoubleType>());
 		
 		final RealTransformRealRandomAccessible<DoubleType, InverseRealTransform> source2 = RealViews.transformReal(source, transform);
-		
-		final RealRandomAccess<DoubleType> access   = source2.realRandomAccess();
-		final RealRandomAccess<DoubleType> access2  = source2.realRandomAccess();
+
+		final RealRandomAccess< DoubleType > access  = source2.realRandomAccess();
+		final RealRandomAccess< DoubleType > access2 = source2.realRandomAccess();
 		
 		
 		final double[] result = new double[ nIter ];
