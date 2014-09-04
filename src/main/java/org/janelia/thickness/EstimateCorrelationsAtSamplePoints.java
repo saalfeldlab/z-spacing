@@ -92,7 +92,10 @@ public class EstimateCorrelationsAtSamplePoints {
 					
 		}
 		
-		for ( int i = 0; i < result.length; ++i ) {
+		/* TODO inverts because LUTRealTransform can only increasing */
+		result[0] = -1.0;
+		for ( int i = 1; i < result.length; ++i ) {
+			
 			correlationFitModel.fit( pointCollections.get( i ) );
 			
 			/* TODO inverts because LUTRealTransform can only increasing */
