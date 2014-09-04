@@ -37,15 +37,30 @@ public class ApplyTransformToImagesAndAverageVisitor extends AbstractMultiVisito
 	private ImagePlusImg< FloatType, ? > targetImgWrapped;
 	private final double scale;
 	private double multiplier;
+	private final int minX;
+	private final int minY;
+	private final int maxX;
+	private final int maxY;
 
 
 	public ApplyTransformToImagesAndAverageVisitor(final String basePath, final InterpolatorFactory< FloatType, RandomAccessible< FloatType > > interpolatorFactory, final double scale ) {
-		this( new ArrayList<Visitor>(), basePath, new ArrayList< RandomAccessibleInterval< FloatType > >(), interpolatorFactory, scale );
+		this( new ArrayList<Visitor>(), basePath, new ArrayList< RandomAccessibleInterval< FloatType > >(), interpolatorFactory, scale, Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE );
+	}
+	
+	public ApplyTransformToImagesAndAverageVisitor(final String basePath, final InterpolatorFactory< FloatType, RandomAccessible< FloatType > > interpolatorFactory, 
+			final double scale,
+			final int minX,
+			final int minY,
+			final int maxX,
+			final int maxY) {
+		this( new ArrayList<Visitor>(), basePath, new ArrayList< RandomAccessibleInterval< FloatType > >(), interpolatorFactory, scale, minX, minY, maxX, maxY );
 	}
 
 
 	public ApplyTransformToImagesAndAverageVisitor(final ArrayList<Visitor> visitors,
-			final String basePath, final ArrayList< RandomAccessibleInterval< FloatType > > images, final InterpolatorFactory< FloatType, RandomAccessible< FloatType > > interpolatorFactory, final double scale ) {
+			final String basePath, 
+			final ArrayList< RandomAccessibleInterval< FloatType > > images, final InterpolatorFactory< FloatType, RandomAccessible< FloatType > > interpolatorFactory, final double scale,
+			final int minX, final int minY, final int maxX, final int maxY ) {
 		super(visitors);
 		try {
 			String.format( basePath, 0 );
@@ -58,6 +73,11 @@ public class ApplyTransformToImagesAndAverageVisitor extends AbstractMultiVisito
 		this.interpolatorFactory = interpolatorFactory;
 		this.scale = scale;
 		this.multiplier = images.size();
+		
+		this.minX = minX;
+		this.minY = minY;
+		this.maxX = maxX;
+		this.maxY = maxY;
 		
 		if ( images.size() > 0 ) {
 			
@@ -97,7 +117,11 @@ public class ApplyTransformToImagesAndAverageVisitor extends AbstractMultiVisito
 	
 	
 	private void generateTargetImg() {
-		final FloatProcessor ip = new FloatProcessor( (int) this.images.get( 0 ).dimension(0), (int) ( this.images.get( 0 ).dimension(1) * scale ) );
+		final int minX = this.minX == Integer.MAX_VALUE ? 0 : this.minX;
+		final int minY = this.minY == Integer.MAX_VALUE ? 0 : this.minY;
+		final int maxX = (int) ( this.maxX == Integer.MAX_VALUE ? this.images.get( 0 ).dimension( 0 ) : this.maxX );
+		final int maxY = (int) ( this.maxY == Integer.MAX_VALUE ? this.images.get( 0 ).dimension( 1 ) : this.maxY );
+		final FloatProcessor ip = new FloatProcessor( maxX - minX, (int) (( maxY - minY ) * scale) );
 		this.targetImg = new ImagePlus( "", ip ); // ImagePlusImgs.floats( max - min, max - min );// ArrayImgs.doubles( max - min, max - min );
 		this.targetImgWrapped = ImagePlusImgs.from( this.targetImg );
 	}
