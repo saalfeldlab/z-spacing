@@ -1,5 +1,6 @@
 from ij import ImagePlus
 from ij import ImageStack
+from ij import IJ
 from ij.plugin import FolderOpener
 from ij.process import ImageConverter
 
@@ -196,17 +197,27 @@ if __name__ == "__main__":
     t0 = time.time()
     print t0 - t0
 
-    correlationRanges = range(10, 11, 10)
-    root = '/data/hanslovskyp/playground/pov-ray/constant_thickness=5/850-1149/scale/0.05/250x250+125+125'
-    imgSource = FolderOpener().open( '%s/data' % root.rstrip('/') )
+    correlationRanges = range(40, 100, 222221)
+    # root = '/data/hanslovskyp/playground/pov-ray/constant_thickness=5/850-1149/scale/0.05/250x250+125+125'
+    # root = '/data/hanslovskyp/export_from_nobackup/sub_stack_01/data/substacks/01/'
+    # root = '/ssd/hanslovskyp/crack_from_john/substacks/03/'
+    # root = '/ssd/hanslovskyp/forPhilipp/substacks/03/'
+    root = '/ssd/hanslovskyp/boergens/substacks/01/'
+    IJ.run("Image Sequence...", "open=%s/data number=1000 sort" % root.rstrip());
+    # imgSource = FolderOpener().open( '%s/data' % root.rstrip('/') )
+    imgSource = IJ.getImage()
+    imgSource.show()
     stackSource = imgSource.getStack()
     conv = ImageConverter( imgSource )
     conv.convertToGray32()
-    nIterations = 100
+    nIterations = 500
     nThreads = 1
     scale = 1.0
-    xyScale = 1.0
-    doXYScale = False
+    # stackMin, stackMax = ( None, 300 )
+    xyScale = 0.25 # fibsem (crack from john) ~> 0.25
+    xyScale = 0.1 # fibsem (crop from john) ~> 0.1?
+    doXYScale = True
+   
 
     img = imgSource
     if doXYScale:
@@ -220,10 +231,10 @@ if __name__ == "__main__":
                 
              
             img = ImagePlus("", stack)
-        else:
-            img = imgSource
+    else:
+        img = imgSource
 
-
+    img.show()
     for c in correlationRanges:    
         correlationRange = c
         home = root.rstrip('/') + '/range=%d'.rstrip('/')
@@ -237,11 +248,12 @@ if __name__ == "__main__":
         print t1 - t0
              
         options                   = CorrelationsObject.Options()
+        # options.coordinateUpdateRegularizerWeight = 0.1
         # options.fitIntervalLength = 3
         # options.stride            = 2
         # options.fitterFactory     = StackFitterNoUncertaintyFactory([1.0])
              
-        co = CorrelationsObject(options)
+        co = CorrelationsObject(CorrelationsObject.Options())
              
         coordinateBase = ArrayList()
              
@@ -252,8 +264,14 @@ if __name__ == "__main__":
              
         t2 = time.time()
         print t2 - t0
-             
-        for i in xrange( 1, img.getStack().getSize() + 1 ):
+
+        start = 1
+        stop  = img.getStack().getSize()
+        if False and stackMin != None:
+            start = stackMin
+        if False and stackMax != None:
+            stop  = stackMax
+        for i in xrange( 1, stop + 1 ):
             stackRange, interval = cc.toStackRange( i, correlationRange )
              
             out = ImagePlus('test_%02d' % i, stackRange)
@@ -293,16 +311,16 @@ if __name__ == "__main__":
         make_sure_path_exists( bp )
         matrixTracker = CorrelationMatrixTrackerVisitor( bp, # base path
                                                          0, # min
-                                                         100, # max
-                                                         30, # scale
+                                                         1000, # max
+                                                         2, # scale
                                                          FloorInterpolatorFactory() ) # interpolation
              
         bp = home + "/matrix_nlinear/matrixNLinear_%02d.tif"
         make_sure_path_exists( bp )
         matrixTracker = CorrelationMatrixTrackerVisitor( bp, # base path
                                                          0, # min
-                                                         300, # max
-                                                         10, # scale
+                                                         1000, # max
+                                                         2, # scale
                                                          NLinearInterpolatorFactory() ) # interpolation
              
         bp = home + "/array/array_%02d.tif"
@@ -320,9 +338,13 @@ if __name__ == "__main__":
              
         renderTracker = ApplyTransformToImagesAndAverageVisitor( bp, # base path
                                                                  FloorInterpolatorFactory(), # interpolation
-                                                                 scale )
+                                                                 scale,
+                                                                 0,
+                                                                 0,
+                                                                 1308,
+                                                                 1000)
         for i in xrange(-2, 3, 1):
-            renderTracker.addImage( Views.hyperSlice( ImagePlusImgs.from( imgSource ), 1,  100 + i ) )                                                 
+            renderTracker.addImage( Views.hyperSlice( ImagePlusImgs.from( imgSource ), 1,  3 + i ) )                                                 
              
         bp = home + "/fit_tracker/fitTracker_%d.csv"
         make_sure_path_exists( bp )
