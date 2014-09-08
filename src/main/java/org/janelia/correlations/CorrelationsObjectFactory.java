@@ -1,9 +1,11 @@
 package org.janelia.correlations;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
-import net.imglib2.Cursor;
+import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
@@ -15,6 +17,7 @@ import net.imglib2.view.Views;
 
 import org.janelia.correlations.CorrelationsObject.Options;
 import org.janelia.correlations.CorrelationsObjectInterface.Meta;
+import org.janelia.utility.ConstantPair;
 import org.janelia.utility.ConstantRealRandomAccesssible;
 
 /**
@@ -25,21 +28,109 @@ import org.janelia.utility.ConstantRealRandomAccesssible;
 public class CorrelationsObjectFactory < T extends RealType< T > > {
 	
 	private final RandomAccessibleInterval< T > images;
+	private final XYSampler sampler;
+	
+	public static interface XYSampler extends Iterable< ConstantPair< Long, Long > > {
+		
+	}
+	
+	public static class DenseSampler implements XYSampler {
+		
+		private final long width;
+		private final long height;
+		
+		
+
+		/**
+		 * @param width
+		 * @param height
+		 */
+		public DenseSampler(final long width, final long height) {
+			super();
+			this.width = width;
+			this.height = height;
+		}
+
+		public class XYIterator implements Iterator<ConstantPair<Long, Long>> {
+			
+			private long x = -1;
+			private long y =  0;
+			
+			private final long maxX = width - 1;
+			private final long maxY = height - 1;
+
+			@Override
+			public boolean hasNext() {
+				return ( ! ( x == maxX && y == maxY ) );
+			}
+
+			@Override
+			public ConstantPair<Long, Long> next() {
+				if ( x == maxX ) {
+					x = 0;
+					++y;
+				} else
+					++x;
+				
+				return new ConstantPair< Long, Long >( x, y );
+			}
+
+			@Override
+			public void remove() {
+				// don't need this
+			}
+			
+		}
+
+		@Override
+		public Iterator<ConstantPair<Long, Long>> iterator() {
+			return new XYIterator();
+		}
+		
+	}
 	
 	
-	
+	public static class SparseSampler implements XYSampler {
+		
+		private final ArrayList< ConstantPair< Long, Long > > coords;
+		/**
+		 * @param coords
+		 */
+		public SparseSampler(final ArrayList<ConstantPair<Long, Long>> coords) {
+			super();
+			this.coords = coords;
+		}
+		
+		
+		public SparseSampler() {
+			super();
+			this.coords = new ArrayList<ConstantPair<Long,Long>>();
+		}
+
+
+		@Override
+		public Iterator<ConstantPair<Long, Long>> iterator() {
+			return coords.iterator();
+		}
+		
+	}
 	
 	
 	/**
 	 * @param images
 	 */
+	public CorrelationsObjectFactory(final RandomAccessibleInterval<T> images, final XYSampler sampler ) {
+		super();
+		this.images = images;
+		this.sampler = sampler;
+	}
+	
+	
 	public CorrelationsObjectFactory(final RandomAccessibleInterval<T> images) {
 		super();
 		this.images = images;
+		this.sampler = new DenseSampler( images.dimension(0), images.dimension(1) );
 	}
-
-
-
 
 
 	public CorrelationsObjectInterface create( final long range, final long[] radius ) {
@@ -81,11 +172,15 @@ public class CorrelationsObjectFactory < T extends RealType< T > > {
 							radius );
 				}
 				
-				final Cursor<FloatType> t = Views.flatIterable( correlationsTarget ).cursor();
-				final Cursor<FloatType> s = Views.flatIterable( correlationsSource ).cursor();
-				
-				while ( s.hasNext() ) {
-					t.next().set( s.next() );
+				final Iterator<ConstantPair<Long, Long>> it = sampler.iterator();
+				final RandomAccess<FloatType> s = correlationsSource.randomAccess();
+				final RandomAccess<FloatType> t = correlationsTarget.randomAccess();
+				while( it.hasNext() ) {
+					final ConstantPair<Long, Long> c = it.next();
+					s.setPosition( c.getA(), 0);
+					s.setPosition( c.getB(), 1 );
+					t.setPosition( s );
+					t.get().set( s.get() );
 				}
 				
 			}
@@ -103,5 +198,5 @@ public class CorrelationsObjectFactory < T extends RealType< T > > {
 		
 		return co;
 	}
-
+	
 }
