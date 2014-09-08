@@ -30,6 +30,10 @@ public class ConstantRealRandomAccesssible< T extends RealType< T > > implements
 	}
 	
 	public class ConstantRealRandomAccess extends RealPoint implements RealRandomAccess< T > {
+		
+		public ConstantRealRandomAccess() {
+			super( numDimensions );
+		}
 
 		@Override
 		public T get() {
@@ -50,14 +54,12 @@ public class ConstantRealRandomAccesssible< T extends RealType< T > > implements
 
 	@Override
 	public RealRandomAccess<T> realRandomAccess() {
-		// TODO Auto-generated method stub
-		return null;
+		return new ConstantRealRandomAccess();
 	}
 
 	@Override
 	public RealRandomAccess<T> realRandomAccess(final RealInterval interval) {
-		// TODO Auto-generated method stub
-		return null;
+		return realRandomAccess();
 	}
 
 }
