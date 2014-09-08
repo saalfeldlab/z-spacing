@@ -8,6 +8,7 @@ import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.type.numeric.real.DoubleType;
+import net.imglib2.type.numeric.real.FloatType;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -56,7 +57,7 @@ public class CrossCorrelationTest {
 		double val2;
 		// correlation == 1
 		final CrossCorrelation<DoubleType, DoubleType> cc1 = new CrossCorrelation<DoubleType, DoubleType>(img1, img2, new long[] { 2, 2 } );
-		final RandomAccess<DoubleType> ra1 = cc1.randomAccess();
+		final RandomAccess<FloatType> ra1 = cc1.randomAccess();
 		ra1.setPosition( new int[] { 2, 2 } );
 		val1 = ra1.get().get();
 		val2 = ra1.get().get();
@@ -65,7 +66,7 @@ public class CrossCorrelationTest {
 		
 		// correlation == -1
 		final CrossCorrelation<DoubleType, DoubleType> cc2 = new CrossCorrelation<DoubleType, DoubleType>(img1, img3, new long[] { 2, 2 } );
-		final RandomAccess<DoubleType> ra2 = cc2.randomAccess();
+		final RandomAccess<FloatType> ra2 = cc2.randomAccess();
 		ra2.setPosition( new int[] { 2, 2 } );
 		val1 = ra2.get().get();
 		val2 = ra2.get().get();
@@ -74,7 +75,7 @@ public class CrossCorrelationTest {
 		
 		// correlation ~~ 0
 		final CrossCorrelation< DoubleType, DoubleType > cc3 = new CrossCorrelation<DoubleType, DoubleType>(img4, img5, randomDim );
-		final RandomAccess< DoubleType > ra3 = cc3.randomAccess();
+		final RandomAccess<FloatType> ra3 = cc3.randomAccess();
 		ra3.setPosition( new long[] { randomDim[0] / 2 } );
 		val1 = ra3.get().get();
 		val2 = ra3.get().get();

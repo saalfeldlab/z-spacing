@@ -11,10 +11,10 @@ import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.array.ArrayRandomAccess;
 import net.imglib2.img.basictypeaccess.array.BitArray;
-import net.imglib2.img.basictypeaccess.array.DoubleArray;
+import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.type.logic.BitType;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.real.DoubleType;
+import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
 /**
@@ -23,11 +23,11 @@ import net.imglib2.view.Views;
  * @param <T>
  * @param <U>
  */
-public class CrossCorrelation < T extends RealType< T >, U extends RealType< U > > implements RandomAccessibleInterval<DoubleType> {
+public class CrossCorrelation < T extends RealType< T >, U extends RealType< U > > implements RandomAccessibleInterval< FloatType > {
 	
 	private final RandomAccessibleInterval<T> img1;
 	private final RandomAccessibleInterval<U> img2;
-	private final ArrayImg< DoubleType, DoubleArray > correlations;
+	private final ArrayImg< FloatType, FloatArray > correlations;
 	private final ArrayImg< BitType, BitArray > calculatedCheck;
 	private final long[] dim;
 	private final long[] r;
@@ -60,7 +60,7 @@ public class CrossCorrelation < T extends RealType< T >, U extends RealType< U >
 			this.max[d] = dim[d] - 1;
 		}
 		
-		this.correlations    = ArrayImgs.doubles( dim );
+		this.correlations    = ArrayImgs.floats( dim );
 		this.calculatedCheck = ArrayImgs.bits( dim );
 		
 		if ( r.length == 1 ) {
@@ -73,17 +73,17 @@ public class CrossCorrelation < T extends RealType< T >, U extends RealType< U >
 		
 	}
 	
-	public class CrossCorrelationRandomAaccess extends Point implements RandomAccess< DoubleType > {
+	public class CrossCorrelationRandomAaccess extends Point implements RandomAccess< FloatType > {
 		
 		private final ArrayRandomAccess< BitType > checkAccess;
-		private final ArrayRandomAccess< DoubleType > correlationsAccess;
+		private final ArrayRandomAccess< FloatType > correlationsAccess;
 		
 		private final long[] intervalMin;
 		private final long[] intervalMax;
 	
 		private CrossCorrelationRandomAaccess(final long[] position,
 				final ArrayRandomAccess<BitType> checkAccess,
-				final ArrayRandomAccess<DoubleType> correlationsAccess,
+				final ArrayRandomAccess<FloatType> correlationsAccess,
 				final long[] intervalMin, final long[] intervalMax) {
 			super(position);
 			this.checkAccess = checkAccess;
@@ -102,11 +102,11 @@ public class CrossCorrelation < T extends RealType< T >, U extends RealType< U >
 		}
 
 		@Override
-		public DoubleType get() {
+		public FloatType get() {
 			checkAccess.setPosition( this.position );
 			correlationsAccess.setPosition( this.position );
 			
-			final DoubleType currVal = correlationsAccess.get();
+			final FloatType currVal = correlationsAccess.get();
 			
 			if ( checkAccess.get().get() == false ) {
 				
@@ -115,7 +115,7 @@ public class CrossCorrelation < T extends RealType< T >, U extends RealType< U >
 					intervalMax[d] = Math.min( max[d], this.position[d] + r[d] );
 				}
 				
-				currVal.set( calculateNormalizedCrossCorrelation( 
+				currVal.setReal( calculateNormalizedCrossCorrelation( 
 						Views.interval( img1, intervalMin, intervalMax ),
 						Views.interval( img2, intervalMin, intervalMax )
 						) 
