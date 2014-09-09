@@ -1,6 +1,5 @@
 package org.janelia.correlations;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.TreeMap;
@@ -18,6 +17,8 @@ import net.imglib2.view.Views;
 import org.janelia.correlations.CorrelationsObjectInterface.Meta;
 import org.janelia.utility.ConstantPair;
 import org.janelia.utility.ConstantRealRandomAccesssible;
+import org.janelia.utility.sampler.DenseXYSampler;
+import org.janelia.utility.sampler.XYSampler;
 
 /**
  * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>
@@ -28,91 +29,6 @@ public class CorrelationsObjectFactory < T extends RealType< T > > {
 	
 	private final RandomAccessibleInterval< T > images;
 	private final XYSampler sampler;
-	
-	public static interface XYSampler extends Iterable< ConstantPair< Long, Long > > {
-		
-	}
-	
-	public static class DenseSampler implements XYSampler {
-		
-		private final long width;
-		private final long height;
-		
-		
-
-		/**
-		 * @param width
-		 * @param height
-		 */
-		public DenseSampler(final long width, final long height) {
-			super();
-			this.width = width;
-			this.height = height;
-		}
-
-		public class XYIterator implements Iterator<ConstantPair<Long, Long>> {
-			
-			private long x = -1;
-			private long y =  0;
-			
-			private final long maxX = width - 1;
-			private final long maxY = height - 1;
-
-			@Override
-			public boolean hasNext() {
-				return ( ! ( x == maxX && y == maxY ) );
-			}
-
-			@Override
-			public ConstantPair<Long, Long> next() {
-				if ( x == maxX ) {
-					x = 0;
-					++y;
-				} else
-					++x;
-				
-				return new ConstantPair< Long, Long >( x, y );
-			}
-
-			@Override
-			public void remove() {
-				// don't need this
-			}
-			
-		}
-
-		@Override
-		public Iterator<ConstantPair<Long, Long>> iterator() {
-			return new XYIterator();
-		}
-		
-	}
-	
-	
-	public static class SparseSampler implements XYSampler {
-		
-		private final ArrayList< ConstantPair< Long, Long > > coords;
-		/**
-		 * @param coords
-		 */
-		public SparseSampler(final ArrayList<ConstantPair<Long, Long>> coords) {
-			super();
-			this.coords = coords;
-		}
-		
-		
-		public SparseSampler() {
-			super();
-			this.coords = new ArrayList<ConstantPair<Long,Long>>();
-		}
-
-
-		@Override
-		public Iterator<ConstantPair<Long, Long>> iterator() {
-			return coords.iterator();
-		}
-		
-	}
 	
 	
 	/**
@@ -128,7 +44,7 @@ public class CorrelationsObjectFactory < T extends RealType< T > > {
 	public CorrelationsObjectFactory(final RandomAccessibleInterval<T> images) {
 		super();
 		this.images = images;
-		this.sampler = new DenseSampler( images.dimension(0), images.dimension(1) );
+		this.sampler = new DenseXYSampler( images.dimension(0), images.dimension(1) );
 	}
 
 
