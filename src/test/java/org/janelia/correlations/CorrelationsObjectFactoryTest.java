@@ -1,5 +1,7 @@
 package org.janelia.correlations;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
@@ -11,6 +13,9 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
 import org.janelia.correlations.CorrelationsObjectInterface.Meta;
+import org.janelia.utility.ConstantPair;
+import org.janelia.utility.sampler.SparseXYSampler;
+import org.janelia.utility.sampler.XYSampler;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -39,7 +44,7 @@ public class CorrelationsObjectFactoryTest {
 	public ExpectedException exception = ExpectedException.none();
 
 	@Test
-	public void test() {
+	public void testDense() {
 		
 		final CorrelationsObjectFactory<FloatType> factory = new CorrelationsObjectFactory<FloatType>( imgs );
 		final CorrelationsObjectInterface co = factory.create( range, new long[] { 5 } );
@@ -64,6 +69,40 @@ public class CorrelationsObjectFactoryTest {
 				}
 			}
 		}
+	}
+	
+	@Test
+	public void testSparse() {
+		@SuppressWarnings("unchecked")
+		final
+		List<ConstantPair<Long, Long>> coords = Arrays.asList( 
+				ConstantPair.toPair( 0l, 0l ),
+				ConstantPair.toPair( 1l, 2l ),
+				ConstantPair.toPair( 3l, 1l )
+				);
+		final XYSampler sampler = new SparseXYSampler(coords);
+		
+		final SparseCorrelationsObjectFactory<FloatType> factory = new SparseCorrelationsObjectFactory< FloatType >( imgs, sampler);
+		final CorrelationsObjectInterface sco = factory.create( range, new long[] { 5 } );
+		
+		final TreeMap<Long, Meta> metaMap = sco.getMetaMap();
+		for ( final Entry<Long, Meta> entry : metaMap.entrySet() ) {
+			final Meta meta = entry.getValue();
+			Assert.assertEquals( Math.min( imgs.dimension(2), entry.getKey() + range + 1), meta.zCoordinateMax );
+			Assert.assertEquals( Math.max( 0,  entry.getKey() - range ), meta.zCoordinateMin );
+			Assert.assertEquals( (long)entry.getKey(), meta.zPosition );
+		}
+		
+		for ( final ConstantPair<Long, Long> s : sampler ) {
+			for ( int z = 0; z < imgs.dimension( 2 ); ++z ) {
+				final ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType>> corrs = sco.extractDoubleCorrelationsAt( s.getA(), s.getB(), z);
+				Assert.assertNotEquals( corrs, null );
+				for ( final DoubleType c : Views.flatIterable( corrs.getA() ) )
+					Assert.assertEquals( 1.0,  c.get(), 0.0 );
+			}
+						
+		}
+		
 	}
 
 }
