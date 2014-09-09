@@ -83,7 +83,7 @@ public class CorrelationsObjectFactory < T extends RealType< T > > {
 				} else {
 					correlationsSource = new CrossCorrelation<T, T>( 
 							Views.hyperSlice( images, 2, z ), 
-							Views.hyperSlice( images, 2, z ), 
+							Views.hyperSlice( images, 2, zRef ), 
 							radius );
 				}
 				
