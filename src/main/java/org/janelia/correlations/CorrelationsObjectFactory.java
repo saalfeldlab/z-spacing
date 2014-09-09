@@ -15,7 +15,6 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
-import org.janelia.correlations.CorrelationsObject.Options;
 import org.janelia.correlations.CorrelationsObjectInterface.Meta;
 import org.janelia.utility.ConstantPair;
 import org.janelia.utility.ConstantRealRandomAccesssible;
@@ -190,7 +189,7 @@ public class CorrelationsObjectFactory < T extends RealType< T > > {
 			
 		}
 		
-		final CorrelationsObject co = new CorrelationsObject( new Options() );
+		final CorrelationsObject co = new CorrelationsObject( );
 
 		for ( final Entry<Long, RandomAccessibleInterval<FloatType>> entry : correlations.entrySet() ) {
 			co.addCorrelationImage( entry.getKey(), entry.getValue(), metaMap.get( entry.getKey() ) );

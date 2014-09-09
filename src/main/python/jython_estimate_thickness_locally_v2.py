@@ -289,7 +289,7 @@ if __name__ == "__main__":
         t1 = time.time()
         print t1 - t0
              
-        co = CorrelationsObject( CorrelationsObject.Options() )
+        co = CorrelationsObject( )
 
         
              

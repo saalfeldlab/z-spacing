@@ -208,12 +208,7 @@ if __name__ == "__main__":
         cc.correlateAllWithinRange( correlationRange )
                             
                             
-        options                   = CorrelationsObject.Options()
-        # options.fitIntervalLength = 3
-        # options.stride            = 2
-        # options.fitterFactory     = StackFitterNoUncertaintyFactory([1.0])
-                            
-        co = CorrelationsObject(options)
+        co = CorrelationsObject()
                             
         coordinateBase = ArrayList()
                             

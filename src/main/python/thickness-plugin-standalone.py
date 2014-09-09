@@ -136,7 +136,7 @@ if __name__ == "__main__":
     creator = thickness.CorrelationsCreator( image, radius )
     creator.correlateAllWithinRange( correlationsRange )
 
-    co = CorrelationsObject( CorrelationsObject.Options() )
+    co = CorrelationsObject( )
     for i in xrange( 1, image.getStack().getSize() + 1 ):
         stackRange, interval = creator.toStackRange( i, correlationsRange )
         meta = CorrelationsObject.Meta()

@@ -33,39 +33,13 @@ import org.janelia.utility.ConstantPair;
  * of the current image in z-direction.
  * 
  */
-public class CorrelationsObject implements CorrelationsObjectInterface {
+public class CorrelationsObject extends AbstractCorrelationsObject implements CorrelationsObjectInterface {
 	
 
-
-	public static class Options {
-		
-	}
 
 	private final HashMap<Long, RandomAccessibleInterval<FloatType> > correlationsMap;
-	private final TreeMap<Long, Meta> metaMap;
 	private final HashMap<Long, RandomAccessibleInterval<FloatType> > fitMap;
-	private Options options;
-	private long zMin;
-	private long zMax;
-	
-	
-	
-	
-	
-	/**
-	 * @return the options
-	 */
-	public Options getOptions() {
-		return options;
-	}
 
-
-	/**
-	 * @param options the options to set
-	 */
-	public void setOptions(final Options options) {
-		this.options = options;
-	}
 
 
 	/**
@@ -113,36 +87,17 @@ public class CorrelationsObject implements CorrelationsObjectInterface {
 
 	public CorrelationsObject(
 			final HashMap<Long, RandomAccessibleInterval<FloatType>> correlationsMap,
-			final TreeMap<Long, Meta> metaMap,
-			final Options options) {
-		super();
-		this.zMin = 0;
-		this.zMax = 0;
+			final TreeMap<Long, Meta> metaMap) {
+		super( metaMap );
 		this.correlationsMap = correlationsMap;
-		this.metaMap = metaMap;
 		this.fitMap = new HashMap<Long, RandomAccessibleInterval<FloatType>>();
-		this.options = options;
-		
-		if ( this.metaMap.size() != 0 ) {
-			this.zMin = this.metaMap.values().iterator().next().zCoordinateMin;
-			this.zMax = this.metaMap.values().iterator().next().zCoordinateMax;
-			
-			for ( final Meta v : this.metaMap.values() ) {
-				if ( v.zCoordinateMin < this.zMin ) {
-					this.zMin = v.zCoordinateMin;
-				}
-				if ( v.zCoordinateMax > this.zMax ) {
-					this.zMax = v.zCoordinateMax;
-				}
-			}
-		}
+
 	}
 
 
-	public CorrelationsObject(final Options options) {
+	public CorrelationsObject() {
 		this(new HashMap<Long, RandomAccessibleInterval<FloatType>>(),
-				new TreeMap<Long, Meta>(),
-				options);
+				new TreeMap<Long, Meta>());
 	}
 	
 	
@@ -152,13 +107,7 @@ public class CorrelationsObject implements CorrelationsObjectInterface {
 	{
 		this.correlationsMap.put(index, correlations);
 		this.metaMap.put(index, meta);
-		if ( meta.zCoordinateMin < this.zMin ) {
-			this.zMin = meta.zCoordinateMin;
-		}
-		
-		if ( meta.zCoordinateMax > this.zMax ) {
-			this.zMax = meta.zCoordinateMax;
-		}
+
 	}
 	
 	/**
@@ -174,7 +123,7 @@ public class CorrelationsObject implements CorrelationsObjectInterface {
 		final IntervalView<FloatType> entryA         = Views.hyperSlice( Views.hyperSlice( correlationsMap.get( z ), 0, x ), 0, y );
 		final ArrayImg<FloatType, FloatArray> entryB = ArrayImgs.floats(entryA.dimension(0));
 		
-		long zPosition               = metaMap.get(z).zCoordinateMin;
+		long zPosition = metaMap.get(z).zCoordinateMin;
 		final ArrayCursor<FloatType> cursor = entryB.cursor();
 		
 		while ( cursor.hasNext() ) {
@@ -214,7 +163,7 @@ public class CorrelationsObject implements CorrelationsObjectInterface {
 
 
 	@Override
-	public ArrayImg<DoubleType, DoubleArray> toMatrix( 
+	public ArrayImg<DoubleType, DoubleArray> toMatrix ( 
 			final long x, 
 			final long y) {
 		final Iterator<Long> iterator = this.metaMap.keySet().iterator();
