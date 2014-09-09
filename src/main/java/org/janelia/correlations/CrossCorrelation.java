@@ -3,15 +3,12 @@ package org.janelia.correlations;
 import net.imglib2.Cursor;
 import net.imglib2.Interval;
 import net.imglib2.Point;
-import net.imglib2.Positionable;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.RealPositionable;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.array.ArrayRandomAccess;
 import net.imglib2.img.basictypeaccess.array.BitArray;
-import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.type.logic.BitType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
@@ -23,54 +20,18 @@ import net.imglib2.view.Views;
  * @param <T>
  * @param <U>
  */
-public class CrossCorrelation < T extends RealType< T >, U extends RealType< U > > implements RandomAccessibleInterval< FloatType > {
+public class CrossCorrelation < T extends RealType< T >, U extends RealType< U > > extends AbstractCrossCorrelation< T, U > implements RandomAccessibleInterval< FloatType > {
 	
-	private final RandomAccessibleInterval<T> img1;
-	private final RandomAccessibleInterval<U> img2;
-	private final ArrayImg< FloatType, FloatArray > correlations;
+	
+	
 	private final ArrayImg< BitType, BitArray > calculatedCheck;
-	private final long[] dim;
-	private final long[] r;
-	private final long[] min;
-	private final long[] max;
-	
 	
 
 	public CrossCorrelation(final RandomAccessibleInterval<T> img1,
 			final RandomAccessibleInterval<U> img2,
 			final long[] r ) {
-		super();
-		assert img1.numDimensions() == img2.numDimensions(): "Mismatch in number of dimensions";
-		
-		for ( int d = 0; d < img1.numDimensions(); ++ d ) {
-			assert img1.dimension( d ) == img2.dimension( d ): String.format( "Mismatch in dimension %d", d );
-		}
-		
-		assert r.length == img1.numDimensions() || r.length == 1: "Mismatch in number of dimensions and radii";
-		
-		this.img1 = img1;
-		this.img2 = img2;
-		
-		this.dim = new long[ img1.numDimensions() ];
-		img1.dimensions( dim );
-		this.min = new long[ dim.length ];
-		this.max = new long[ dim.length ];
-		for ( int d = 0; d < dim.length; ++d ) {
-			this.min[d] = 0;
-			this.max[d] = dim[d] - 1;
-		}
-		
-		this.correlations    = ArrayImgs.floats( dim );
+		super( img1, img2, r );
 		this.calculatedCheck = ArrayImgs.bits( dim );
-		
-		if ( r.length == 1 ) {
-			this.r = new long[ this.dim.length ];
-			for (int i = 0; i < this.r.length; i++) {
-				this.r[ i ] = r[ 0 ];
-			}
-		} else		
-			this.r = r.clone();
-		
 	}
 	
 	public class CrossCorrelationRandomAaccess extends Point implements RandomAccess< FloatType > {
@@ -198,92 +159,6 @@ public class CrossCorrelation < T extends RealType< T >, U extends RealType< U >
 	@Override
 	public CrossCorrelationRandomAaccess randomAccess(final Interval interval) {
 		return randomAccess();
-	}
-
-	@Override
-	public int numDimensions() {
-		return this.dim.length;
-	}
-
-	@Override
-	public long min(final int d) {
-		return this.min[ d ];
-	}
-
-	@Override
-	public void min(final long[] min) {
-		for (int i = 0; i < min.length; i++) {
-			min[i] = this.min[i];
-		}
-	}
-
-	@Override
-	public void min(final Positionable min) {
-		min.setPosition( this.min );
-	}
-
-	@Override
-	public long max(final int d) {
-		// TODO Auto-generated method stub
-		return this.max[d];
-	}
-
-	@Override
-	public void max(final long[] max) {
-		for (int i = 0; i < max.length; i++) {
-			max[i] = this.max[i];
-		}
-	}
-
-	@Override
-	public void max(final Positionable max) {
-		max.setPosition(this.max);
-	}
-
-	@Override
-	public double realMin(final int d) {
-		return min(d);
-	}
-
-	@Override
-	public void realMin(final double[] min) {
-		for (int i = 0; i < min.length; i++) {
-			min[i] = this.min[i];
-		}
-	}
-
-	@Override
-	public void realMin(final RealPositionable min) {
-		min( min );
-	}
-
-	@Override
-	public double realMax(final int d) {
-		return max( d );
-	}
-
-	@Override
-	public void realMax(final double[] max) {
-		for (int i = 0; i < max.length; i++) {
-			max[i] = this.max[i];
-		}
-	}
-
-	@Override
-	public void realMax(final RealPositionable max) {
-		max( max );
-	}
-
-	@Override
-	public void dimensions(final long[] dimensions) {
-		for (int i = 0; i < dimensions.length; i++) {
-			dimensions[i] = this.dim[i];
-		}
-	}
-
-	@Override
-	public long dimension(final int d) {
-		return this.dim[d];
 	}
 
 }
