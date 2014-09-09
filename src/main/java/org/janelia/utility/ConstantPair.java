@@ -9,12 +9,13 @@ public class ConstantPair<A, B> implements Pair<A, B>, Comparable< ConstantPair<
 	
 	
 	
-	public ConstantPair(A entryA, B entryB) {
+	public ConstantPair(final A entryA, final B entryB) {
 		super();
 		this.entryA = entryA;
 		this.entryB = entryB;
 	}
 
+	@Override
 	public A getA() {
 		return entryA;
 	}
@@ -27,6 +28,7 @@ public class ConstantPair<A, B> implements Pair<A, B>, Comparable< ConstantPair<
 		return "(" + entryA.toString() + "," + entryB.toString() + ")";
 	}
 
+	@Override
 	public B getB() {
 		return entryB;
 	}
@@ -52,8 +54,9 @@ public class ConstantPair<A, B> implements Pair<A, B>, Comparable< ConstantPair<
 		return entryA.hashCode() + entryB.hashCode();
 	}
 
+	@Override
 	@SuppressWarnings("unchecked")
-	public int compareTo(ConstantPair<A, B> o) {
+	public int compareTo(final ConstantPair<A, B> o) {
 		if ( !( entryA instanceof Comparable<?> ) || 
 		     !( entryB instanceof Comparable<?> )) {
 				return 0;
@@ -63,6 +66,11 @@ public class ConstantPair<A, B> implements Pair<A, B>, Comparable< ConstantPair<
 			} else { 
 				return ( (Comparable<A>) entryA ).compareTo( o.entryA ); 
 			}
+	}
+	
+	
+	public static < U , B > ConstantPair< U, B > toPair( final U u, final B b ) {
+		return new ConstantPair<U, B >( u, b );
 	}
 	
 	
