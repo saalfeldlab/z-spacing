@@ -5,6 +5,7 @@ package org.janelia.utility.sampler;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import org.janelia.utility.ConstantPair;
 
@@ -14,11 +15,11 @@ import org.janelia.utility.ConstantPair;
  */
 public class SparseXYSampler implements XYSampler {
 
-	private final ArrayList< ConstantPair< Long, Long > > coords;
+	private final List< ConstantPair< Long, Long > > coords;
 	/**
 	 * @param coords
 	 */
-	public SparseXYSampler( final ArrayList<ConstantPair<Long, Long>> coords ) {
+	public SparseXYSampler( final List<ConstantPair<Long, Long>> coords ) {
 		super();
 		this.coords = coords;
 	}
