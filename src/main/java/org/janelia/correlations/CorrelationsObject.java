@@ -106,8 +106,7 @@ public class CorrelationsObject extends AbstractCorrelationsObject implements Co
 			final Meta meta) 
 	{
 		this.correlationsMap.put(index, correlations);
-		this.metaMap.put(index, meta);
-
+		this.addToMeta( index, meta );
 	}
 	
 	/**
