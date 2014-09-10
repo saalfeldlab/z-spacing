@@ -52,12 +52,14 @@ public class ShiftCoordinates {
 				if ( reference[ 0 ] == Double.MAX_VALUE || reference[ 0 ] == -Double.MAX_VALUE )
 					continue;
 				
+				// rel: negative coordinates of k wrt to local coordinate system of i
 				final double rel = coordinates[ i ] - coordinates[ k ];
 				
 				/* current location */
 				final double shift = ( k < i ) ? rel - reference[ 0 ] : rel + reference[ 0 ];
 				
-				localShifts.add( new ConstantPair<Double, Double>( shift, weights[ i ] * 1.0 / ( Math.abs( i - k ) + 1 ) ) );
+//				localShifts.add( new ConstantPair<Double, Double>( shift, weights[ i ] * 1.0 / ( Math.abs( i - k ) + 1 ) ) );
+				localShifts.add( new ConstantPair<Double, Double>( shift, weights[ i ] ) );
 				
 			}
 		}
