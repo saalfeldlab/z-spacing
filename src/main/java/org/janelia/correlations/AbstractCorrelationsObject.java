@@ -17,6 +17,8 @@ public abstract class AbstractCorrelationsObject implements
 	protected long zMin;
 	protected long zMax;
 	
+	public float tolerance = 1e-5f;
+	
 	
 
 	/**
@@ -93,7 +95,9 @@ public abstract class AbstractCorrelationsObject implements
 							final Cursor<DoubleType> cc2 = Views.flatIterable( c2 ).cursor();
 							
 							while ( cc1.hasNext() ) {
-								if ( ! ( cc1.next().get() == cc2.next().get() ) )
+								cc1.fwd();
+								cc2.fwd();
+								if ( ! ( Math.abs( cc1.get().get() - cc2.get().get() ) < tolerance ) )
 									return false;
 							}
 							
