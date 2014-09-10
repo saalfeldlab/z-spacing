@@ -25,6 +25,7 @@ public class ShiftCoordinates {
 		
 		final double[] reference = new double[ 1 ];
 		
+		// i is reference index, k is comparison index
 		for ( int i = 0; i < correlations.dimension( 1 ); ++i ) {
 			
 			corrAccess.setPosition( i, 1 );
