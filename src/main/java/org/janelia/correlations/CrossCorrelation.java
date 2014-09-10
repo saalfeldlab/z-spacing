@@ -25,13 +25,23 @@ public class CrossCorrelation < T extends RealType< T >, U extends RealType< U >
 	
 	
 	private final ArrayImg< BitType, BitArray > calculatedCheck;
+	private final TYPE type;
+	public enum TYPE { STANDARD, SIGNED_SQUARED };
+	
+	public CrossCorrelation(final RandomAccessibleInterval<T> img1,
+			final RandomAccessibleInterval<U> img2,
+			final long[] r ){
+		this( img1, img2, r, TYPE.STANDARD );
+	}
 	
 
 	public CrossCorrelation(final RandomAccessibleInterval<T> img1,
 			final RandomAccessibleInterval<U> img2,
-			final long[] r ) {
+			final long[] r,
+			final TYPE type ) {
 		super( img1, img2, r );
 		this.calculatedCheck = ArrayImgs.bits( dim );
+		this.type = type;
 	}
 	
 	public class CrossCorrelationRandomAccess extends Point implements RandomAccess< FloatType > {
@@ -76,11 +86,25 @@ public class CrossCorrelation < T extends RealType< T >, U extends RealType< U >
 					intervalMax[d] = Math.min( max[d], this.position[d] + r[d] );
 				}
 				
-				currVal.setReal( calculateNormalizedCrossCorrelation( 
-						Views.interval( img1, intervalMin, intervalMax ),
-						Views.interval( img2, intervalMin, intervalMax )
-						) 
-						);
+				
+				switch ( type ) {
+				case STANDARD:
+					currVal.setReal( calculateNormalizedCrossCorrelation( 
+							Views.interval( img1, intervalMin, intervalMax ),
+							Views.interval( img2, intervalMin, intervalMax )
+							) 
+							);
+					break;
+				case SIGNED_SQUARED:
+					currVal.setReal( calculateSignedSquaredNormalizedCrossCorrelation( 
+							Views.interval( img1, intervalMin, intervalMax ),
+							Views.interval( img2, intervalMin, intervalMax )
+							) 
+							);
+				default:
+					break;
+				}
+				
 			}
 			
 			return currVal;
@@ -102,6 +126,7 @@ public class CrossCorrelation < T extends RealType< T >, U extends RealType< U >
 		}
 		
 	}
+	
 	
 	public double calculateNormalizedCrossCorrelation( final RandomAccessibleInterval< T > i1, final RandomAccessibleInterval< U > i2 ) {
 		double cc = 0.0;
@@ -126,6 +151,12 @@ public class CrossCorrelation < T extends RealType< T >, U extends RealType< U >
 		}
 		
 		return cc / ( Math.sqrt( var1 ) * Math.sqrt( var2 ) * nElementsDouble );
+	}
+	
+	
+	public double calculateSignedSquaredNormalizedCrossCorrelation ( final RandomAccessibleInterval< T > i1, final RandomAccessibleInterval< U > i2 ) {
+		final double cc = calculateNormalizedCrossCorrelation(i1, i2);
+		return ( cc < 0 ? -cc * cc : cc * cc );
 	}
 	
 	

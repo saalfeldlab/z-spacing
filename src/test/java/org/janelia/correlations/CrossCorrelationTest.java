@@ -134,23 +134,33 @@ public class CrossCorrelationTest {
 			
 			final FloatProcessor fp1 = new FloatProcessor( randomFloat2D1 );
 			final FloatProcessor fp2 = new FloatProcessor( randomFloat2D2 );
-			final BlockPMCC blockCC  = new BlockPMCC( fp1, fp2, 0, 0 ); // offset needs to be explicitly set to 0,0
-			final CrossCorrelation<FloatType, FloatType> cc = new CrossCorrelation< FloatType, FloatType >( img6, img7, longRadius );
+			final BlockPMCC blockCC1  = new BlockPMCC( fp1, fp2, 0, 0 ); // offset needs to be explicitly set to 0,0
+			final BlockPMCC blockCC2  = new BlockPMCC( fp1, fp2, 0, 0 ); // offset needs to be explicitly set to 0,0
+			final CrossCorrelation< FloatType, FloatType > cc1 = new CrossCorrelation< FloatType, FloatType >( img6, img7, longRadius );
+			final CrossCorrelation< FloatType, FloatType > cc2 = new CrossCorrelation< FloatType, FloatType >( img6, img7, longRadius, CrossCorrelation.TYPE.SIGNED_SQUARED );
 			
 			
-			blockCC.r( intRadius[0], intRadius[1] );
-			final FloatProcessor fpRes = blockCC.getTargetProcessor();
+			blockCC1.r( intRadius[0], intRadius[1] );
+			blockCC2.rSignedSquare( intRadius[0], intRadius[1] );
+			final FloatProcessor fpRes1 = blockCC1.getTargetProcessor();
+			final FloatProcessor fpRes2 = blockCC2.getTargetProcessor();
 			
-			final Cursor<FloatType> c = Views.flatIterable( cc ).cursor();
+			final Cursor<FloatType> c1 = Views.flatIterable( cc1 ).cursor();
+			final Cursor<FloatType> c2 = Views.flatIterable( cc2 ).cursor();
 			
-			while( c.hasNext() ) {
-				c.fwd();
-				final int x = c.getIntPosition( 0 );
-				final int y = c.getIntPosition( 1 );
+			while( c1.hasNext() ) {
+				c1.fwd();
+				c2.fwd();
+				final int x = c1.getIntPosition( 0 );
+				final int y = c1.getIntPosition( 1 );
 				
-				final float cVal  = c.get().get();
-				final float fpVal = fpRes.getf( x, y );
-				Assert.assertEquals( fpVal, cVal, 1e-6f );
+				final float cVal1  = c1.get().get();
+				final float cVal2  = c2.get().get();
+				final float fpVal1 = fpRes1.getf( x, y );
+				final float fpVal2 = fpRes2.getf( x, y );
+				Assert.assertEquals( fpVal1, cVal1, 1e-6f );
+				Assert.assertEquals( fpVal2, cVal2, 1e-6f );
+				Assert.assertEquals( cVal1*cVal1, Math.abs( cVal2 ), 1e-6f );
 			}
 			
 		}
