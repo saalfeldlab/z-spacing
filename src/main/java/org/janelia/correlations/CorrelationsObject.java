@@ -2,7 +2,9 @@ package org.janelia.correlations;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import net.imglib2.Cursor;
 import net.imglib2.Pair;
@@ -19,6 +21,7 @@ import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
 import org.janelia.utility.ConstantPair;
+import org.janelia.utility.sampler.DenseXYSampler;
 
 
 
@@ -230,7 +233,19 @@ public class CorrelationsObject extends AbstractCorrelationsObject implements Co
 	    }
 
 	}
-	
+
+
+	@Override
+	public Set<ConstantPair<Long, Long>> getXYCoordinates() {
+		final Long firstKey = this.metaMap.firstKey();
+		final RandomAccessibleInterval<FloatType> firstEl = this.correlationsMap.get( firstKey );
+		final DenseXYSampler sampler = new DenseXYSampler( firstEl.dimension( 0 ), firstEl.dimension( 1 ) );
+		final TreeSet<ConstantPair<Long, Long>> result = new TreeSet< ConstantPair<Long, Long> >();
+		for ( final ConstantPair<Long, Long> s : sampler ) {
+			result.add( s );
+		}
+		return result;
+	}
 	
 }
  

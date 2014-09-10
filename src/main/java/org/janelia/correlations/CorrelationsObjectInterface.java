@@ -1,5 +1,6 @@
 package org.janelia.correlations;
 
+import java.util.Set;
 import java.util.TreeMap;
 
 import net.imglib2.RandomAccessibleInterval;
@@ -48,7 +49,14 @@ public interface CorrelationsObjectInterface {
 	public long getzMax();
 	
 	public TreeMap<Long, Meta> getMetaMap();
-
 	
+	public boolean equalsMeta( CorrelationsObjectInterface other );
+	
+	public boolean equalsXYCoordinates( final CorrelationsObjectInterface other );
+	
+	public Set< ConstantPair< Long, Long > > getXYCoordinates();
+
+	@Override
+	public boolean equals( Object other );
 	
 }

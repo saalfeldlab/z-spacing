@@ -1,6 +1,7 @@
 package org.janelia.correlations;
 
 
+import java.util.Set;
 import java.util.TreeMap;
 
 import net.imglib2.RandomAccessibleInterval;
@@ -94,5 +95,23 @@ public class DummyCorrelationsObject implements CorrelationsObjectInterface {
 	public void toMatrix(final long x, final long y,
 			final RandomAccessibleInterval<DoubleType> matrix) {
 
+	}
+
+	@Override
+	public boolean equalsMeta(final CorrelationsObjectInterface other) {
+		// TODO this dummy should always return false
+		return false;
+	}
+
+	@Override
+	public Set<ConstantPair<Long, Long>> getXYCoordinates() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean equalsXYCoordinates(final CorrelationsObjectInterface other) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 }

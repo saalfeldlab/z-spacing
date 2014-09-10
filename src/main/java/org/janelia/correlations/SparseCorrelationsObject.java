@@ -5,6 +5,7 @@ package org.janelia.correlations;
 
 import ij.ImageJ;
 
+import java.util.Set;
 import java.util.TreeMap;
 
 import net.imglib2.RandomAccess;
@@ -184,6 +185,11 @@ public class SparseCorrelationsObject extends AbstractCorrelationsObject impleme
 		new ImageJ();
 		ImageJFunctions.show( sco.toMatrix( 0, 0 ) );
 		
+	}
+
+	@Override
+	public Set<ConstantPair<Long, Long>> getXYCoordinates() {
+		return this.correlations.keySet();
 	}
 
 
