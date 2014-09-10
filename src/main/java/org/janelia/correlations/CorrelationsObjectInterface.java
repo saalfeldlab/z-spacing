@@ -31,6 +31,21 @@ public interface CorrelationsObjectInterface {
 					",zCoordinateMin=" + this.zCoordinateMin +
 					",zCoordinateMax=" + this.zCoordinateMax);
 		}
+		
+		
+		@Override
+		public boolean equals( final Object other ) {
+			if ( other instanceof Meta ) {
+				final Meta meta = (Meta) other;
+				return (
+						this.zPosition      == meta.zPosition &&
+						this.zCoordinateMax == meta.zCoordinateMax &&
+						this.zCoordinateMin == meta.zCoordinateMin
+						);
+			}
+			else
+				return false;
+		}
 	}
 
 	public ConstantPair<RandomAccessibleInterval<FloatType>, RandomAccessibleInterval<FloatType> > extractCorrelationsAt(long x, long y, long z);
