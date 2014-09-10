@@ -71,6 +71,7 @@ public class CorrelationsObjectFactoryTest {
 		}
 	}
 	
+	
 	@Test
 	public void testSparse() {
 		@SuppressWarnings("unchecked")
