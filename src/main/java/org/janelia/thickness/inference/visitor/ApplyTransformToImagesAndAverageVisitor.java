@@ -43,11 +43,14 @@ public class ApplyTransformToImagesAndAverageVisitor extends AbstractMultiVisito
 	private final int maxY;
 
 
-	public ApplyTransformToImagesAndAverageVisitor(final String basePath, final InterpolatorFactory< FloatType, RandomAccessible< FloatType > > interpolatorFactory, final double scale ) {
+	public ApplyTransformToImagesAndAverageVisitor(final String basePath, 
+			final InterpolatorFactory< FloatType, RandomAccessible< FloatType > > interpolatorFactory, 
+			final double scale ) {
 		this( new ArrayList<Visitor>(), basePath, new ArrayList< RandomAccessibleInterval< FloatType > >(), interpolatorFactory, scale, Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE );
 	}
 	
-	public ApplyTransformToImagesAndAverageVisitor(final String basePath, final InterpolatorFactory< FloatType, RandomAccessible< FloatType > > interpolatorFactory, 
+	public ApplyTransformToImagesAndAverageVisitor(final String basePath, 
+			final InterpolatorFactory< FloatType, RandomAccessible< FloatType > > interpolatorFactory, 
 			final double scale,
 			final int minX,
 			final int minY,
