@@ -23,15 +23,25 @@ public class SparseCorrelationsObjectFactory < T extends RealType< T > > {
 	
 	private final RandomAccessibleInterval< T > images;
 	private final XYSampler sampler;
+	private final CrossCorrelation.TYPE type;
 	
 	
 	/**
 	 * @param images
 	 */
-	public SparseCorrelationsObjectFactory(final RandomAccessibleInterval<T> images, final XYSampler sampler ) {
+	public SparseCorrelationsObjectFactory(final RandomAccessibleInterval<T> images, final XYSampler sampler, final CrossCorrelation.TYPE type ) {
 		super();
 		this.images = images;
 		this.sampler = sampler;
+		this.type = type;
+	}
+	
+	public SparseCorrelationsObjectFactory(final RandomAccessibleInterval<T> images, final XYSampler sampler ) {
+		this( images, sampler, CrossCorrelation.TYPE.STANDARD );
+	}
+	
+	public SparseCorrelationsObjectFactory(final RandomAccessibleInterval<T> images, final CrossCorrelation.TYPE type ) {
+		this(images, new DenseXYSampler( images.dimension(0), images.dimension(1) ), type );
 	}
 	
 	
@@ -86,7 +96,8 @@ public class SparseCorrelationsObjectFactory < T extends RealType< T > > {
 						final CrossCorrelation<T, T> cc = new CrossCorrelation< T, T >(
 								Views.hyperSlice( images, 2, z ),
 								Views.hyperSlice( images, 2, zRef ),
-								radius );
+								radius,
+								this.type );
 						final CrossCorrelationRandomAccess ra = cc.randomAccess();
 						ra.setPosition( new long[] { xy.getA(), xy.getB() } );
 						correlationsAt[ relativePosition ] = ra.get().getRealDouble();
