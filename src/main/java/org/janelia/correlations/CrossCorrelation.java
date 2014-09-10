@@ -34,7 +34,7 @@ public class CrossCorrelation < T extends RealType< T >, U extends RealType< U >
 		this.calculatedCheck = ArrayImgs.bits( dim );
 	}
 	
-	public class CrossCorrelationRandomAaccess extends Point implements RandomAccess< FloatType > {
+	public class CrossCorrelationRandomAccess extends Point implements RandomAccess< FloatType > {
 		
 		private final ArrayRandomAccess< BitType > checkAccess;
 		private final ArrayRandomAccess< FloatType > correlationsAccess;
@@ -42,7 +42,7 @@ public class CrossCorrelation < T extends RealType< T >, U extends RealType< U >
 		private final long[] intervalMin;
 		private final long[] intervalMax;
 	
-		private CrossCorrelationRandomAaccess(final long[] position,
+		private CrossCorrelationRandomAccess(final long[] position,
 				final ArrayRandomAccess<BitType> checkAccess,
 				final ArrayRandomAccess<FloatType> correlationsAccess,
 				final long[] intervalMin, final long[] intervalMax) {
@@ -53,7 +53,7 @@ public class CrossCorrelation < T extends RealType< T >, U extends RealType< U >
 			this.intervalMax = intervalMax;
 		}
 
-		public CrossCorrelationRandomAaccess() {
+		public CrossCorrelationRandomAccess() {
 			super( dim.length );
 			this.checkAccess        = calculatedCheck.randomAccess();
 			this.correlationsAccess = correlations.randomAccess();
@@ -88,8 +88,8 @@ public class CrossCorrelation < T extends RealType< T >, U extends RealType< U >
 		}
 
 		@Override
-		public CrossCorrelationRandomAaccess copy() {
-			return new CrossCorrelationRandomAaccess( this.position.clone(), 
+		public CrossCorrelationRandomAccess copy() {
+			return new CrossCorrelationRandomAccess( this.position.clone(), 
 					checkAccess.copy(), 
 					correlationsAccess.copy(), 
 					intervalMin.clone(), 
@@ -97,7 +97,7 @@ public class CrossCorrelation < T extends RealType< T >, U extends RealType< U >
 		}
 
 		@Override
-		public CrossCorrelationRandomAaccess copyRandomAccess() {
+		public CrossCorrelationRandomAccess copyRandomAccess() {
 			return copy();
 		}
 		
@@ -152,12 +152,12 @@ public class CrossCorrelation < T extends RealType< T >, U extends RealType< U >
 
 
 	@Override
-	public CrossCorrelationRandomAaccess randomAccess() {
-		return new CrossCorrelationRandomAaccess();
+	public CrossCorrelationRandomAccess randomAccess() {
+		return new CrossCorrelationRandomAccess();
 	}
 
 	@Override
-	public CrossCorrelationRandomAaccess randomAccess(final Interval interval) {
+	public CrossCorrelationRandomAccess randomAccess(final Interval interval) {
 		return randomAccess();
 	}
 

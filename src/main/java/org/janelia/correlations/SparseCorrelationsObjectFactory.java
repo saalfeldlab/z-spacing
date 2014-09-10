@@ -9,7 +9,7 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.view.Views;
 
 import org.janelia.correlations.CorrelationsObjectInterface.Meta;
-import org.janelia.correlations.CrossCorrelation.CrossCorrelationRandomAaccess;
+import org.janelia.correlations.CrossCorrelation.CrossCorrelationRandomAccess;
 import org.janelia.utility.ConstantPair;
 import org.janelia.utility.sampler.DenseXYSampler;
 import org.janelia.utility.sampler.XYSampler;
@@ -87,7 +87,7 @@ public class SparseCorrelationsObjectFactory < T extends RealType< T > > {
 								Views.hyperSlice( images, 2, z ),
 								Views.hyperSlice( images, 2, zRef ),
 								radius );
-						final CrossCorrelationRandomAaccess ra = cc.randomAccess();
+						final CrossCorrelationRandomAccess ra = cc.randomAccess();
 						ra.setPosition( new long[] { xy.getA(), xy.getB() } );
 						correlationsAt[ relativePosition ] = ra.get().getRealDouble();
 					}
