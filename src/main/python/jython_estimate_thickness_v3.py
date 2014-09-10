@@ -30,7 +30,10 @@ from net.imglib2.type.numeric.real import DoubleType
 from org.janelia.models import ScaleModel
 from org.janelia.utility import ConstantPair
 from org.janelia.utility import CopyFromIntervalToInterval
+from org.janelia.utility.sampler import SparseXYSampler
 from org.janelia.correlations import CorrelationsObject
+from org.janelia.correlations import CorrelationsObjectFactory
+from org.janelia.correlations import SparseCorrelationsObjectFactory
 from org.janelia.thickness import InferFromCorrelationsObject
 from org.janelia.thickness.lut import SingleDimensionLUTRealTransform
 from org.janelia.thickness.inference.visitor import ActualCoordinatesTrackerVisitor
@@ -197,29 +200,35 @@ if __name__ == "__main__":
     t0 = time.time()
     print t0 - t0
 
-    correlationRanges = range(40, 100, 222221)
+    correlationRanges = range(19, 100, 222221)
+    nImages = 100
     # root = '/data/hanslovskyp/playground/pov-ray/constant_thickness=5/850-1149/scale/0.05/250x250+125+125'
     # root = '/data/hanslovskyp/export_from_nobackup/sub_stack_01/data/substacks/01/'
     # root = '/ssd/hanslovskyp/crack_from_john/substacks/03/'
     # root = '/ssd/hanslovskyp/forPhilipp/substacks/03/'
-    root = '/ssd/hanslovskyp/boergens/substacks/01/'
-    IJ.run("Image Sequence...", "open=%s/data number=1000 sort" % root.rstrip());
+    # root = '/ssd/hanslovskyp/boergens/substacks/01/'
+    # root = '/ssd/hanslovskyp/tweak_CutOn4-15-2013_ImagedOn1-27-2014/substacks/01/'
+    root = '/data/hanslovskyp/forPhilipp/substacks/03/'
+    IJ.run("Image Sequence...", "open=%s/data number=%d sort" % ( root.rstrip(), nImages ) );
     # imgSource = FolderOpener().open( '%s/data' % root.rstrip('/') )
     imgSource = IJ.getImage()
-    imgSource.show()
-    stackSource = imgSource.getStack()
+    # imgSource.show()
     conv = ImageConverter( imgSource )
     conv.convertToGray32()
-    nIterations = 500
+    stackSource = imgSource.getStack()
+    nIterations = 200
     nThreads = 1
     scale = 1.0
     # stackMin, stackMax = ( None, 300 )
     xyScale = 0.25 # fibsem (crack from john) ~> 0.25
     xyScale = 0.1 # fibsem (crop from john) ~> 0.1?
     doXYScale = True
+    matrixSize = nImages
+    matrixScale = 3.0
    
 
-    img = imgSource
+    img = imgSource.clone()
+    print stackSource.getSize()
     if doXYScale:
         stack = ImageStack(int(round(imgSource.getWidth()*xyScale)), int(round(imgSource.getHeight()*xyScale)))
         for z in xrange(stackSource.getSize()):
@@ -230,39 +239,40 @@ if __name__ == "__main__":
                 0.5))
                 
              
-            img = ImagePlus("", stack)
+        img = ImagePlus("", stack)
     else:
         img = imgSource
 
-    img.show()
+    # img.show()
+    print img.getWidth(), img.getHeight(), img.getStack().getSize()
     for c in correlationRanges:    
         correlationRange = c
         home = root.rstrip('/') + '/range=%d'.rstrip('/')
         home = home % correlationRange
         
+        # START DEPRECATED correlation calculation
+        # cc = CorrelationsCreator(img, [img.getWidth(), img.getHeight()])
+        # cc.correlateAllWithinRange( correlationRange )
              
-        cc = CorrelationsCreator(img, [img.getWidth(), img.getHeight()])
-        cc.correlateAllWithinRange( correlationRange )
+        # t1 = time.time()
+        # print t1 - t0
              
-        t1 = time.time()
-        print t1 - t0
+        # # options.coordinateUpdateRegularizerWeight = 0.1
+        # # options.fitIntervalLength = 3
+        # # options.stride            = 2
+        # # options.fitterFactory     = StackFitterNoUncertaintyFactory([1.0])
              
-        # options.coordinateUpdateRegularizerWeight = 0.1
-        # options.fitIntervalLength = 3
-        # options.stride            = 2
-        # options.fitterFactory     = StackFitterNoUncertaintyFactory([1.0])
+        # co = CorrelationsObject()
              
-        co = CorrelationsObject()
+        # coordinateBase = ArrayList()
              
-        coordinateBase = ArrayList()
-             
-        positions = TreeMap();
-        positions.put( ConstantPair( Long(0), Long(0) ), ArrayList() );
+        # positions = TreeMap();
+        # positions.put( ConstantPair( Long(0), Long(0) ), ArrayList() );
              
         startingCoordinates = []
              
-        t2 = time.time()
-        print t2 - t0
+        # t2 = time.time()
+        # print t2 - t0
 
         start = 1
         stop  = img.getStack().getSize()
@@ -270,27 +280,38 @@ if __name__ == "__main__":
             start = stackMin
         if False and stackMax != None:
             stop  = stackMax
-        for i in xrange( 1, stop + 1 ):
-            stackRange, interval = cc.toStackRange( i, correlationRange )
+        startingCoordinates = range( start - 1, stop )
+        # for i in xrange( start, stop + 1 ):
+        #     stackRange, interval = cc.toStackRange( i, correlationRange )
              
-            out = ImagePlus('test_%02d' % i, stackRange)
-            # out.show()
+        #     out = ImagePlus('test_%02d' % i, stackRange)
+        #     # out.show()
              
-            meta                = CorrelationsObject.Meta()
-            meta.zPosition      = i
-            meta.zCoordinateMin = interval[0]
-            meta.zCoordinateMax = interval[1] + 1 # exclusive
+        #     meta                = CorrelationsObject.Meta()
+        #     meta.zPosition      = i
+        #     meta.zCoordinateMin = interval[0]
+        #     meta.zCoordinateMax = interval[1] + 1 # exclusive
              
-            adapter = ImagePlusAdapter.wrap(out)
-            co.addCorrelationImage(meta.zPosition, adapter, meta)
+        #     adapter = ImagePlusAdapter.wrap(out)
+        #     co.addCorrelationImage(meta.zPosition, adapter, meta)
              
-            coordinateBase.add( float(i) )
+        #     coordinateBase.add( float(i) )
              
-            startingCoordinates.append( float(i-1) )
-             
-             
+        #     startingCoordinates.append( float(i-1) )
+        # END DEPRECATED correlation calculation
+
+        # START create CorrelationsObject with factory
+
+        t0Prime = time.time()
+        
+        samples = ArrayList()
+        samples.add( ConstantPair.toPair( Long(0), Long(0) ) )
+        sampler = SparseXYSampler( samples )
+        cf      = SparseCorrelationsObjectFactory( ImagePlusAdapter.wrap( img ), sampler )
+        co      = cf.create( correlationRange, [img.getWidth(), img.getHeight()] )
+        
         t3 = time.time()
-        print t3 - t0
+        print t3 - t0Prime
              
              
              
@@ -311,15 +332,15 @@ if __name__ == "__main__":
         matrixTracker = CorrelationMatrixTrackerVisitor( bp, # base path
                                                          0, # min
                                                          1000, # max
-                                                         2, # scale
+                                                         1, # scale
                                                          FloorInterpolatorFactory() ) # interpolation
              
         bp = home + "/matrix_nlinear/matrixNLinear_%02d.tif"
         make_sure_path_exists( bp )
         matrixTracker = CorrelationMatrixTrackerVisitor( bp, # base path
                                                          0, # min
-                                                         1000, # max
-                                                         2, # scale
+                                                         matrixSize, # max
+                                                         matrixScale, # scale
                                                          NLinearInterpolatorFactory() ) # interpolation
              
         bp = home + "/array/array_%02d.tif"
@@ -340,10 +361,10 @@ if __name__ == "__main__":
                                                                  scale,
                                                                  0,
                                                                  0,
-                                                                 1308,
-                                                                 1000)
+                                                                 imgSource.getWidth(),
+                                                                 nImages)
         for i in xrange(-2, 3, 1):
-            renderTracker.addImage( Views.hyperSlice( ImagePlusImgs.from( imgSource ), 1,  3 + i ) )                                                 
+            renderTracker.addImage( Views.hyperSlice( ImagePlusImgs.from( imgSource ), 1,  5 + i ) )                                                 
              
         bp = home + "/fit_tracker/fitTracker_%d.csv"
         make_sure_path_exists( bp )
