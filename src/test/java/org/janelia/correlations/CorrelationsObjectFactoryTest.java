@@ -3,11 +3,14 @@ package org.janelia.correlations;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.TreeMap;
 
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
@@ -26,6 +29,9 @@ public class CorrelationsObjectFactoryTest {
 	
 	private final RandomAccessibleInterval< FloatType > imgs = ArrayImgs.floats( 10, 10, 5 );
 	private final int range = 3;
+	private final long[] radius = new long[] { 5 };
+	private final ArrayImg< FloatType, FloatArray > randomImage = ArrayImgs.floats( 10, 10, 5 );
+	private final Random rng = new Random( 100 );
 
 	@Before
 	public void setUp() throws Exception {
@@ -38,6 +44,10 @@ public class CorrelationsObjectFactoryTest {
 			}
 		}
 		
+		for ( final FloatType r : randomImage ) {
+			r.set( rng.nextFloat() );
+		}
+		
 	}
 	
 	@Rule
@@ -47,7 +57,7 @@ public class CorrelationsObjectFactoryTest {
 	public void testDense() {
 		
 		final CorrelationsObjectFactory<FloatType> factory = new CorrelationsObjectFactory<FloatType>( imgs );
-		final CorrelationsObjectInterface co = factory.create( range, new long[] { 5 } );
+		final CorrelationsObjectInterface co = factory.create( range, radius );
 		
 		final TreeMap<Long, Meta> metaMap = co.getMetaMap();
 		for ( final Entry<Long, Meta> entry : metaMap.entrySet() ) {
@@ -84,7 +94,7 @@ public class CorrelationsObjectFactoryTest {
 		final XYSampler sampler = new SparseXYSampler(coords);
 		
 		final SparseCorrelationsObjectFactory<FloatType> factory = new SparseCorrelationsObjectFactory< FloatType >( imgs, sampler);
-		final CorrelationsObjectInterface sco = factory.create( range, new long[] { 5 } );
+		final CorrelationsObjectInterface sco = factory.create( range, radius );
 		
 		final TreeMap<Long, Meta> metaMap = sco.getMetaMap();
 		for ( final Entry<Long, Meta> entry : metaMap.entrySet() ) {
@@ -103,6 +113,22 @@ public class CorrelationsObjectFactoryTest {
 			}
 						
 		}
+		
+	}
+	
+	
+	@Test
+	public void testEqual() {
+		
+		final CorrelationsObjectFactory<FloatType> dcof       = new CorrelationsObjectFactory<FloatType>( randomImage );
+		final SparseCorrelationsObjectFactory<FloatType> scof = new SparseCorrelationsObjectFactory<FloatType>( randomImage );
+		
+		final CorrelationsObjectInterface dco = dcof.create( range, radius );
+		final CorrelationsObjectInterface sco = scof.create( range, radius );
+		
+		Assert.assertTrue( dco.equalsMeta( sco ) );
+		Assert.assertTrue( dco.equalsXYCoordinates( sco ) );
+		Assert.assertTrue( dco.equals( sco ) );
 		
 	}
 
