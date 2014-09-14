@@ -89,7 +89,7 @@ public class CrossCorrelationTest {
 		double val1;
 		double val2;
 		// correlation == 1
-		final CrossCorrelation<DoubleType, DoubleType> cc1 = new CrossCorrelation<DoubleType, DoubleType>(img1, img2, new long[] { 2, 2 } );
+		final CrossCorrelation< DoubleType, DoubleType, FloatType > cc1 = new CrossCorrelation< DoubleType, DoubleType, FloatType >(img1, img2, new long[] { 2, 2 }, new FloatType() );
 		final RandomAccess<FloatType> ra1 = cc1.randomAccess();
 		ra1.setPosition( new int[] { 2, 2 } );
 		val1 = ra1.get().get();
@@ -98,7 +98,7 @@ public class CrossCorrelationTest {
 		Assert.assertEquals( val1, val2, 0.0 );
 		
 		// correlation == -1
-		final CrossCorrelation<DoubleType, DoubleType> cc2 = new CrossCorrelation<DoubleType, DoubleType>(img1, img3, new long[] { 2, 2 } );
+		final CrossCorrelation< DoubleType, DoubleType, FloatType > cc2 = new CrossCorrelation< DoubleType, DoubleType, FloatType >(img1, img3, new long[] { 2, 2 }, new FloatType() );
 		final RandomAccess<FloatType> ra2 = cc2.randomAccess();
 		ra2.setPosition( new int[] { 2, 2 } );
 		val1 = ra2.get().get();
@@ -107,7 +107,7 @@ public class CrossCorrelationTest {
 		Assert.assertEquals( val1,  val2, 0.0 );
 		
 		// correlation ~~ 0
-		final CrossCorrelation< DoubleType, DoubleType > cc3 = new CrossCorrelation<DoubleType, DoubleType>(img4, img5, randomDim );
+		final CrossCorrelation< DoubleType, DoubleType, FloatType > cc3 = new CrossCorrelation< DoubleType, DoubleType, FloatType >(img4, img5, randomDim, new FloatType() );
 		final RandomAccess<FloatType> ra3 = cc3.randomAccess();
 		ra3.setPosition( new long[] { randomDim[0] / 2 } );
 		val1 = ra3.get().get();
@@ -136,8 +136,8 @@ public class CrossCorrelationTest {
 			final FloatProcessor fp2 = new FloatProcessor( randomFloat2D2 );
 			final BlockPMCC blockCC1  = new BlockPMCC( fp1, fp2, 0, 0 ); // offset needs to be explicitly set to 0,0
 			final BlockPMCC blockCC2  = new BlockPMCC( fp1, fp2, 0, 0 ); // offset needs to be explicitly set to 0,0
-			final CrossCorrelation< FloatType, FloatType > cc1 = new CrossCorrelation< FloatType, FloatType >( img6, img7, longRadius );
-			final CrossCorrelation< FloatType, FloatType > cc2 = new CrossCorrelation< FloatType, FloatType >( img6, img7, longRadius, CrossCorrelation.TYPE.SIGNED_SQUARED );
+			final CrossCorrelation< FloatType, FloatType, FloatType > cc1 = new CrossCorrelation< FloatType, FloatType, FloatType >( img6, img7, longRadius, new FloatType() );
+			final CrossCorrelation< FloatType, FloatType, FloatType > cc2 = new CrossCorrelation< FloatType, FloatType, FloatType >( img6, img7, longRadius, CrossCorrelation.TYPE.SIGNED_SQUARED, new FloatType() );
 			
 			
 			blockCC1.r( intRadius[0], intRadius[1] );
@@ -187,7 +187,7 @@ public class CrossCorrelationTest {
 		final FloatProcessor fp1 = new FloatProcessor( smallExample1 );
 		final FloatProcessor fp2 = new FloatProcessor( smallExample2 );
 		final BlockPMCC blockCC  = new BlockPMCC( fp1, fp2, 0, 0 );
-		final CrossCorrelation<FloatType, FloatType> cc = new CrossCorrelation<FloatType, FloatType>( img8, img9, new long[] { radius } );
+		final CrossCorrelation<FloatType, FloatType, FloatType > cc = new CrossCorrelation< FloatType, FloatType, FloatType >( img8, img9, new long[] { radius }, new FloatType() );
 		blockCC.r( radius );
 		final FloatProcessor fpRes = blockCC.getTargetProcessor();
 		

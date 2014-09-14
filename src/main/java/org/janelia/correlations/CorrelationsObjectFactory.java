@@ -81,10 +81,11 @@ public class CorrelationsObjectFactory < T extends RealType< T > > {
 				} else if ( z == zRef ) {
 					correlationsSource = Views.interval( Views.raster( new ConstantRealRandomAccesssible< FloatType >( 2, new FloatType( 1.0f ) ) ), correlationsTarget );
 				} else {
-					correlationsSource = new CrossCorrelation<T, T>( 
+					correlationsSource = new CrossCorrelation<T, T, FloatType >( 
 							Views.hyperSlice( images, 2, z ), 
 							Views.hyperSlice( images, 2, zRef ), 
-							radius );
+							radius,
+							new FloatType() );
 				}
 				
 				final Iterator<ConstantPair<Long, Long>> it = sampler.iterator();

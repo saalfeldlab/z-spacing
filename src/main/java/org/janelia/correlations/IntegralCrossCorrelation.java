@@ -20,6 +20,7 @@ import net.imglib2.img.array.ArrayCursor;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.FloatArray;
+import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
@@ -28,7 +29,7 @@ import net.imglib2.view.Views;
  * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>
  *
  */
-public class IntegralCrossCorrelation< T extends RealType< T >, U extends RealType< U > > extends AbstractCrossCorrelation< T, U > {
+public class IntegralCrossCorrelation< T extends RealType< T >, U extends RealType< U >, S extends RealType< S > & NativeType< S > > extends AbstractCrossCorrelation< T, U, S > {
 	
 	private Img< FloatType > sums1;
 	private Img< FloatType > sums2;
@@ -51,16 +52,18 @@ public class IntegralCrossCorrelation< T extends RealType< T >, U extends RealTy
 	
 	public IntegralCrossCorrelation(final RandomAccessibleInterval<T> img1,
 			final RandomAccessibleInterval<U> img2,
-			final long[] r) throws NotEnoughSpaceException {
-		this(img1, img2, r, CrossCorrelationType.STANDARD );
+			final long[] r,
+			final S n ) throws NotEnoughSpaceException {
+		this(img1, img2, r, CrossCorrelationType.STANDARD, n );
 	}
 	
 	
 	public IntegralCrossCorrelation(final RandomAccessibleInterval<T> img1,
 			final RandomAccessibleInterval<U> img2,
 			final long[] r,
-			final CrossCorrelationType type ) throws NotEnoughSpaceException {
-		super( img1, img2, r );
+			final CrossCorrelationType type,
+			final S n ) throws NotEnoughSpaceException {
+		super( img1, img2, r, n );
 		
 		switch ( type ) {
 		case STANDARD:
@@ -83,7 +86,7 @@ public class IntegralCrossCorrelation< T extends RealType< T >, U extends RealTy
 	 * @see net.imglib2.RandomAccessible#randomAccess()
 	 */
 	@Override
-	public RandomAccess< FloatType > randomAccess() {
+	public RandomAccess< S > randomAccess() {
 		return this.correlations.randomAccess();
 	}
 
@@ -91,7 +94,7 @@ public class IntegralCrossCorrelation< T extends RealType< T >, U extends RealTy
 	 * @see net.imglib2.RandomAccessible#randomAccess(net.imglib2.Interval)
 	 */
 	@Override
-	public RandomAccess< FloatType > randomAccess(final Interval interval) {
+	public RandomAccess< S > randomAccess(final Interval interval) {
 		return randomAccess();
 	}
 	
@@ -112,9 +115,9 @@ public class IntegralCrossCorrelation< T extends RealType< T >, U extends RealTy
 	
 	private void calculateCrossCorrelation() throws NotEnoughSpaceException {
 		calculateCrossCorrelationSignedSquared();
-		for ( final FloatType c : this.correlations ) {
-			final float val = c.get();
-			c.set( (float) (val < 0 ? -Math.sqrt( -val ) : Math.sqrt( val ) ) );
+		for ( final S c : this.correlations ) {
+			final double val = c.getRealDouble();
+			c.setReal( (val < 0 ? -Math.sqrt( -val ) : Math.sqrt( val ) ) );
 		}
 
 		
@@ -129,7 +132,7 @@ public class IntegralCrossCorrelation< T extends RealType< T >, U extends RealTy
 		final RandomAccess<FloatType> ra12 = sums12.randomAccess();
 		final RandomAccess<FloatType> ra22 = sums22.randomAccess();
 		
-		final ArrayCursor<FloatType> c = this.correlations.cursor();
+		final ArrayCursor< S > c = this.correlations.cursor();
 		
 		final long[] lower = new long[ this.dim.length ];
 		final long[] upper = new long[ this.dim.length ];
@@ -158,15 +161,15 @@ public class IntegralCrossCorrelation< T extends RealType< T >, U extends RealTy
 				upper[ d ] = Math.min( currPos + this.r[ d ], this.dim[ d ] );
 				nPoints *= upper[ d ] - lower [ d ];
 			}
-			final float nPointsFloat = nPoints;
+			final double nPointsDouble = nPoints;
 			
-			float val = 0.0f;
+			double val = 0.0;
 			
-			float sum1  = 0f;
-			float sum2  = 0f;
-			float sum11 = 0f;
-			float sum12 = 0f;
-			float sum22 = 0f;
+			double sum1  = 0.0;
+			double sum2  = 0.0;
+			double sum11 = 0.0;
+			double sum12 = 0.0;
+			double sum22 = 0.0;
 			
 			
 			for ( final int[] p : configurations ) {
@@ -182,18 +185,18 @@ public class IntegralCrossCorrelation< T extends RealType< T >, U extends RealTy
 				}
 				// sign = (-1)^ ( nDimensions - || p ||_1 )
 				// as p_i = { 0, 1 }, || p ||_1 = sum of non-zero elements
-				final float sign = ( (sum & 1) == 0 ) ? 1.f : -1.f ;
+				final double sign = ( (sum & 1) == 0 ) ? 1. : -1. ;
 				sum1  += sign * ra1. get().get();
 				sum2  += sign * ra2. get().get();
 				sum11 += sign * ra11.get().get();
 				sum12 += sign * ra12.get().get();
 				sum22 += sign * ra22.get().get();
 			}
-			val  = ( nPointsFloat * sum12 - sum1*sum2 );
+			val  = ( nPointsDouble * sum12 - sum1*sum2 );
 			val *= ( val > 0 ? val : -val );
-			val /= ( ( nPointsFloat * sum11 - sum1*sum1 ) * ( nPointsFloat * sum22 - sum2*sum2 ) );
+			val /= ( ( nPointsDouble * sum11 - sum1*sum1 ) * ( nPointsDouble * sum22 - sum2*sum2 ) );
 			
-			c.get().set( val );
+			c.get().setReal( val );
 			
 			
 		}
@@ -275,7 +278,7 @@ public class IntegralCrossCorrelation< T extends RealType< T >, U extends RealTy
 		
 //		new ImageJ();
 		
-		final IntegralCrossCorrelation< FloatType, FloatType > ii = new IntegralCrossCorrelation<FloatType, FloatType>(img1, img2,  new long[] { rad[0], rad[1] } );
+		final IntegralCrossCorrelation< FloatType, FloatType, FloatType > ii = new IntegralCrossCorrelation< FloatType, FloatType, FloatType >(img1, img2,  new long[] { rad[0], rad[1] }, new FloatType() );
 		final BlockPMCC cc = new BlockPMCC(fpR, fpS, 0, 0);
 		cc.r( rad[0], rad[1] );
 		final FloatProcessor fp = cc.getTargetProcessor();

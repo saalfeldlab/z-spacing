@@ -4,10 +4,9 @@ import net.imglib2.Positionable;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealPositionable;
 import net.imglib2.img.array.ArrayImg;
-import net.imglib2.img.array.ArrayImgs;
-import net.imglib2.img.basictypeaccess.array.FloatArray;
+import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.real.FloatType;
 
 /**
  * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>
@@ -15,11 +14,11 @@ import net.imglib2.type.numeric.real.FloatType;
  * @param <T>
  * @param <U>
  */
-public abstract class AbstractCrossCorrelation  < T extends RealType< T >, U extends RealType< U > > implements RandomAccessibleInterval< FloatType > {
+public abstract class AbstractCrossCorrelation  < T extends RealType< T >, U extends RealType< U >, S extends RealType< S > & NativeType< S > > implements RandomAccessibleInterval< S > {
 	
 	protected final RandomAccessibleInterval<T> img1;
 	protected final RandomAccessibleInterval<U> img2;
-	protected final ArrayImg< FloatType, FloatArray > correlations;
+	protected final ArrayImg< S, ? > correlations;
 	protected final long[] dim;
 	protected final long[] r;
 	protected final long[] min;
@@ -32,7 +31,8 @@ public abstract class AbstractCrossCorrelation  < T extends RealType< T >, U ext
 	 */
 	public AbstractCrossCorrelation(final RandomAccessibleInterval<T> img1,
 			final RandomAccessibleInterval<U> img2,
-			final long[] r ) {
+			final long[] r,
+			final S type ) {
 		super();
 		assert img1.numDimensions() == img2.numDimensions(): "Mismatch in number of dimensions";
 		
@@ -54,7 +54,7 @@ public abstract class AbstractCrossCorrelation  < T extends RealType< T >, U ext
 			this.max[d] = dim[d] - 1;
 		}
 		
-		this.correlations = ArrayImgs.floats( dim );
+		this.correlations = new ArrayImgFactory< S >().create( dim, type );
 		
 		
 		

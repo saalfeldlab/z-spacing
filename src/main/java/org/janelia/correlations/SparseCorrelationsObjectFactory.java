@@ -6,6 +6,7 @@ import java.util.TreeMap;
 
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
 import org.janelia.correlations.CorrelationsObjectInterface.Meta;
@@ -93,11 +94,12 @@ public class SparseCorrelationsObjectFactory < T extends RealType< T > > {
 					} else if ( z == zRef ) {
 						correlationsAt[ relativePosition ] = 1.0;
 					} else {
-						final CrossCorrelation<T, T> cc = new CrossCorrelation< T, T >(
+						final CrossCorrelation<T, T, FloatType > cc = new CrossCorrelation< T, T, FloatType >(
 								Views.hyperSlice( images, 2, z ),
 								Views.hyperSlice( images, 2, zRef ),
 								radius,
-								this.type );
+								this.type,
+								new FloatType() );
 						final CrossCorrelationRandomAccess ra = cc.randomAccess();
 						ra.setPosition( new long[] { xy.getA(), xy.getB() } );
 						correlationsAt[ relativePosition ] = ra.get().getRealDouble();

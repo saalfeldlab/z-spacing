@@ -9,9 +9,9 @@ import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.array.ArrayRandomAccess;
 import net.imglib2.img.basictypeaccess.array.BitArray;
+import net.imglib2.type.NativeType;
 import net.imglib2.type.logic.BitType;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
 /**
@@ -20,7 +20,7 @@ import net.imglib2.view.Views;
  * @param <T>
  * @param <U>
  */
-public class CrossCorrelation < T extends RealType< T >, U extends RealType< U > > extends AbstractCrossCorrelation< T, U > implements RandomAccessibleInterval< FloatType > {
+public class CrossCorrelation < T extends RealType< T >, U extends RealType< U >, S extends RealType< S > & NativeType< S > > extends AbstractCrossCorrelation< T, U, S > implements RandomAccessibleInterval< S > {
 	
 	
 	
@@ -30,31 +30,33 @@ public class CrossCorrelation < T extends RealType< T >, U extends RealType< U >
 	
 	public CrossCorrelation(final RandomAccessibleInterval<T> img1,
 			final RandomAccessibleInterval<U> img2,
-			final long[] r ){
-		this( img1, img2, r, TYPE.STANDARD );
+			final long[] r,
+			final S n ){
+		this( img1, img2, r, TYPE.STANDARD, n );
 	}
 	
 
 	public CrossCorrelation(final RandomAccessibleInterval<T> img1,
 			final RandomAccessibleInterval<U> img2,
 			final long[] r,
-			final TYPE type ) {
-		super( img1, img2, r );
+			final TYPE type,
+			final S n ) {
+		super( img1, img2, r, n );
 		this.calculatedCheck = ArrayImgs.bits( dim );
 		this.type = type;
 	}
 	
-	public class CrossCorrelationRandomAccess extends Point implements RandomAccess< FloatType > {
+	public class CrossCorrelationRandomAccess extends Point implements RandomAccess< S > {
 		
 		private final ArrayRandomAccess< BitType > checkAccess;
-		private final ArrayRandomAccess< FloatType > correlationsAccess;
+		private final ArrayRandomAccess< S > correlationsAccess;
 		
 		private final long[] intervalMin;
 		private final long[] intervalMax;
 	
 		private CrossCorrelationRandomAccess(final long[] position,
 				final ArrayRandomAccess<BitType> checkAccess,
-				final ArrayRandomAccess<FloatType> correlationsAccess,
+				final ArrayRandomAccess< S > correlationsAccess,
 				final long[] intervalMin, final long[] intervalMax) {
 			super(position);
 			this.checkAccess = checkAccess;
@@ -73,11 +75,11 @@ public class CrossCorrelation < T extends RealType< T >, U extends RealType< U >
 		}
 
 		@Override
-		public FloatType get() {
+		public S get() {
 			checkAccess.setPosition( this.position );
 			correlationsAccess.setPosition( this.position );
 			
-			final FloatType currVal = correlationsAccess.get();
+			final S currVal = correlationsAccess.get();
 			
 			if ( checkAccess.get().get() == false ) {
 				
