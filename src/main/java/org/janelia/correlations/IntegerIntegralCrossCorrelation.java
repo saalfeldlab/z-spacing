@@ -13,13 +13,13 @@ import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.img.basictypeaccess.array.LongArray;
 import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.IntegerType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.LongType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
-import org.janelia.utility.IntegralToIntegralConverter;
+import org.janelia.utility.RealLongConverter;
+
 
 
 /**
@@ -29,7 +29,7 @@ import org.janelia.utility.IntegralToIntegralConverter;
  * @param <U> pixel type of second input image
  * @param <S> pixel type of output image
  */
-public class IntegerIntegralCrossCorrelation< T extends IntegerType< T >, U extends IntegerType< U >, S extends RealType< S > & NativeType< S > > extends
+public class IntegerIntegralCrossCorrelation< T extends RealType< T >, U extends RealType< U >, S extends RealType< S > & NativeType< S > > extends
 		IntegralCrossCorrelation<T, U, S, LongType > {
 	
 	public IntegerIntegralCrossCorrelation(
@@ -50,10 +50,8 @@ public class IntegerIntegralCrossCorrelation< T extends IntegerType< T >, U exte
 			final S resultDummy	
 			)
 			throws NotEnoughSpaceException {
-		super(img1, img2, r, type, new IntegralToIntegralConverter< T, LongType >(), new IntegralToIntegralConverter< U, LongType >(), resultDummy, new LongType() );
+		super(img1, img2, r, type, new RealLongConverter< T >(), new RealLongConverter< U >(), resultDummy, new LongType() );
 	}
-	
-	
 	
 	
 	
@@ -120,6 +118,5 @@ public class IntegerIntegralCrossCorrelation< T extends IntegerType< T >, U exte
 		
 		
 	}
-
 
 }
