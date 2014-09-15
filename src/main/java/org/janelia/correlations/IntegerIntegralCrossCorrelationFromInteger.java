@@ -29,10 +29,10 @@ import org.janelia.utility.RealLongConverter;
  * @param <U> pixel type of second input image
  * @param <S> pixel type of output image
  */
-public class IntegerIntegralCrossCorrelationFromIntegral< T extends RealType< T >, U extends RealType< U >, S extends RealType< S > & NativeType< S > > extends
+public class IntegerIntegralCrossCorrelationFromInteger< T extends RealType< T >, U extends RealType< U >, S extends RealType< S > & NativeType< S > > extends
 		IntegralCrossCorrelation<T, U, S, LongType > {
 	
-	public IntegerIntegralCrossCorrelationFromIntegral(
+	public IntegerIntegralCrossCorrelationFromInteger(
 			final RandomAccessibleInterval<T> img1,
 			final RandomAccessibleInterval<U> img2,
 			final long[] r,
@@ -42,7 +42,7 @@ public class IntegerIntegralCrossCorrelationFromIntegral< T extends RealType< T 
 		this( img1, img2, r, CrossCorrelationType.STANDARD, resultDummy );
 	}
 	
-	public IntegerIntegralCrossCorrelationFromIntegral(
+	public IntegerIntegralCrossCorrelationFromInteger(
 			final RandomAccessibleInterval<T> img1,
 			final RandomAccessibleInterval<U> img2,
 			final long[] r,
@@ -98,8 +98,8 @@ public class IntegerIntegralCrossCorrelationFromIntegral< T extends RealType< T 
 //						new SameTypeConverter<FloatType>(),
 //						new FloatType( 0.0f ),
 //						new FloatType( 0.0f ) );
-		final IntegerIntegralCrossCorrelationFromIntegral< LongType	, LongType, FloatType > ii = 
-				new IntegerIntegralCrossCorrelationFromIntegral< LongType, LongType, FloatType >( img1, img2, new long[] { rad[0], rad[1] }, new FloatType() );
+		final IntegerIntegralCrossCorrelationFromInteger< LongType	, LongType, FloatType > ii = 
+				new IntegerIntegralCrossCorrelationFromInteger< LongType, LongType, FloatType >( img1, img2, new long[] { rad[0], rad[1] }, new FloatType() );
 		final BlockPMCC cc = new BlockPMCC(fpR, fpS, 0, 0);
 		cc.r( rad[0], rad[1] );
 		final FloatProcessor fp = cc.getTargetProcessor();
