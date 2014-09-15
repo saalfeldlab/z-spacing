@@ -19,7 +19,7 @@ import net.imglib2.type.numeric.integer.LongType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
-import org.janelia.utility.IntegralToIntegralConverter;
+import org.janelia.utility.IntegerToIntegerConverter;
 
 
 /**
@@ -50,7 +50,7 @@ public class IntegerIntegralCrossCorrelationFromInteger< T extends IntegerType< 
 			final S resultDummy	
 			)
 			throws NotEnoughSpaceException {
-		super(img1, img2, r, type, new IntegralToIntegralConverter< T, LongType >(), new IntegralToIntegralConverter< U, LongType >(), resultDummy, new LongType() );
+		super(img1, img2, r, type, new IntegerToIntegerConverter< T, LongType >(), new IntegerToIntegerConverter< U, LongType >(), resultDummy, new LongType() );
 	}
 	
 	
