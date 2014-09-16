@@ -173,7 +173,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                 for ( int n = 0; n < this.nIterations; ++n ) {
 
                         this.iterationStep(matrix, weightArr, transform, lut, coordinateArr, coordinates, mediatedShifts, options, visitor, n);
-
+                        IJ.showProgress( n, options.nIterations );
                 }
                 return coordinates;
         }
@@ -337,7 +337,6 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                                         }
                                 }
                         }
-                        IJ.showProgress( iteration, options.nIterations );
                 }
 
 
