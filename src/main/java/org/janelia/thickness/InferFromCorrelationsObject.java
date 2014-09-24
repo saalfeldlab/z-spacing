@@ -21,6 +21,7 @@ import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.img.basictypeaccess.array.FloatArray;
+import net.imglib2.img.list.ListImg;
 import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.type.numeric.real.DoubleType;
@@ -31,6 +32,7 @@ import net.imglib2.view.Views;
 import org.apache.commons.math.FunctionEvaluationException;
 import org.janelia.correlations.CorrelationsObjectInterface;
 import org.janelia.correlations.CorrelationsObjectInterface.Meta;
+import org.janelia.thickness.LocalizedCorrelationFit.WeightGenerator;
 import org.janelia.thickness.inference.visitor.Visitor;
 import org.janelia.thickness.lut.AbstractLUTRealTransform;
 import org.janelia.thickness.lut.LUTRealTransform;
@@ -105,6 +107,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                 while ( iterator.hasNext() )
                         zMaxTmp = iterator.next();
                 zMax = zMaxTmp + 1;
+               
         }
 
 
@@ -169,10 +172,38 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 
 
                 visitor.act( 0, matrix, lut, transform, weightArr, weightArr, new double[ lut.length ] );
+                
+                final double[] weightTable = new double[ lut.length ];
+                for (int i = 0; i < weightTable.length; i++) {
+					weightTable[ i ] = Math.exp( - 0.5*i*i / 40000 );
+				}
+                
+                final WeightGenerator wg = new LocalizedCorrelationFit.WeightGenerator() {
+                	
+					
+					@Override
+					public double calculate(final int c1, final int c2) {
+//						final int dist = Math.abs( c1 - c2 );
+//						return dist >= weightTable.length ? 0.0 : weightTable[ dist ];
+						return weightTable[ Math.abs( c1 - c2 ) ];
+					}
+					
+					@Override
+					public float calculatFloat(final int c1, final int c2) {
+						return (float) calculate(c1, c2);
+					}
+				};
+				final LocalizedCorrelationFit lcf = new LocalizedCorrelationFit( wg );
+				final ArrayList<double[]> fitList = new ArrayList< double[] >();
+				for ( int i = 0; i < lut.length; ++i ) {
+					fitList.add( new double[ this.comparisonRange ] );
+				}
+				
+				final ListImg< double[] > localFits = new ListImg<double[]>( fitList, fitList.size() );
 
                 for ( int n = 0; n < this.nIterations; ++n ) {
 
-                        this.iterationStep(matrix, weightArr, transform, lut, coordinateArr, coordinates, mediatedShifts, options, visitor, n);
+                        this.iterationStep(matrix, weightArr, transform, lut, coordinateArr, coordinates, mediatedShifts, options, visitor, n, lcf, localFits );
                         IJ.showProgress( n, options.nIterations );
                 }
                 return coordinates;
@@ -389,14 +420,26 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                 this.shiftMediator.mediate( shifts, mediatedShifts );
 
                 final ArrayCursor<DoubleType> mediatedCursor = mediatedShifts.cursor();
+                
+                double accumulatedShifts = 0.0;
 
                 for ( int ijk = 0; mediatedCursor.hasNext(); ++ijk ) {
 
                         mediatedCursor.fwd();
-                        
-                        lut[ijk] += options.shiftProportion * mediatedCursor.get().get();
+                        final double previous = lut[ijk];
+                        lut[ ijk ] += accumulatedShifts + options.shiftProportion * mediatedCursor.get().get();
+                        // make sure, that slices do not flip positions, ie set lut[ijk] to
+                        // previous + shiftProportion * ( lut[ijk-1] - previous )
+                        IJ.log( "Why is the stuff inside the condition not being logged? " + ijk );
+                        if ( ijk > 0 && lut[ ijk ] < lut[ ijk - 1 ] ) {
+                        	String logStr = "" + ijk + " " + lut[ ijk ] + " <= " + lut[ ijk - 1 ];
+                        	lut[ ijk ] = lut[ ijk - 1 ] + ( lut[ ijk - 1 ] - lut[ ijk ] ) * ( options.shiftProportion );
+                        	logStr += ", now: lut[ijk] = " + lut[ijk];
+                        	IJ.log( "Switched positions at " + logStr );
+                        }
 //                        lut[ijk] *= inverseCoordinateUpdateRegularizerWeight;
 //                        lut[ijk] += options.coordinateUpdateRegularizerWeight * ijk;
+                        accumulatedShifts = lut[ ijk ] - previous;
                 }
                 
                 final float[] floatLut = new float[ lut.length ]; final float[] arange = new float[ lut.length ];
@@ -420,6 +463,104 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 
                 visitor.act( n + 1, matrix, lut, transform, multipliers, weights, estimatedFit );
         }
+        
+        
+        private void iterationStep( final ArrayImg<DoubleType, DoubleArray> matrix,
+                final double[] weights,
+                final AbstractLUTRealTransform transform,
+                final double[] lut,
+                final double[] coordinateArr,
+                final ArrayImg< DoubleType, DoubleArray > coordinates,
+                final ArrayImg< DoubleType, DoubleArray > mediatedShifts,
+                final Options options,
+                final Visitor visitor,
+                final int n,
+                final LocalizedCorrelationFit lcf,
+                final ListImg< double[] > localFits
+                ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+			final double[] vars = new double[ this.comparisonRange ];
+			
+			lcf.estimateFromMatrix(matrix, coordinateArr, weights, transform, this.comparisonRange, correlationFitModel, localFits);
+//			}	
+			
+			final double inverseCoordinateUpdateRegularizerWeight = 1 - options.coordinateUpdateRegularizerWeight;
+			
+			final double[] multipliers = EstimateQualityOfSlice.estimateFromMatrix( matrix,
+			                                                                    weights,
+			                                                                    this.measurementsMultiplierModel,
+			                                                                    coordinates,
+			                                                                    localFits, // mirrorAndExtend( estimatedFit, new NLinearInterpolatorFactory< DoubleType >() ),
+			                                                                    this.nThreads,
+			                                                                    options.multiplierGenerationRegularizerWeight );
+			
+//			IJ.log( "" + localFits.dimension( 0 ) );
+			final TreeMap< Long, ArrayList< ConstantPair< Double, Double > > > shifts =
+			            ShiftCoordinates.collectShiftsFromMatrix(
+			                    coordinateArr,
+			                    matrix,
+			                    weights,
+			                    multipliers,
+			                    localFits );
+			
+			this.shiftMediator.mediate( shifts, mediatedShifts );
+			
+			final ArrayCursor<DoubleType> mediatedCursor = mediatedShifts.cursor();
+			
+			double accumulatedShifts = 0.0;
+			
+			for ( int ijk = 0; mediatedCursor.hasNext(); ++ijk ) {
+			
+			    mediatedCursor.fwd();
+			    final double previous = lut[ijk];
+			    lut[ijk] += accumulatedShifts + options.shiftProportion * mediatedCursor.get().get();
+			    // make sure, that slices do not flip positions, ie set lut[ijk] to
+			    // previous + shiftProportion * ( lut[ijk-1] - previous )
+			    // TODO think of a way of ensuring this (e.g. minimum section thickness?)
+//			    if ( ijk > 0 && lut[ ijk ] < lut[ ijk - 1 ] ) {
+//                	lut[ ijk ] = lut[ ijk - 1 ] + 0.1;
+//                }
+			    accumulatedShifts = 0.0; // lut[ijk] - previous; // TODO Why do accumulated shifts not work?
+			}
+			
+			// TODO decide for complete range or end points for this fit
+//			final float[] floatLut = new float[ lut.length ]; final float[] arange = new float[ lut.length ];
+//			final float[] floatWeights = new float[ lut.length ];
+//			for (int i = 0; i < arange.length; i++) {
+//				arange[i] = i;
+//				floatLut[i] = (float) lut[i];
+//				floatWeights[i] = 1.0f;
+//			}
+			
+			final float[] floatLut = new float[ 2 ]; final float[] arange = new float[ 2 ];
+			final float[] floatWeights = new float[ 2 ];
+			for (int i = 0; i < arange.length; i++) {
+				arange[i] = i;
+				floatWeights[i] = 1.0f;
+			}
+			floatLut[ 0 ] = (float) lut[ 0 ];
+			arange[ 0 ]   = 0f;
+			floatWeights[ 0 ] = 1.0f;
+			floatLut[ 1 ] = (float) lut[ lut.length - 1 ];
+			arange[ 1 ] = lut.length - 1;
+			floatWeights[ 1 ] = 1.0f;
+			
+			final AffineModel1D coordinatesFitModel = new AffineModel1D();
+			
+			
+			coordinatesFitModel.fit( new float[][]{floatLut}, new float[][]{arange}, floatWeights );
+			
+			final double[] affineArray = new double[ 2 ];
+			coordinatesFitModel.toArray( affineArray );
+			
+			for (int i = 0; i < lut.length; i++) {
+			lut[i] = affineArray[0] * lut[i] + affineArray[1];
+			}
+			
+			visitor.act( n + 1, matrix, lut, transform, multipliers, weights, localFits.firstElement() );
+        }
+        
+        
+        
 
 
         public ArrayImg< DoubleType, DoubleArray > correlationsToMatrix( final long x, final long y ) {

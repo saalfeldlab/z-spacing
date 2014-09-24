@@ -1,10 +1,14 @@
 package org.janelia.thickness;
 
+import ij.IJ;
+
 import java.util.ArrayList;
 import java.util.TreeMap;
 
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.list.ListCursor;
+import net.imglib2.img.list.ListImg;
 import net.imglib2.type.numeric.real.DoubleType;
 
 import org.janelia.thickness.lut.LUTRealTransform;
@@ -61,7 +65,72 @@ public class ShiftCoordinates {
 				
 //				localShifts.add( new ConstantPair<Double, Double>( shift, weights[ i ] * 1.0 / ( Math.abs( i - k ) + 1 ) ) );
 				localShifts.add( new ConstantPair<Double, Double>( shift, weights[ i ] ) );
+				if ( k == 350 ) {
+					IJ.log( k +  " from " + i + ": s=" + shift + ", m=" + m +  ", r=" + corrAccess.get().get() );
+				}
+			}
+		}
+		return weightedShifts;
+	}
+	
+	public static TreeMap< Long, ArrayList< ConstantPair<Double, Double> > > collectShiftsFromMatrix(
+			final double[] coordinates, 
+			final RandomAccessibleInterval< DoubleType > correlations, 
+			final double[] weights,
+			final double[] multipliers,
+			final ListImg< double[] > localFits ) {
+		
+		final RandomAccess<DoubleType> corrAccess = correlations.randomAccess();
+		
+		final TreeMap<Long, ArrayList<ConstantPair<Double, Double> > > weightedShifts = new TreeMap< Long, ArrayList< ConstantPair<Double, Double> > >();
+		
+		final double[] reference = new double[ 1 ];
+		
+		final ListCursor<double[]> cursor = localFits.cursor();
+		
+//		IJ.log( localFits.numDimensions() + " " + localFits.dimension( 0 ) + "");
+		
+		// i is reference index, k is comparison index
+		for ( int i = 0; i < correlations.dimension( 1 ); ++i ) {
+			
+			corrAccess.setPosition( i, 1 );
+			final double[] localFit = cursor.next();
+			final LUTRealTransform lut = new LUTRealTransform( localFit, 1, 1 );
+			
+			for ( int k = 0; k < correlations.dimension( 0 ); ++k ) {
 				
+				corrAccess.setPosition( k, 0 );
+				
+				if ( Double.isNaN( corrAccess.get().getRealDouble() ) )
+					continue;
+				
+				ArrayList< ConstantPair< Double, Double > > localShifts = weightedShifts.get( ( long ) k );
+				if ( localShifts == null ) {
+					localShifts = new ArrayList<ConstantPair<Double,Double>>();
+					weightedShifts.put( (long) k, localShifts );
+				}
+				
+				final double m = ( k == i ) ? 1.0 : multipliers[ i ];
+				
+				/* TODO inverts because LUTRealTransform can only increasing */
+				reference[ 0 ] = -corrAccess.get().get() * m;
+				
+				lut.applyInverse( reference, reference );
+				
+				if ( reference[ 0 ] == Double.MAX_VALUE || reference[ 0 ] == -Double.MAX_VALUE )
+					continue;
+				
+				// rel: negative coordinates of k wrt to local coordinate system of i
+				final double rel = coordinates[ i ] - coordinates[ k ];
+				
+				/* current location */
+				final double shift = ( k < i ) ? rel - reference[ 0 ] : rel + reference[ 0 ];
+				
+//				localShifts.add( new ConstantPair<Double, Double>( shift, weights[ i ] * 1.0 / ( Math.abs( i - k ) + 1 ) ) );
+				localShifts.add( new ConstantPair<Double, Double>( shift, weights[ i ] ) );
+//				if ( k == 350 ) {
+//					IJ.log( k +  " from " + i + ": s=" + shift + ", m=" + m +  ", r=" + corrAccess.get().get() );
+//				}
 			}
 		}
 		return weightedShifts;
@@ -116,14 +185,9 @@ public class ShiftCoordinates {
 				reference[ 0 ] = -mValue * mult;
 				
 				lut.applyInverse( reference, reference );
-				if ( Math.abs( k - i ) < 4 ) {
-//					System.out.println( reference[0] );
-				}
+
 				
 				if ( reference[ 0 ] == Double.MAX_VALUE || reference[ 0 ] == -Double.MAX_VALUE ) {
-					if ( Math.abs( k - i ) < 4 ) {
-//						System.exit( 124353124 );
-					}
 					continue;
 				}
 				
