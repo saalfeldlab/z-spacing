@@ -67,7 +67,6 @@ public class EstimateCorrelationsAtSamplePoints {
 			
 			for ( int k = 0; k <= nIter; ++k ) {
 				
-				
 //				if ( i < coordinates.length - 1 && coordinates[i] + k < coordinates[ i + 1 ] )
 //					continue;
 //				
@@ -92,9 +91,9 @@ public class EstimateCorrelationsAtSamplePoints {
 				if ( ( ! Double.isNaN( a2 ) ) && ( ! Double.isNaN( w2 ) ) )
 					points.add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new float[]{ (float)a2 } ), (float) w2 ) );
 				
+				
 				access.fwd(0);
 				access2.bck(0);
-				
 			}
 					
 		}
@@ -102,13 +101,11 @@ public class EstimateCorrelationsAtSamplePoints {
 		/* TODO inverts because LUTRealTransform can only increasing */
 		result[0] = -1.0;
 		for ( int i = 1; i < result.length; ++i ) {
-			
 			correlationFitModel.fit( pointCollections.get( i ) );
 			
 			/* TODO inverts because LUTRealTransform can only increasing */
 			result[i] = -correlationFitModel.apply( ONE_DIMENSION_ZERO_POSITION )[ 0 ];
 		}
-		
 		return result;
 	}
 	
