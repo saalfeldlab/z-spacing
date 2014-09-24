@@ -200,8 +200,8 @@ if __name__ == "__main__":
     t0 = time.time()
     print t0 - t0
 
-    correlationRanges = range(19, 100, 222221)
-    nImages = 100
+    correlationRanges = range( 54, 1001, 222221 )
+    nImages = 600
     # root = '/data/hanslovskyp/playground/pov-ray/constant_thickness=5/850-1149/scale/0.05/250x250+125+125'
     # root = '/data/hanslovskyp/export_from_nobackup/sub_stack_01/data/substacks/01/'
     # root = '/ssd/hanslovskyp/crack_from_john/substacks/03/'
@@ -209,6 +209,7 @@ if __name__ == "__main__":
     # root = '/ssd/hanslovskyp/boergens/substacks/01/'
     # root = '/ssd/hanslovskyp/tweak_CutOn4-15-2013_ImagedOn1-27-2014/substacks/01/'
     root = '/data/hanslovskyp/forPhilipp/substacks/03/'
+    # root = '/ssd/hanslovskyp/tweak_CutOn4-15-2013_ImagedOn1-27-2014/substacks/01/'
     IJ.run("Image Sequence...", "open=%s/data number=%d sort" % ( root.rstrip(), nImages ) );
     # imgSource = FolderOpener().open( '%s/data' % root.rstrip('/') )
     imgSource = IJ.getImage()
@@ -216,15 +217,15 @@ if __name__ == "__main__":
     conv = ImageConverter( imgSource )
     conv.convertToGray32()
     stackSource = imgSource.getStack()
-    nIterations = 200
+    nIterations = 1000
     nThreads = 1
     scale = 1.0
     # stackMin, stackMax = ( None, 300 )
     xyScale = 0.25 # fibsem (crack from john) ~> 0.25
     xyScale = 0.1 # fibsem (crop from john) ~> 0.1?
-    doXYScale = True
+    doXYScale = False
     matrixSize = nImages
-    matrixScale = 3.0
+    matrixScale = 6.0
    
 
     img = imgSource.clone()
@@ -396,6 +397,7 @@ if __name__ == "__main__":
         matrixTracker.addVisitor( weightsTracker )                                         
              
         options = InferFromCorrelationsObject.Options.generateDefaultOptions()
+        options.shiftProportion = 0.8
         # if you want to specify values for options, do:
         # options.multiplierGenerationRegularizerWeight = <value>
         # or equivalent
