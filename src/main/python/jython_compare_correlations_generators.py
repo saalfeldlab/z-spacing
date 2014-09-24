@@ -84,11 +84,12 @@ def funcJavaOnlyDense( img, cRange ):
 
 if __name__ == "__main__":
     root = '/ssd/hanslovskyp/boergens/substacks/01/'
+    number = 10
     # only set this to True if the number of images as well as range is very short! calculation will take long!
     checkConsistencyWithDeprecated = True
     toColonWidth = 75
     # load iamges
-    IJ.run( "Image Sequence...", "open=%s/data number=10 sort" % root.rstrip() )
+    IJ.run( "Image Sequence...", "open=%s/data number=%d sort" % ( root.rstrip(), number ) )
     imgSource = IJ.getImage()
     cRange = 3
 
