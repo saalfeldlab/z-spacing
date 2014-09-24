@@ -57,10 +57,7 @@ public class Benchmark {
 				func.run();
 			}
 			end = System.nanoTime();
-			final long tmp1 = System.nanoTime();
-			System.nanoTime();
-			final long tmp2 = System.nanoTime();
-			list[ r ] =  ( end - start - ( tmp2 -tmp1 ) ) * 1.0 / nIterations;
+			list[ r ] =  ( end - start ) * 1.0 / nIterations;
 		}
 		
 		this.mean = new Mean().evaluate( list );
