@@ -45,12 +45,9 @@ import org.janelia.utility.ConstantPair;
 public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L> > {
 
         private final CorrelationsObjectInterface correlationsObject;
-        private final int nIterations;
-        private final int comparisonRange;
         private final M correlationFitModel;
         private final InterpolatorFactory< DoubleType, RandomAccessible< DoubleType>> fitInterpolatorFactory;
         private final L measurementsMultiplierModel;
-        private final int nThreads;
         private final OpinionMediator shiftMediator;
         private final long zMin;
         private final long zMax;
@@ -109,22 +106,16 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 
         public InferFromCorrelationsObject(
                 final CorrelationsObjectInterface correlationsObject,
-                final int nIterations,
-                final int comparisonRange,
                 final M correlationFitModel,
                 final InterpolatorFactory< DoubleType, RandomAccessible< DoubleType>> fitInterpolatorFactory,
                 final L measurementsMultiplierModel,
-                final int nThreads,
                 final OpinionMediator shiftMediator ) {
                 super();
 
                 this.correlationsObject = correlationsObject;
-                this.nIterations = nIterations;
-                this.comparisonRange = comparisonRange;
                 this.correlationFitModel = correlationFitModel;
                 this.fitInterpolatorFactory = fitInterpolatorFactory;
                 this.measurementsMultiplierModel = measurementsMultiplierModel;
-                this.nThreads = nThreads;
                 this.shiftMediator = shiftMediator;
 
                 final Iterator<Long> iterator = this.correlationsObject.getMetaMap().keySet().iterator();
@@ -223,12 +214,12 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 				final LocalizedCorrelationFit lcf = new LocalizedCorrelationFit( wg );
 				final ArrayList<double[]> fitList = new ArrayList< double[] >();
 				for ( int i = 0; i < lut.length; ++i ) {
-					fitList.add( new double[ this.comparisonRange ] );
+					fitList.add( new double[ options.comparisonRange ] );
 				}
 				
 				final ListImg< double[] > localFits = new ListImg<double[]>( fitList, fitList.size() );
 
-                for ( int n = 0; n < this.nIterations; ++n ) {
+                for ( int n = 0; n < options.nIterations; ++n ) {
 
                         this.iterationStep(matrix, weightArr, transform, lut, coordinateArr, coordinates, mediatedShifts, options, visitor, n, lcf, localFits );
                         IJ.showProgress( n, options.nIterations );
@@ -421,9 +412,9 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                                     final Visitor visitor,
                                     final int n
                                     ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
-                final double[] vars = new double[ this.comparisonRange ];
+                final double[] vars = new double[ options.comparisonRange ];
 
-                final double[] estimatedFit = EstimateCorrelationsAtSamplePoints.estimateFromMatrix( matrix, weights, transform, coordinateArr, this.comparisonRange, this.correlationFitModel, vars );
+                final double[] estimatedFit = EstimateCorrelationsAtSamplePoints.estimateFromMatrix( matrix, weights, transform, coordinateArr, options.comparisonRange, this.correlationFitModel, vars );
 
                 final double inverseCoordinateUpdateRegularizerWeight = 1 - options.coordinateUpdateRegularizerWeight;
 
@@ -432,7 +423,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                                                                                         this.measurementsMultiplierModel,
                                                                                         coordinates,
                                                                                         mirrorAndExtend( estimatedFit, new NLinearInterpolatorFactory< DoubleType >() ),
-                                                                                        this.nThreads,
+                                                                                        options.nThreads,
                                                                                         options.multiplierGenerationRegularizerWeight );
 
 
@@ -505,9 +496,9 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                 final LocalizedCorrelationFit lcf,
                 final ListImg< double[] > localFits
                 ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
-			final double[] vars = new double[ this.comparisonRange ];
+			final double[] vars = new double[ options.comparisonRange ];
 			
-			lcf.estimateFromMatrix(matrix, coordinateArr, weights, transform, this.comparisonRange, correlationFitModel, localFits);
+			lcf.estimateFromMatrix(matrix, coordinateArr, weights, transform, options.comparisonRange, correlationFitModel, localFits);
 //			}	
 			
 			final double inverseCoordinateUpdateRegularizerWeight = 1 - options.coordinateUpdateRegularizerWeight;
@@ -517,7 +508,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			                                                                    this.measurementsMultiplierModel,
 			                                                                    coordinates,
 			                                                                    localFits, // mirrorAndExtend( estimatedFit, new NLinearInterpolatorFactory< DoubleType >() ),
-			                                                                    this.nThreads,
+			                                                                    options.nThreads,
 			                                                                    options.multiplierGenerationRegularizerWeight );
 			
 //			IJ.log( "" + localFits.dimension( 0 ) );
