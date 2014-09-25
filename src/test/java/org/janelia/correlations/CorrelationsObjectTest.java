@@ -9,7 +9,7 @@ import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 
 import org.janelia.correlations.CorrelationsObjectInterface.Meta;
-import org.janelia.utility.benchmark.Serialization;
+import org.janelia.utility.Serialization;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
