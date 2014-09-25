@@ -2,6 +2,7 @@ package org.janelia.thickness;
 
 import ij.IJ;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -77,6 +78,30 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                 public int comparisonRange; // range for cross correlations
                 public double neighborRegularizerWeight;
                 public double minimumSectionThickness;
+                
+                @Override
+				public String toString() {
+                	final StringBuilder sb = new StringBuilder();
+                    sb.append("[");
+                    sb.append(getClass().getName());
+                    sb.append("]\n");
+                    for ( final Field f : this.getClass().getDeclaredFields() ) {
+                  	  sb.append( f.getName() );
+                  	  sb.append( "\t" );
+                  	  try {
+          				final StringBuilder append = sb.append( f.get( this ) );
+          			} catch (final IllegalArgumentException e) {
+          				// TODO Auto-generated catch block
+          				e.printStackTrace();
+          			} catch (final IllegalAccessException e) {
+          				// TODO Auto-generated catch block
+          				e.printStackTrace();
+          			}
+                  	  sb.append( "\n" );
+                    }
+                    
+                    return sb.toString();
+                }
 
 
         }
