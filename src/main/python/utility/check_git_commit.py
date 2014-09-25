@@ -9,11 +9,11 @@ def getCommit( repoDir ):
     os.chdir( repoDir )
 
     process = subprocess.Popen( bashCommand.split(), stdout=subprocess.PIPE )
-    output  = process.communicate()[0]
+    output  = process.communicate()[0].rstrip( '\n' )
     
     os.chdir( cwd )
 
-    return repoDir
+    return output
 
 
 
