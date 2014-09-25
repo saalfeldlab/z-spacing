@@ -226,7 +226,6 @@ if __name__ == "__main__":
     conv = ImageConverter( imgSource )
     conv.convertToGray32()
     stackSource = imgSource.getStack()
-    nIterations = 1000
     nThreads = 1
     scale = 1.0
     # stackMin, stackMax = ( None, 300 )
@@ -239,8 +238,9 @@ if __name__ == "__main__":
     deserializeCorrelations = not serializeCorrelations
     options = InferFromCorrelationsObject.Options.generateDefaultOptions()
     options.shiftProportion = 0.8
-    options.nIterations = nIterations
+    options.nIterations = 1000
     options.nThreads = nThreads
+    options.windowRange = 500
     thickness_estimation_repo_dir = '/groups/saalfeld/home/hanslovskyp/workspace/em-thickness-estimation'
     
    
