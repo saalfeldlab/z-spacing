@@ -239,6 +239,8 @@ if __name__ == "__main__":
     deserializeCorrelations = not serializeCorrelations
     options = InferFromCorrelationsObject.Options.generateDefaultOptions()
     options.shiftProportion = 0.8
+    options.nIterations = nIterations
+    options.nThreads = nThreads
     thickness_estimation_repo_dir = '/groups/saalfeld/home/hanslovskyp/workspace/em-thickness-estimation'
     
    
@@ -266,11 +268,18 @@ if __name__ == "__main__":
         home = root.rstrip('/') + '/range=%d'.rstrip('/')
         home = home % correlationRange
 
+        options.comparisonRange = c
+
         serializationString = '%s/correlations.sr' % home.rstrip()
 
         gitCommitInfoFile = '%s/commitHash' % home.rstrip('/')
         with open( gitCommitInfoFile, 'w' ) as f:
             f.write( '%s\n' % utility.gitcommit.getCommit( thickness_estimation_repo_dir ) )
+
+        optionsFile = '%s/options' % home.rstrip('/')
+        with open( optionsFile, 'w' ) as f:
+            f.write( '%s\n' % options.toString() )
+        
 
         this_file_name = os.path.realpath( inspect.getfile( lambda : None ) ) # inspect.getfile requires method, class, ... as input and returns the file in which input was defined
         shutil.copyfile( this_file_name, '%s/%s' % ( home.rstrip('/'), this_file_name.split('/')[-1] ) )
@@ -345,12 +354,9 @@ if __name__ == "__main__":
         print t3 - t0Prime
 
         inference = InferFromCorrelationsObject( co,
-                                                 nIterations,
-                                                 correlationRange,
                                                  TranslationModel1D(),
                                                  NLinearInterpolatorFactory(),
                                                  ScaleModel(),
-                                                 nThreads,
                                                  OpinionMediatorModel( TranslationModel1D() )
                                                  )
                                                  
