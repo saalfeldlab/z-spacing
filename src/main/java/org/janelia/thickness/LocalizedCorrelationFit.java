@@ -56,7 +56,8 @@ public class LocalizedCorrelationFit {
 			final AbstractLUTRealTransform transform,
 			final int range,
 			final M correlationFitModel,
-			final ListImg< double[] > localFits ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+			final ListImg< double[] > localFits,
+			final int windowRange) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 		
 		assert localFits.numDimensions() == 2;
 		assert localFits.dimension( 1 ) == coordinates.length;
@@ -81,8 +82,6 @@ public class LocalizedCorrelationFit {
 		final RealRandomAccess< DoubleType > access  = source2.realRandomAccess();
 		final RealRandomAccess< DoubleType > access2 = source2.realRandomAccess();
 		
-		final int lookAtRange = 25;
-		
 		for ( int i = 0; i < correlations.dimension( 1 ); ++i ) {
 			
 			access.setPosition( i, 1 );
@@ -91,8 +90,8 @@ public class LocalizedCorrelationFit {
 			transform.apply(access, access);
 			access2.setPosition(access);
 			
-			final int lower = Math.max( 0,  i - lookAtRange );
-			final int upper = -1; // Math.min( coordinates.length, i + lookAtRange );
+			final int lower = Math.max( 0,  i - windowRange );
+			final int upper = Math.min( coordinates.length, i + windowRange );
 			
 			for ( int k = 0; k <= range; ++k, access.fwd( 0 ), access2.bck( 0 ) ) {
 				

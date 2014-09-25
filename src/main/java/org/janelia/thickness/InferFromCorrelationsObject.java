@@ -64,6 +64,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                         result.comparisonRange = 10;
                         result.neighborRegularizerWeight = 0.05;
                         result.minimumSectionThickness = 0.01;
+                        result.windowRange = 150;
                         return result;
                 }
 
@@ -75,6 +76,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                 public int comparisonRange; // range for cross correlations
                 public double neighborRegularizerWeight;
                 public double minimumSectionThickness;
+                public int windowRange;
                 
                 @Override
 				public String toString() {
@@ -498,7 +500,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                 ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 			final double[] vars = new double[ options.comparisonRange ];
 			
-			lcf.estimateFromMatrix(matrix, coordinateArr, weights, transform, options.comparisonRange, correlationFitModel, localFits);
+			lcf.estimateFromMatrix(matrix, coordinateArr, weights, transform, options.comparisonRange, correlationFitModel, localFits, options.windowRange);
 //			}	
 			
 			final double inverseCoordinateUpdateRegularizerWeight = 1 - options.coordinateUpdateRegularizerWeight;
