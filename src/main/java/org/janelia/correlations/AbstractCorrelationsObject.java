@@ -1,5 +1,16 @@
 package org.janelia.correlations;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -8,7 +19,7 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.Views;
 
-import org.janelia.utility.ConstantPair;
+import org.janelia.utility.SerializableConstantPair;
 
 public abstract class AbstractCorrelationsObject implements
 		CorrelationsObjectInterface {
@@ -82,8 +93,8 @@ public abstract class AbstractCorrelationsObject implements
 			if ( this.equalsMeta( aco ) ) {
 				
 				if ( this.equalsXYCoordinates( aco ) ) {
-					final Set<ConstantPair<Long, Long>> XYCoordinates = this.getXYCoordinates();
-					for ( final ConstantPair<Long, Long> xy : XYCoordinates ) {
+					final Set<SerializableConstantPair<Long, Long>> XYCoordinates = this.getXYCoordinates();
+					for ( final SerializableConstantPair<Long, Long> xy : XYCoordinates ) {
 						for ( final Long z : metaMap.keySet() ) {
 							final RandomAccessibleInterval<DoubleType> c1 = this.extractDoubleCorrelationsAt( xy.getA(), xy.getB(), z ).getA();
 							final RandomAccessibleInterval<DoubleType> c2 = aco.extractDoubleCorrelationsAt( xy.getA(), xy.getB(), z ).getA();
@@ -119,4 +130,6 @@ public abstract class AbstractCorrelationsObject implements
 			return false;
 	}
 
+	
+	
 }

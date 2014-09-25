@@ -11,7 +11,7 @@ import net.imglib2.view.Views;
 
 import org.janelia.correlations.CorrelationsObjectInterface.Meta;
 import org.janelia.correlations.CrossCorrelation.CrossCorrelationRandomAccess;
-import org.janelia.utility.ConstantPair;
+import org.janelia.utility.SerializableConstantPair;
 import org.janelia.utility.sampler.DenseXYSampler;
 import org.janelia.utility.sampler.XYSampler;
 
@@ -56,12 +56,12 @@ public class SparseCorrelationsObjectFactory < T extends RealType< T > > {
 		final long stop = images.dimension( 2 ) - 1;
 		
 		final TreeMap<Long, Meta> metaMap = new TreeMap< Long, Meta > ();
-		final TreeMap<ConstantPair<Long, Long>, TreeMap<Long, double[]>> correlations = new TreeMap< ConstantPair< Long, Long >, TreeMap< Long, double[] > >();
+		final TreeMap<SerializableConstantPair<Long, Long>, TreeMap<Long, double[]>> correlations = new TreeMap< SerializableConstantPair< Long, Long >, TreeMap< Long, double[] > >();
 		
-		final Iterator<ConstantPair<Long, Long>> sampleIterator = sampler.iterator();
+		final Iterator<SerializableConstantPair<Long, Long>> sampleIterator = sampler.iterator();
 		int count = 0;
 		while ( sampleIterator.hasNext() ) {
-			final ConstantPair<Long, Long> xy = sampleIterator.next();
+			final SerializableConstantPair<Long, Long> xy = sampleIterator.next();
 			// as we just created correlations, nothing present at XY yet; it is the user's responsibility to make sure, there's no duplicate coordinates in sampler
 			final TreeMap<Long, double[]> correlationsAtXY = new TreeMap<Long, double[]>();
 			correlations.put( xy, correlationsAtXY );
@@ -112,7 +112,7 @@ public class SparseCorrelationsObjectFactory < T extends RealType< T > > {
 		
 		final SparseCorrelationsObject sco = new SparseCorrelationsObject();
 
-		for ( final Entry<ConstantPair<Long, Long>, TreeMap<Long, double[]>> entry : correlations.entrySet() ) 
+		for ( final Entry<SerializableConstantPair<Long, Long>, TreeMap<Long, double[]>> entry : correlations.entrySet() ) 
 		{
 			final Long x = entry.getKey().getA();
 			final Long y = entry.getKey().getB();

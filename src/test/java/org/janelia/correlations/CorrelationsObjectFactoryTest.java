@@ -17,6 +17,7 @@ import net.imglib2.view.Views;
 
 import org.janelia.correlations.CorrelationsObjectInterface.Meta;
 import org.janelia.utility.ConstantPair;
+import org.janelia.utility.SerializableConstantPair;
 import org.janelia.utility.sampler.SparseXYSampler;
 import org.janelia.utility.sampler.XYSampler;
 import org.junit.Assert;
@@ -86,10 +87,10 @@ public class CorrelationsObjectFactoryTest {
 	public void testSparse() {
 		@SuppressWarnings("unchecked")
 		final
-		List<ConstantPair<Long, Long>> coords = Arrays.asList( 
-				ConstantPair.toPair( 0l, 0l ),
-				ConstantPair.toPair( 1l, 2l ),
-				ConstantPair.toPair( 3l, 1l )
+		List<SerializableConstantPair<Long, Long>> coords = Arrays.asList( 
+				SerializableConstantPair.toPair( 0l, 0l ),
+				SerializableConstantPair.toPair( 1l, 2l ),
+				SerializableConstantPair.toPair( 3l, 1l )
 				);
 		final XYSampler sampler = new SparseXYSampler(coords);
 		
@@ -104,7 +105,7 @@ public class CorrelationsObjectFactoryTest {
 			Assert.assertEquals( (long)entry.getKey(), meta.zPosition );
 		}
 		
-		for ( final ConstantPair<Long, Long> s : sampler ) {
+		for ( final SerializableConstantPair<Long, Long> s : sampler ) {
 			for ( int z = 0; z < imgs.dimension( 2 ); ++z ) {
 				final ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType>> corrs = sco.extractDoubleCorrelationsAt( s.getA(), s.getB(), z);
 				Assert.assertNotEquals( corrs, null );

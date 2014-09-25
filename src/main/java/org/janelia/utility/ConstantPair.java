@@ -1,9 +1,15 @@
 package org.janelia.utility;
 
+import java.io.Serializable;
+
 import net.imglib2.Pair;
 
-public class ConstantPair<A, B> implements Pair<A, B>, Comparable< ConstantPair< A, B> > {
+public class ConstantPair<A, B> implements Pair<A, B>, Comparable< ConstantPair< A, B> >, Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -7963474267757313817L;
 	private final A entryA;
 	private final B entryB;
 	

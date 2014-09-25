@@ -9,6 +9,7 @@ import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 
 import org.janelia.correlations.CorrelationsObjectInterface.Meta;
+import org.janelia.utility.benchmark.Serialization;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -87,6 +88,7 @@ public class CorrelationsObjectTest {
 		}
 		
 		testObject( co );
+
 	}
 	
 	@Test
@@ -116,6 +118,15 @@ public class CorrelationsObjectTest {
 			}
 		}
 		testObject( sco );
+		
+		final String targetStr = System.getProperty( "user.dir" ) + "/sco.sr";
+		SparseCorrelationsObject deserialized = null;
+		deserialized = new SparseCorrelationsObject();
+		Serialization.serializeGeneric( sco, targetStr );
+		deserialized = Serialization.deserializeGeneric( targetStr, deserialized );
+		
+		Assert.assertEquals( sco.tolerance, deserialized.tolerance, 0.0f );
+		Assert.assertTrue( sco.equals( deserialized ) );
 	}
 
 }

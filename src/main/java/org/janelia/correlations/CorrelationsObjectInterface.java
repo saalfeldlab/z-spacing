@@ -1,5 +1,6 @@
 package org.janelia.correlations;
 
+import java.io.Serializable;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -10,6 +11,7 @@ import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 
 import org.janelia.utility.ConstantPair;
+import org.janelia.utility.SerializableConstantPair;
 
 /**
  * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>
@@ -18,9 +20,14 @@ import org.janelia.utility.ConstantPair;
  * The function {@link CorrelationsObjectInterface#getMetaMap()} returns a map that stores {@link Meta} information for each z-slice. 
  *
  */
-public interface CorrelationsObjectInterface {
+// get Serializable out of interface, only needed in SparseCorrelations
+public interface CorrelationsObjectInterface extends Serializable {
 	
-	public static class Meta {
+	public static class Meta implements Serializable {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 2529898506717425892L;
 		public long zPosition;
 		public long zCoordinateMin;
 		public long zCoordinateMax;
@@ -69,7 +76,7 @@ public interface CorrelationsObjectInterface {
 	
 	public boolean equalsXYCoordinates( final CorrelationsObjectInterface other );
 	
-	public Set< ConstantPair< Long, Long > > getXYCoordinates();
+	public Set< SerializableConstantPair< Long, Long > > getXYCoordinates();
 
 	@Override
 	public boolean equals( Object other );

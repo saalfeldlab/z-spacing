@@ -1,7 +1,7 @@
 package org.janelia.utility.sampler;
 
-import org.janelia.utility.ConstantPair;
+import org.janelia.utility.SerializableConstantPair;
 
-public interface XYSampler extends Sampler<ConstantPair<Long, Long>> {
+public interface XYSampler extends Sampler<SerializableConstantPair<Long, Long>> {
 
 }

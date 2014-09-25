@@ -2,7 +2,7 @@ package org.janelia.utility.sampler;
 
 import java.util.Iterator;
 
-import org.janelia.utility.ConstantPair;
+import org.janelia.utility.SerializableConstantPair;
 
 /**
  * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>
@@ -25,7 +25,7 @@ public class DenseXYSampler implements XYSampler {
 		this.height = height;
 	}
 
-	public class XYIterator implements Iterator<ConstantPair<Long, Long>> {
+	public class XYIterator implements Iterator<SerializableConstantPair<Long, Long>> {
 		
 		private long x = -1;
 		private long y =  0;
@@ -39,14 +39,14 @@ public class DenseXYSampler implements XYSampler {
 		}
 
 		@Override
-		public ConstantPair<Long, Long> next() {
+		public SerializableConstantPair<Long, Long> next() {
 			if ( x == maxX ) {
 				x = 0;
 				++y;
 			} else
 				++x;
 			
-			return ConstantPair.toPair( x, y );
+			return SerializableConstantPair.toPair( x, y );
 		}
 
 		@Override
@@ -57,7 +57,7 @@ public class DenseXYSampler implements XYSampler {
 	}
 
 	@Override
-	public Iterator<ConstantPair<Long, Long>> iterator() {
+	public Iterator<SerializableConstantPair<Long, Long>> iterator() {
 		return new XYIterator();
 	}
 

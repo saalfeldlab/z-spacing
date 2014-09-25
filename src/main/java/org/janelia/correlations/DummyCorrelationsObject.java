@@ -12,6 +12,7 @@ import net.imglib2.type.numeric.real.FloatType;
 
 import org.janelia.utility.ConstantPair;
 import org.janelia.utility.ConstantTriple;
+import org.janelia.utility.SerializableConstantPair;
 
 /**
  * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>
@@ -104,7 +105,7 @@ public class DummyCorrelationsObject implements CorrelationsObjectInterface {
 	}
 
 	@Override
-	public Set<ConstantPair<Long, Long>> getXYCoordinates() {
+	public Set<SerializableConstantPair<Long, Long>> getXYCoordinates() {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -114,4 +115,5 @@ public class DummyCorrelationsObject implements CorrelationsObjectInterface {
 		// TODO Auto-generated method stub
 		return false;
 	}
+
 }

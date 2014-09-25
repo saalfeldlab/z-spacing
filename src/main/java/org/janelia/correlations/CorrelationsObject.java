@@ -21,6 +21,7 @@ import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
 import org.janelia.utility.ConstantPair;
+import org.janelia.utility.SerializableConstantPair;
 import org.janelia.utility.sampler.DenseXYSampler;
 
 
@@ -236,16 +237,18 @@ public class CorrelationsObject extends AbstractCorrelationsObject implements Co
 
 
 	@Override
-	public Set<ConstantPair<Long, Long>> getXYCoordinates() {
+	public Set<SerializableConstantPair<Long, Long>> getXYCoordinates() {
 		final Long firstKey = this.metaMap.firstKey();
 		final RandomAccessibleInterval<FloatType> firstEl = this.correlationsMap.get( firstKey );
 		final DenseXYSampler sampler = new DenseXYSampler( firstEl.dimension( 0 ), firstEl.dimension( 1 ) );
-		final TreeSet<ConstantPair<Long, Long>> result = new TreeSet< ConstantPair<Long, Long> >();
-		for ( final ConstantPair<Long, Long> s : sampler ) {
+		final TreeSet<SerializableConstantPair<Long, Long>> result = new TreeSet< SerializableConstantPair<Long, Long> >();
+		for ( final SerializableConstantPair<Long, Long> s : sampler ) {
 			result.add( s );
 		}
 		return result;
 	}
+
+
 	
 }
  

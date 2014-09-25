@@ -15,8 +15,8 @@ import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
 import org.janelia.correlations.CorrelationsObjectInterface.Meta;
-import org.janelia.utility.ConstantPair;
 import org.janelia.utility.ConstantRealRandomAccesssible;
+import org.janelia.utility.SerializableConstantPair;
 import org.janelia.utility.sampler.DenseXYSampler;
 import org.janelia.utility.sampler.XYSampler;
 
@@ -88,11 +88,11 @@ public class CorrelationsObjectFactory < T extends RealType< T > > {
 							new FloatType() );
 				}
 				
-				final Iterator<ConstantPair<Long, Long>> it = sampler.iterator();
+				final Iterator<SerializableConstantPair<Long, Long>> it = sampler.iterator();
 				final RandomAccess<FloatType> s = correlationsSource.randomAccess();
 				final RandomAccess<FloatType> t = correlationsTarget.randomAccess();
 				while( it.hasNext() ) {
-					final ConstantPair<Long, Long> c = it.next();
+					final SerializableConstantPair<Long, Long> c = it.next();
 					s.setPosition( c.getA(), 0);
 					s.setPosition( c.getB(), 1 );
 					t.setPosition( s );

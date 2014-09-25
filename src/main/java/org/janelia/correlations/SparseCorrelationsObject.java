@@ -20,6 +20,7 @@ import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
 import org.janelia.utility.ConstantPair;
+import org.janelia.utility.SerializableConstantPair;
 
 /**
  * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>
@@ -27,7 +28,7 @@ import org.janelia.utility.ConstantPair;
  */
 public class SparseCorrelationsObject extends AbstractCorrelationsObject implements CorrelationsObjectInterface {
 	
-	private final TreeMap< ConstantPair< Long, Long >, TreeMap< Long, double[] > > correlations;
+	private final TreeMap< SerializableConstantPair< Long, Long >, TreeMap< Long, double[] > > correlations;
 	
 	
 	
@@ -38,14 +39,14 @@ public class SparseCorrelationsObject extends AbstractCorrelationsObject impleme
 	 * @param correlations
 	 */
 	public SparseCorrelationsObject(final TreeMap<Long, Meta> metaMap,
-			final TreeMap<ConstantPair<Long, Long>, TreeMap< Long, double[] > > correlations) {
+			final TreeMap<SerializableConstantPair<Long, Long>, TreeMap< Long, double[] > > correlations) {
 		super(metaMap);
 		this.correlations = correlations;
 	}
 
 	public SparseCorrelationsObject() {
 		super(new TreeMap< Long, Meta > () );
-		this.correlations = new TreeMap< ConstantPair< Long, Long >, TreeMap< Long, double[] > >();
+		this.correlations = new TreeMap< SerializableConstantPair< Long, Long >, TreeMap< Long, double[] > >();
 	}
 	
 	public void addCorrelationsAt( final long x, final long y, final long z, final double[] corrs, final Meta meta ) {
@@ -57,7 +58,7 @@ public class SparseCorrelationsObject extends AbstractCorrelationsObject impleme
 		TreeMap<Long, double[]> correlationsAt = this.correlations.get( ConstantPair.toPair( x, y ) );
 		if ( correlationsAt == null ) {
 			correlationsAt = new TreeMap< Long, double[] >();
-			this.correlations.put( ConstantPair.toPair( x, y ), correlationsAt );
+			this.correlations.put( SerializableConstantPair.toPair( x, y ), correlationsAt );
 		}
 		correlationsAt.put( z, corrs );
 	}
@@ -188,7 +189,7 @@ public class SparseCorrelationsObject extends AbstractCorrelationsObject impleme
 	}
 
 	@Override
-	public Set<ConstantPair<Long, Long>> getXYCoordinates() {
+	public Set<SerializableConstantPair<Long, Long>> getXYCoordinates() {
 		return this.correlations.keySet();
 	}
 
