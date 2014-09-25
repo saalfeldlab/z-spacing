@@ -30,9 +30,12 @@ from net.imglib2.type.numeric.real import DoubleType
 from org.janelia.models import ScaleModel
 from org.janelia.utility import ConstantPair
 from org.janelia.utility import CopyFromIntervalToInterval
+from org.janelia.utility import SerializableConstantPair
+from org.janelia.utility import Serialization
 from org.janelia.utility.sampler import SparseXYSampler
 from org.janelia.correlations import CorrelationsObject
 from org.janelia.correlations import CorrelationsObjectFactory
+from org.janelia.correlations import SparseCorrelationsObject
 from org.janelia.correlations import SparseCorrelationsObjectFactory
 from org.janelia.thickness import InferFromCorrelationsObject
 from org.janelia.thickness.lut import SingleDimensionLUTRealTransform
@@ -225,7 +228,10 @@ if __name__ == "__main__":
     xyScale = 0.1 # fibsem (crop from john) ~> 0.1?
     doXYScale = False
     matrixSize = nImages
-    matrixScale = 6.0
+    matrixScale = 2.0
+    serializeCorrelations = True
+    deserializeCorrelations = not serializeCorrelations
+    
    
 
     img = imgSource.clone()
@@ -250,6 +256,8 @@ if __name__ == "__main__":
         correlationRange = c
         home = root.rstrip('/') + '/range=%d'.rstrip('/')
         home = home % correlationRange
+
+        serializationString = '%s/correlations.sr' % home.rstrip()
         
         # START DEPRECATED correlation calculation
         # cc = CorrelationsCreator(img, [img.getWidth(), img.getHeight()])
@@ -303,19 +311,22 @@ if __name__ == "__main__":
 
         # START create CorrelationsObject with factory
 
-        t0Prime = time.time()
+        co = SparseCorrelationsObject()
+        if deserializeCorrelations:
+            co = Serialization.deserializeGeneric( serializationString, co )
+        else:
+            t0Prime = time.time()
         
-        samples = ArrayList()
-        samples.add( ConstantPair.toPair( Long(0), Long(0) ) )
-        sampler = SparseXYSampler( samples )
-        cf      = SparseCorrelationsObjectFactory( ImagePlusAdapter.wrap( img ), sampler )
-        co      = cf.create( correlationRange, [img.getWidth(), img.getHeight()] )
+            samples = ArrayList()
+            samples.add( SerializableConstantPair.toPair( Long(0), Long(0) ) )
+            sampler = SparseXYSampler( samples )
+            cf      = SparseCorrelationsObjectFactory( ImagePlusAdapter.wrap( img ), sampler )
+            co      = cf.create( correlationRange, [img.getWidth(), img.getHeight()] )
+            Serialization.serializeGeneric( co, serializationString )
         
-        t3 = time.time()
-        print t3 - t0Prime
-             
-             
-             
+            t3 = time.time()
+            print t3 - t0Prime
+
         inference = InferFromCorrelationsObject( co,
                                                  nIterations,
                                                  correlationRange,
