@@ -65,6 +65,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                         result.nThreads = 1;
                         result.comparisonRange = 10;
                         result.neighborRegularizerWeight = 0.05;
+                        result.minimumSectionThickness = 0.01;
                         return result;
                 }
 
@@ -75,6 +76,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                 public int nThreads; // number of threads
                 public int comparisonRange; // range for cross correlations
                 public double neighborRegularizerWeight;
+                public double minimumSectionThickness;
 
 
         }
@@ -513,6 +515,8 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			    mediatedCursor.fwd();
 			    final double previous = lut[ijk];
 			    lut[ijk] += accumulatedShifts + options.shiftProportion * mediatedCursor.get().get();
+			    if ( ijk < 0 )
+			    	lut[ijk]  = Math.max( lut[ijk-1] + options.minimumSectionThickness, lut[ijk] );
 			    // make sure, that slices do not flip positions, ie set lut[ijk] to
 			    // previous + shiftProportion * ( lut[ijk-1] - previous )
 			    // TODO think of a way of ensuring this (e.g. minimum section thickness?)
