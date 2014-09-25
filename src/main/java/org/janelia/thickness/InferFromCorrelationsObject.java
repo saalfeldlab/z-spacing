@@ -557,7 +557,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			coordinatesFitModel.toArray( affineArray );
 			
 			for (int i = 0; i < lut.length; i++) {
-			lut[i] = affineArray[0] * lut[i] + affineArray[1];
+				lut[i] = affineArray[0] * lut[i] + affineArray[1];
 			}
 			
 			visitor.act( n + 1, matrix, lut, transform, multipliers, weights, localFits.firstElement() );
