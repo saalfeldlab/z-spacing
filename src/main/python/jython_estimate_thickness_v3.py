@@ -52,12 +52,12 @@ from org.janelia.thickness.inference.visitor import WeightsTrackerVisitor
 from org.janelia.thickness.mediator import OpinionMediatorModel
 
 
-
-import os
-import math
-import time
-import jarray
 import errno
+import inspect
+import jarray
+import math
+import os
+import time
 import shutil
 import sys
 
@@ -272,7 +272,7 @@ if __name__ == "__main__":
         with open( gitCommitInfoFile, 'w' ) as f:
             f.write( '%s\n' % utility.gitcommit.getCommit( thickness_estimation_repo_dir ) )
 
-        this_file_name = os.path.realpath( sys.argv[0] )
+        this_file_name = os.path.realpath( inspect.getfile( lambda : None ) ) # inspect.getfile requires method, class, ... as input and returns the file in which input was defined
         shutil.copyfile( this_file_name, '%s/%s' % ( home.rstrip('/'), this_file_name.split('/')[-1] ) )
         
         # START DEPRECATED correlation calculation
