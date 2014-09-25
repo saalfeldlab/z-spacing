@@ -1,3 +1,5 @@
+from __future__ import with_statement # need this for with statement
+
 from ij import ImagePlus
 from ij import ImageStack
 from ij import IJ
@@ -56,6 +58,10 @@ import math
 import time
 import jarray
 import errno
+import shutil
+import sys
+
+import utility
 
 def make_sure_path_exists(path):
     try:
@@ -229,8 +235,11 @@ if __name__ == "__main__":
     doXYScale = False
     matrixSize = nImages
     matrixScale = 2.0
-    serializeCorrelations = True
+    serializeCorrelations = False
     deserializeCorrelations = not serializeCorrelations
+    options = InferFromCorrelationsObject.Options.generateDefaultOptions()
+    options.shiftProportion = 0.8
+    thickness_estimation_repo_dir = '/groups/saalfeld/home/hanslovskyp/workspace/em-thickness-estimation'
     
    
 
@@ -258,6 +267,13 @@ if __name__ == "__main__":
         home = home % correlationRange
 
         serializationString = '%s/correlations.sr' % home.rstrip()
+
+        gitCommitInfoFile = '%s/commitHash' % home.rstrip('/')
+        with open( gitCommitInfoFile, 'w' ) as f:
+            f.write( '%s\n' % utility.gitcommit.getCommit( thickness_estimation_repo_dir ) )
+
+        this_file_name = os.path.realpath( sys.argv[0] )
+        shutil.copyfile( this_file_name, '%s/%s' % ( home.rstrip('/'), this_file_name.split('/')[-1] ) )
         
         # START DEPRECATED correlation calculation
         # cc = CorrelationsCreator(img, [img.getWidth(), img.getHeight()])
@@ -312,10 +328,11 @@ if __name__ == "__main__":
         # START create CorrelationsObject with factory
 
         co = SparseCorrelationsObject()
+        t0Prime = time.time()
         if deserializeCorrelations:
             co = Serialization.deserializeGeneric( serializationString, co )
         else:
-            t0Prime = time.time()
+            
         
             samples = ArrayList()
             samples.add( SerializableConstantPair.toPair( Long(0), Long(0) ) )
@@ -324,8 +341,8 @@ if __name__ == "__main__":
             co      = cf.create( correlationRange, [img.getWidth(), img.getHeight()] )
             Serialization.serializeGeneric( co, serializationString )
         
-            t3 = time.time()
-            print t3 - t0Prime
+        t3 = time.time()
+        print t3 - t0Prime
 
         inference = InferFromCorrelationsObject( co,
                                                  nIterations,
@@ -407,8 +424,6 @@ if __name__ == "__main__":
         matrixTracker.addVisitor( multiplierTracker )
         matrixTracker.addVisitor( weightsTracker )                                         
              
-        options = InferFromCorrelationsObject.Options.generateDefaultOptions()
-        options.shiftProportion = 0.8
         # if you want to specify values for options, do:
         # options.multiplierGenerationRegularizerWeight = <value>
         # or equivalent
