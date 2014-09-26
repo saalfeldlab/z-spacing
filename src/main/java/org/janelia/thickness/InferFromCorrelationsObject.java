@@ -455,12 +455,10 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                         lut[ ijk ] += accumulatedShifts + options.shiftProportion * mediatedCursor.get().get();
                         // make sure, that slices do not flip positions, ie set lut[ijk] to
                         // previous + shiftProportion * ( lut[ijk-1] - previous )
-                        IJ.log( "Why is the stuff inside the condition not being logged? " + ijk );
                         if ( ijk > 0 && lut[ ijk ] < lut[ ijk - 1 ] ) {
                         	String logStr = "" + ijk + " " + lut[ ijk ] + " <= " + lut[ ijk - 1 ];
                         	lut[ ijk ] = lut[ ijk - 1 ] + ( lut[ ijk - 1 ] - lut[ ijk ] ) * ( options.shiftProportion );
                         	logStr += ", now: lut[ijk] = " + lut[ijk];
-                        	IJ.log( "Switched positions at " + logStr );
                         }
 //                        lut[ijk] *= inverseCoordinateUpdateRegularizerWeight;
 //                        lut[ijk] += options.coordinateUpdateRegularizerWeight * ijk;
@@ -518,7 +516,6 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			                                                                    options.nThreads,
 			                                                                    options.multiplierGenerationRegularizerWeight );
 			
-//			IJ.log( "" + localFits.dimension( 0 ) );
 			final TreeMap< Long, ArrayList< ConstantPair< Double, Double > > > shifts =
 			            ShiftCoordinates.collectShiftsFromMatrix(
 			                    coordinateArr,
