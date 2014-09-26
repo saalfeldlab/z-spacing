@@ -267,6 +267,7 @@ if __name__ == "__main__":
         correlationRange = c
         home = root.rstrip('/') + '/range=%d'.rstrip('/')
         home = home % correlationRange
+        make_sure_path_exists( home.rstrip('/') + '/' )
 
         options.comparisonRange = c
 
