@@ -545,14 +545,14 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 				gaussKernel[ i ] /= normalizingConstant;
 			}
 			
-			// still unnormalized
 			final OutOfBounds<DoubleType> mediatedRA = Views.extendMirrorSingle( mediatedShifts ).randomAccess();
 			for (int i = 0; i < smoothedShifts.length; i++) {
+				smoothedShifts[ i ] = 0.0;
 				for ( int k = -options.shiftsSmoothingRange; k <= options.shiftsSmoothingRange; ++k ) {
-					mediatedRA.setPosition( k, 0 );
+					mediatedRA.setPosition( i + k, 0 );
 					final double w = gaussKernel[ Math.abs( k ) ];
 					final double val = mediatedRA.get().get() * w;
-					smoothedShifts[ i ] += val; 
+					smoothedShifts[ i ] += val;
 				}
 			}
 			
