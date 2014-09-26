@@ -25,6 +25,7 @@ import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.img.list.ListImg;
 import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
+import net.imglib2.outofbounds.OutOfBounds;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.IntervalView;
@@ -65,6 +66,8 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                         result.neighborRegularizerWeight = 0.05;
                         result.minimumSectionThickness = 0.01;
                         result.windowRange = 150;
+                        result.shiftsSmoothingSigma = 4.0;
+                        result.shiftsSmoothingRange = 10;
                         return result;
                 }
 
@@ -77,6 +80,8 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                 public double neighborRegularizerWeight;
                 public double minimumSectionThickness;
                 public int windowRange;
+                public double shiftsSmoothingSigma;
+                public int shiftsSmoothingRange;
                 
                 @Override
 				public String toString() {
@@ -527,13 +532,38 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			final ArrayCursor<DoubleType> mediatedCursor = mediatedShifts.cursor();
 			
 			double accumulatedShifts = 0.0;
+			final double[] smoothedShifts = new double [ (int) mediatedShifts.dimension( 0 ) ];
+			final double[] gaussKernel    = new double[ options.shiftsSmoothingRange + 1 ];
+			gaussKernel[0] = 1.0;
+			double normalizingConstant = gaussKernel[0];
+			for ( int i = 1; i < gaussKernel.length; ++i ) {
+				gaussKernel[ i ] = Math.exp( -0.5 * i * i / ( options.shiftsSmoothingSigma * options.shiftsSmoothingSigma ) );
+				normalizingConstant += 2* gaussKernel[ i ];
+			}
+			
+			for (int i = 0; i < gaussKernel.length; i++) {
+				gaussKernel[ i ] /= normalizingConstant;
+			}
+			
+			// still unnormalized
+			final OutOfBounds<DoubleType> mediatedRA = Views.extendMirrorSingle( mediatedShifts ).randomAccess();
+			for (int i = 0; i < smoothedShifts.length; i++) {
+				for ( int k = -options.shiftsSmoothingRange; k <= options.shiftsSmoothingRange; ++k ) {
+					mediatedRA.setPosition( k, 0 );
+					final double w = gaussKernel[ Math.abs( k ) ];
+					final double val = mediatedRA.get().get() * w;
+					smoothedShifts[ i ] += val; 
+				}
+			}
+			
 			
 			for ( int ijk = 0; mediatedCursor.hasNext(); ++ijk ) {
 			
 			    mediatedCursor.fwd();
 			    final double previous = lut[ijk];
-			    lut[ijk] += accumulatedShifts + options.shiftProportion * mediatedCursor.get().get();
-			    if ( ijk < 0 )
+//			    lut[ijk] += accumulatedShifts + options.shiftProportion * mediatedCursor.get().get();
+			    lut[ijk] += accumulatedShifts + options.shiftProportion * smoothedShifts[ ijk ];
+			    if ( false && ijk < 0 )
 			    	lut[ijk]  = Math.max( lut[ijk-1] + options.minimumSectionThickness, lut[ijk] );
 			    // make sure, that slices do not flip positions, ie set lut[ijk] to
 			    // previous + shiftProportion * ( lut[ijk-1] - previous )
