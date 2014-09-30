@@ -177,8 +177,10 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                 final Options options) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 
                 final ArrayImg<DoubleType, DoubleArray> matrix = this.correlationsToMatrix( x, y );
+//        		final ArrayImg<DoubleType, DoubleArray> stripe = ArrayImgs.doubles( options.comparisonRange*2 + 1, this.correlationsObject.getzMax() - this.correlationsObject.getzMin() );
+//        		this.correlationsObject.toCorrelationStripe( x, y, stripe );
 
-                final double[] weightArr = new double[ ( int )matrix.dimension( 0 ) ];
+                final double[] weightArr = new double[ ( int )matrix.dimension( 1 ) ];
                 final ArrayImg<DoubleType, DoubleArray> weights = ArrayImgs.doubles( weightArr, new long[]{ weightArr.length } );
 
                 for ( final DoubleType w : weights) {
