@@ -532,7 +532,6 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			
 			final ArrayCursor<DoubleType> mediatedCursor = mediatedShifts.cursor();
 			
-			double accumulatedShifts = 0.0;
 			final double[] smoothedShifts = new double [ (int) mediatedShifts.dimension( 0 ) ];
 			final double[] gaussKernel    = new double[ options.shiftsSmoothingRange + 1 ];
 			gaussKernel[0] = 1.0;
@@ -558,21 +557,23 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			}
 			
 			
+			double accumulatedCorrections = 0.0;
 			for ( int ijk = 0; mediatedCursor.hasNext(); ++ijk ) {
 			
 			    mediatedCursor.fwd();
+			    lut[ijk] += accumulatedCorrections + options.shiftProportion * smoothedShifts[ ijk ];
 			    final double previous = lut[ijk];
-//			    lut[ijk] += accumulatedShifts + options.shiftProportion * mediatedCursor.get().get();
-			    lut[ijk] += accumulatedShifts + options.shiftProportion * smoothedShifts[ ijk ];
-			    if ( false && ijk < 0 )
-			    	lut[ijk]  = Math.max( lut[ijk-1] + options.minimumSectionThickness, lut[ijk] );
+			    if ( ijk > 0 && lut[ijk] < lut[ijk-1] + options.minimumSectionThickness ) {
+			    	
+			    	lut[ijk]  = lut[ijk-1] +  options.minimumSectionThickness;
+			    	accumulatedCorrections += lut[ijk] - previous;
+			    }
 			    // make sure, that slices do not flip positions, ie set lut[ijk] to
 			    // previous + shiftProportion * ( lut[ijk-1] - previous )
 			    // TODO think of a way of ensuring this (e.g. minimum section thickness?)
 //			    if ( ijk > 0 && lut[ ijk ] < lut[ ijk - 1 ] ) {
 //                	lut[ ijk ] = lut[ ijk - 1 ] + 0.1;
 //                }
-			    accumulatedShifts = 0.0; // lut[ijk] - previous; // TODO Why do accumulated shifts not work?
 			}
 			
 			// TODO decide for complete range or end points for this fit
