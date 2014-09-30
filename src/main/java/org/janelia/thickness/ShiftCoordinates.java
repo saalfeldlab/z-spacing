@@ -128,9 +128,6 @@ public class ShiftCoordinates {
 				
 //				localShifts.add( new ConstantPair<Double, Double>( shift, weights[ i ] * 1.0 / ( Math.abs( i - k ) + 1 ) ) );
 				localShifts.add( new ConstantPair<Double, Double>( shift, weights[ i ] ) );
-//				if ( k == 350 ) {
-//					IJ.log( k +  " from " + i + ": s=" + shift + ", m=" + m +  ", r=" + corrAccess.get().get() );
-//				}
 			}
 		}
 		return weightedShifts;
