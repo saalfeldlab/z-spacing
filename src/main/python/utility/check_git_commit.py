@@ -15,6 +15,20 @@ def getCommit( repoDir ):
 
     return output
 
+def getDiff( repoDir ):
+
+    cwd = os.getcwd()
+    bashCommand = 'git diff'
+
+    os.chdir( repoDir )
+
+    process = subprocess.Popen( bashCommand.split(), stdout=subprocess.PIPE )
+    output  = process.communicate()[0].rstrip( '\n' )
+
+    os.chdir( cwd )
+
+    return output
+
 
 
 if __name__ == "__main__":

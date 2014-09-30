@@ -277,6 +277,11 @@ if __name__ == "__main__":
         with open( gitCommitInfoFile, 'w' ) as f:
             f.write( '%s\n' % utility.gitcommit.getCommit( thickness_estimation_repo_dir ) )
 
+        gitDiffFile = '%s/gitDiff' % home.rstrip('/')
+        with open( gitDiffFile, 'w' ) as f:
+            f.write( '%s\n' % utility.gitcommit.getDiff( thickness_estimation_repo_dir ) )
+
+
         optionsFile = '%s/options' % home.rstrip('/')
         with open( optionsFile, 'w' ) as f:
             f.write( '%s\n' % options.toString() )
