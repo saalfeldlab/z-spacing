@@ -231,18 +231,25 @@ if __name__ == "__main__":
     scale = 1.0
     # stackMin, stackMax = ( None, 300 )
     xyScale = 0.25 # fibsem (crack from john) ~> 0.25
-    xyScale = 0.1 # fibsem (crop from john) ~> 0.1?
-    doXYScale = False
+    # xyScale = 0.1 # fibsem (crop from john) ~> 0.1?
+    doXYScale = True
     matrixSize = nImages
     matrixScale = 2.0
-    serializeCorrelations = False
+    serializeCorrelations = True
     deserializeCorrelations = not serializeCorrelations
     options = InferFromCorrelationsObject.Options.generateDefaultOptions()
-    options.shiftProportion = 0.8
-    options.nIterations = 1000
+    options.shiftProportion = 0.6
+    options.nIterations = 200
     options.nThreads = nThreads
-    options.windowRange = 500
+    options.windowRange = 100
+    options.shiftsSmoothingSigma = 4
+    options.shiftsSmoothingRange = 0
+    options.withRegularization = True
+    options.minimumSectionThickness = 0.1
     thickness_estimation_repo_dir = '/groups/saalfeld/home/hanslovskyp/workspace/em-thickness-estimation'
+
+    if not doXYScale:
+        xyScale = 1.0
     
    
 
