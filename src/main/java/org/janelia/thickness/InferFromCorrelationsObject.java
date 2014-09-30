@@ -64,10 +64,11 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                         result.nThreads = 1;
                         result.comparisonRange = 10;
                         result.neighborRegularizerWeight = 0.05;
-                        result.minimumSectionThickness = 0.01;
+                        result.minimumSectionThickness = 0.1;
                         result.windowRange = 150;
                         result.shiftsSmoothingSigma = 4.0;
                         result.shiftsSmoothingRange = 10;
+                        result.withRegularization = true;
                         return result;
                 }
 
@@ -82,6 +83,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                 public int windowRange;
                 public double shiftsSmoothingSigma;
                 public int shiftsSmoothingRange;
+                public boolean withRegularization;
                 
                 @Override
 				public String toString() {
