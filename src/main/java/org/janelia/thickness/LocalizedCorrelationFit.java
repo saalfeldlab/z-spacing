@@ -110,9 +110,9 @@ public class LocalizedCorrelationFit {
 				
 				if ( ( ! Double.isNaN( a1 ) ) && ( ! Double.isNaN( w1 ) ) )
 				{
-					for ( int m = lower; m < upper; ++m ) {
-						pointCollections.get( m ).get( k ).add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new float[]{ (float)a1 } ) ) );// , (float) ( w1 * weightGenerator.calculate( i, m ) ) ) );
-					}
+//					for ( int m = lower; m < upper; ++m ) {
+//						pointCollections.get( m ).get( k ).add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new float[]{ (float)a1 } ) ) );// , (float) ( w1 * weightGenerator.calculate( i, m ) ) ) );
+//					}
 					// no local fits momentarily, just use the same fit:
 					final ArrayList<PointMatch> pC = pointCollections.get( 0 ).get( k );
 					pC.add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new float[]{ (float)a1 } ) ) );
@@ -120,9 +120,9 @@ public class LocalizedCorrelationFit {
 				
 				if ( ( ! Double.isNaN( a2 ) ) && ( ! Double.isNaN( w2 ) ) )
 				{
-					for ( int m = lower; m < upper; ++m ) {
-						pointCollections.get( m ).get( k ).add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new float[]{ (float)a2 } ) ) );// , (float) ( w2 * weightGenerator.calculate( i, m ) ) ) );
-					}
+//					for ( int m = lower; m < upper; ++m ) {
+//						pointCollections.get( m ).get( k ).add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new float[]{ (float)a2 } ) ) );// , (float) ( w2 * weightGenerator.calculate( i, m ) ) ) );
+//					}
 					// no local fits momentarily, just use the same fit:
 					final ArrayList<PointMatch> pC = pointCollections.get( 0 ).get( k );
 					pC.add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new float[]{ (float)a2 } ) ) );
