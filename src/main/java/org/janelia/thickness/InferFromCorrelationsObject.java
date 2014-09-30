@@ -585,29 +585,31 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 //				floatWeights[i] = 1.0f;
 //			}
 			
-			final float[] floatLut = new float[ 2 ]; final float[] arange = new float[ 2 ];
-			final float[] floatWeights = new float[ 2 ];
-			for (int i = 0; i < arange.length; i++) {
-				arange[i] = i;
-				floatWeights[i] = 1.0f;
-			}
-			floatLut[ 0 ] = (float) lut[ 0 ];
-			arange[ 0 ]   = 0f;
-			floatWeights[ 0 ] = 1.0f;
-			floatLut[ 1 ] = (float) lut[ lut.length - 1 ];
-			arange[ 1 ] = lut.length - 1;
-			floatWeights[ 1 ] = 1.0f;
-			
-			final AffineModel1D coordinatesFitModel = new AffineModel1D();
-			
-			
-			coordinatesFitModel.fit( new float[][]{floatLut}, new float[][]{arange}, floatWeights );
-			
-			final double[] affineArray = new double[ 2 ];
-			coordinatesFitModel.toArray( affineArray );
-			
-			for (int i = 0; i < lut.length; i++) {
-				lut[i] = affineArray[0] * lut[i] + affineArray[1];
+			if ( options.withRegularization ) {
+				final float[] floatLut = new float[ 2 ]; final float[] arange = new float[ 2 ];
+				final float[] floatWeights = new float[ 2 ];
+				for (int i = 0; i < arange.length; i++) {
+					arange[i] = i;
+					floatWeights[i] = 1.0f;
+				}
+				floatLut[ 0 ] = (float) lut[ 0 ];
+				arange[ 0 ]   = 0f;
+				floatWeights[ 0 ] = 1.0f;
+				floatLut[ 1 ] = (float) lut[ lut.length - 1 ];
+				arange[ 1 ] = lut.length - 1;
+				floatWeights[ 1 ] = 1.0f;
+				
+				final AffineModel1D coordinatesFitModel = new AffineModel1D();
+				
+				
+				coordinatesFitModel.fit( new float[][]{floatLut}, new float[][]{arange}, floatWeights );
+				
+				final double[] affineArray = new double[ 2 ];
+				coordinatesFitModel.toArray( affineArray );
+				
+				for (int i = 0; i < lut.length; i++) {
+					lut[i] = affineArray[0] * lut[i] + affineArray[1];
+				}
 			}
 			
 			visitor.act( n + 1, matrix, lut, transform, multipliers, weights, localFits.firstElement() );
