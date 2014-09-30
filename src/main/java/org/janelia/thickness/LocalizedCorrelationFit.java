@@ -1,7 +1,6 @@
 package org.janelia.thickness;
 
 import java.util.ArrayList;
-import java.util.TreeMap;
 
 import mpicbg.models.IllDefinedDataPointsException;
 import mpicbg.models.Model;
@@ -65,14 +64,14 @@ public class LocalizedCorrelationFit {
 		
 		
 		
-		final TreeMap< Integer, ArrayList< ArrayList< PointMatch > > > pointCollections = new TreeMap< Integer, ArrayList<  ArrayList< PointMatch > > >();
+		final ArrayList< ArrayList< ArrayList< PointMatch > > > pointCollections = new ArrayList< ArrayList<  ArrayList< PointMatch > > >();
 		
 		for ( int i = 0; i < coordinates.length; ++i ) {
 			final ArrayList< ArrayList< PointMatch> > localArrayList = new ArrayList<ArrayList<PointMatch>>();
 			for ( int k = 0; k <= range; ++k ) {
 				localArrayList.add( new ArrayList<PointMatch>() );
 			}
-			pointCollections.put( i , localArrayList );
+			pointCollections.add( localArrayList );
 		}
 		
 		final RealRandomAccessible<DoubleType> source = Views.interpolate( Views.extendValue( correlations, new DoubleType( Double.NaN ) ), new NLinearInterpolatorFactory<DoubleType>());
