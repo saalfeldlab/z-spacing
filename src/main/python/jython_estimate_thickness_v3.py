@@ -52,6 +52,7 @@ from org.janelia.thickness.inference.visitor import WeightsTrackerVisitor
 from org.janelia.thickness.mediator import OpinionMediatorModel
 
 
+import datetime
 import errno
 import inspect
 import jarray
@@ -265,13 +266,14 @@ if __name__ == "__main__":
     print img.getWidth(), img.getHeight(), img.getStack().getSize()
     for c in correlationRanges:    
         correlationRange = c
-        home = root.rstrip('/') + '/range=%d'.rstrip('/')
-        home = home % correlationRange
+        homeScale = root.rstrip('/') + '/xyScale=%f' % xyScale
+        home = homeScale.rstrip('/') + '/range=%d_%s'.rstrip('/')
+        home = home % ( correlationRange, str(datetime.datetime.now() ) )
         make_sure_path_exists( home.rstrip('/') + '/' )
 
         options.comparisonRange = c
 
-        serializationString = '%s/correlations.sr' % home.rstrip()
+        serializationString = '%s/correlations_range=%d.sr' % ( homeScale.rstrip(), correlationRange )
 
         gitCommitInfoFile = '%s/commitHash' % home.rstrip('/')
         with open( gitCommitInfoFile, 'w' ) as f:
