@@ -69,6 +69,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                         result.shiftsSmoothingSigma = 4.0;
                         result.shiftsSmoothingRange = 10;
                         result.withRegularization = true;
+                        result.multiplierRegularizerDecaySpeed = 10000.0;
                         return result;
                 }
 
@@ -84,6 +85,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                 public double shiftsSmoothingSigma;
                 public int shiftsSmoothingRange;
                 public boolean withRegularization;
+                public double multiplierRegularizerDecaySpeed;
                 
                 @Override
 				public String toString() {
@@ -519,6 +521,13 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			                                                                    localFits, // mirrorAndExtend( estimatedFit, new NLinearInterpolatorFactory< DoubleType >() ),
 			                                                                    options.nThreads,
 			                                                                    options.multiplierGenerationRegularizerWeight );
+			
+			final double multiplierRegularizer = Math.exp( -0.5*n*n / ( options.multiplierRegularizerDecaySpeed * options.multiplierRegularizerDecaySpeed ) );
+			final double multiplierWeight      = 1 - multiplierRegularizer;
+			
+			for ( int i = 0; i < multipliers.length; ++i ) {
+				multipliers[ i ] = multiplierWeight * multipliers[ i ] + multiplierRegularizer;
+			}
 			
 			final TreeMap< Long, ArrayList< ConstantPair< Double, Double > > > shifts =
 			            ShiftCoordinates.collectShiftsFromMatrix(
