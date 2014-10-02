@@ -70,6 +70,8 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                         result.shiftsSmoothingRange = 10;
                         result.withRegularization = true;
                         result.multiplierRegularizerDecaySpeed = 10000.0;
+                        result.multiplierWeightsSigma = 0.2;
+                        result.multiplierEstimationIterations = 10;
                         return result;
                 }
 
@@ -86,6 +88,8 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                 public int shiftsSmoothingRange;
                 public boolean withRegularization;
                 public double multiplierRegularizerDecaySpeed;
+                public double multiplierWeightsSigma;
+                public int multiplierEstimationIterations;
                 
                 @Override
 				public String toString() {
@@ -231,10 +235,14 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 				}
 				
 				final ListImg< double[] > localFits = new ListImg<double[]>( fitList, fitList.size() );
+				
+				final double[] multipliers = new double[ weightArr.length ];
+				for ( int i = 0; i < multipliers.length; ++i )
+					multipliers[i] = 1.0;
 
                 for ( int n = 0; n < options.nIterations; ++n ) {
 
-                        this.iterationStep(matrix, weightArr, transform, lut, coordinateArr, coordinates, mediatedShifts, options, visitor, n, lcf, localFits );
+                        this.iterationStep(matrix, weightArr, transform, lut, coordinateArr, coordinates, mediatedShifts, options, visitor, n, lcf, localFits, multipliers );
                         IJ.showProgress( n, options.nIterations );
                 }
                 return coordinates;
@@ -505,7 +513,8 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                 final Visitor visitor,
                 final int n,
                 final LocalizedCorrelationFit lcf,
-                final ListImg< double[] > localFits
+                final ListImg< double[] > localFits,
+                final double[] multipliers
                 ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 			final double[] vars = new double[ options.comparisonRange ];
 			
@@ -514,19 +523,27 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			
 			final double inverseCoordinateUpdateRegularizerWeight = 1 - options.coordinateUpdateRegularizerWeight;
 			
-			final double[] multipliers = EstimateQualityOfSlice.estimateFromMatrix( matrix,
-			                                                                    weights,
-			                                                                    this.measurementsMultiplierModel,
-			                                                                    coordinates,
-			                                                                    localFits, // mirrorAndExtend( estimatedFit, new NLinearInterpolatorFactory< DoubleType >() ),
-			                                                                    options.nThreads,
-			                                                                    options.multiplierGenerationRegularizerWeight );
+//			final double[] multipliers = EstimateQualityOfSlice.estimateFromMatrix( matrix,
+//			                                                                    weights,
+//			                                                                    this.measurementsMultiplierModel,
+//			                                                                    coordinates,
+//			                                                                    localFits, // mirrorAndExtend( estimatedFit, new NLinearInterpolatorFactory< DoubleType >() ),
+//			                                                                    options.nThreads,
+//			                                                                    options.multiplierGenerationRegularizerWeight );
 			
-			final double multiplierRegularizer = Math.exp( -0.5*n*n / ( options.multiplierRegularizerDecaySpeed * options.multiplierRegularizerDecaySpeed ) );
-			final double multiplierWeight      = 1 - multiplierRegularizer;
+			EstimateQualityOfSlice.estimateQuadraticFromMatrix( matrix, 
+					weights, 
+					multipliers, 
+					lut, 
+					localFits, 
+					options.multiplierGenerationRegularizerWeight, 
+					options.comparisonRange, 
+					options.multiplierEstimationIterations );
+			
 			
 			for ( int i = 0; i < multipliers.length; ++i ) {
-				multipliers[ i ] = multiplierWeight * multipliers[ i ] + multiplierRegularizer;
+				final double diff = 1.0 - multipliers[ i ];
+				weights[ i ] = Math.exp( -0.5*diff*diff / ( options.multiplierWeightsSigma ) );
 			}
 			
 			final TreeMap< Long, ArrayList< ConstantPair< Double, Double > > > shifts =
@@ -541,7 +558,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			
 			final ArrayCursor<DoubleType> mediatedCursor = mediatedShifts.cursor();
 			
-			final double[] smoothedShifts = new double [ (int) mediatedShifts.dimension( 0 ) ];
+			final double[] smoothedShifts = new double[ (int) mediatedShifts.dimension( 0 ) ];
 			final double[] gaussKernel    = new double[ options.shiftsSmoothingRange + 1 ];
 			gaussKernel[0] = 1.0;
 			double normalizingConstant = gaussKernel[0];
@@ -554,15 +571,20 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 				gaussKernel[ i ] /= normalizingConstant;
 			}
 			
-			final OutOfBounds<DoubleType> mediatedRA = Views.extendMirrorSingle( mediatedShifts ).randomAccess();
+			final OutOfBounds<DoubleType> mediatedRA    = Views.extendMirrorSingle( mediatedShifts ).randomAccess();
+			final OutOfBounds<DoubleType> weightsRA     = Views.extendMirrorSingle( ArrayImgs.doubles( multipliers, multipliers.length ) ).randomAccess();
 			for (int i = 0; i < smoothedShifts.length; i++) {
 				smoothedShifts[ i ] = 0.0;
+				double weightSum = 0.0;
 				for ( int k = -options.shiftsSmoothingRange; k <= options.shiftsSmoothingRange; ++k ) {
 					mediatedRA.setPosition( i + k, 0 );
-					final double w = gaussKernel[ Math.abs( k ) ];
+					weightsRA.setPosition( mediatedRA );
+					final double w = gaussKernel[ Math.abs( k ) ] * weightsRA.get().get();
 					final double val = mediatedRA.get().get() * w;
 					smoothedShifts[ i ] += val;
+					weightSum += w;
 				}
+				smoothedShifts[ i ] /= weightSum;
 			}
 			
 			
