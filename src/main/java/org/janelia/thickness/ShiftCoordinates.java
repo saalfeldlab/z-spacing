@@ -110,7 +110,7 @@ public class ShiftCoordinates {
 					weightedShifts.put( (long) k, localShifts );
 				}
 				
-				final double m = ( k == i ) ? 1.0 : multipliers[ i ];
+				final double m = ( k == i ) ? 1.0 : multipliers[ i ] * multipliers[ k ];
 				
 				/* TODO inverts because LUTRealTransform can only increasing */
 				reference[ 0 ] = -corrAccess.get().get() * m;
@@ -127,7 +127,7 @@ public class ShiftCoordinates {
 				final double shift = ( k < i ) ? rel - reference[ 0 ] : rel + reference[ 0 ];
 				
 //				localShifts.add( new ConstantPair<Double, Double>( shift, weights[ i ] * 1.0 / ( Math.abs( i - k ) + 1 ) ) );
-				localShifts.add( new ConstantPair<Double, Double>( shift, weights[ i ] ) );
+				localShifts.add( new ConstantPair<Double, Double>( shift, weights[ i ] * weights[ k ] ) );
 			}
 		}
 		return weightedShifts;
