@@ -12,8 +12,11 @@ import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.img.ImagePlusAdapter;
+import net.imglib2.img.array.ArrayCursor;
 import net.imglib2.img.array.ArrayImg;
+import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
+import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.img.imageplus.ImagePlusImg;
 import net.imglib2.img.imageplus.ImagePlusImgs;
 import net.imglib2.img.planar.PlanarCursor;
@@ -41,6 +44,7 @@ public class ApplyTransformToImagesAndAverageVisitor extends AbstractMultiVisito
 	private final int minY;
 	private final int maxX;
 	private final int maxY;
+	private ArrayImg< FloatType, FloatArray > avgImg;
 
 
 	public ApplyTransformToImagesAndAverageVisitor(final String basePath, 
@@ -82,6 +86,8 @@ public class ApplyTransformToImagesAndAverageVisitor extends AbstractMultiVisito
 		this.maxX = maxX;
 		this.maxY = maxY;
 		
+		this.avgImg = null;
+		
 		if ( images.size() > 0 ) {
 			
 			// check dimensions for consistency
@@ -119,6 +125,29 @@ public class ApplyTransformToImagesAndAverageVisitor extends AbstractMultiVisito
 	}
 	
 	
+	public void average() {
+		if ( this.images.size() > 0 ) {
+			this.avgImg = ArrayImgs.floats( this.images.get( 0 ).dimension( 0 ), this.images.get( 0 ).dimension( 1 ) );
+			for ( final FloatType f : this.avgImg ) {
+				f.set( 0.0f );
+			}
+			for ( int i = 0; i < this.images.size(); ++i ) {
+				final Cursor<FloatType> s      = Views.flatIterable( this.images.get( i ) ).cursor();
+				final ArrayCursor<FloatType> t = this.avgImg.cursor();
+				while( s.hasNext() ) {
+					t.next().add( s.next() );
+				}
+			}
+			final float div = 1.0f/this.images.size();
+			for ( final FloatType t : this.avgImg ) {
+				t.mul( div );
+			}
+			if ( this.targetImg == null )
+				generateTargetImg();
+		}
+	}
+	
+	
 	private void generateTargetImg() {
 		final int minX = this.minX == Integer.MAX_VALUE ? 0 : this.minX;
 		final int minY = this.minY == Integer.MAX_VALUE ? 0 : this.minY;
@@ -138,6 +167,21 @@ public class ApplyTransformToImagesAndAverageVisitor extends AbstractMultiVisito
 			final double[] estimatedFit,
 			final int[] positions ) {
 		
+		if ( this.avgImg == null || this.targetImg == null )
+			return;
+		
+		final ArrayImg<FloatType, ?> tmpImg = this.avgImg.copy();
+		if ( positions != null ) {
+			for ( int i = 0; i < positions.length; ++i ) {
+				if ( i == positions[i] )
+					continue;
+				final Cursor<FloatType> s = Views.flatIterable( Views.hyperSlice( this.avgImg, 1, positions[i] ) ).cursor();
+				final Cursor<FloatType> t = Views.flatIterable( Views.hyperSlice( tmpImg,  1,  i ) ).cursor();
+				while ( s.hasNext() )
+					t.next().set( s.next() );
+			}
+		}
+		
 		final double[] scaledLut = new double[ lut.length ];
 		for (int i = 0; i < scaledLut.length; i++) {
 			scaledLut[i] = lut[i] * scale;
@@ -148,23 +192,16 @@ public class ApplyTransformToImagesAndAverageVisitor extends AbstractMultiVisito
 			t.setReal( 0.0 );
 		}
 		
-		PlanarCursor<FloatType> targetCursor;
-		for (  final RandomAccessibleInterval<FloatType> i : this.images ) {
-			targetCursor = ImagePlusAdapter.wrapFloat( targetImg ).cursor();
-			final RealRandomAccessible<FloatType> interpolated = Views.interpolate( Views.extendValue( i, new FloatType( Float.NaN ) ), this.interpolatorFactory );
-			final IntervalView<FloatType> transformed = Views.interval( RealViews.transform( interpolated, lutTransform), this.targetImgWrapped );
-			final Cursor<FloatType> sourceCursor = Views.flatIterable( transformed ).cursor();
-			
-			while ( targetCursor.hasNext() ) {
-				targetCursor.next().add( sourceCursor.next() );
-			}
-		}
+
+		final PlanarCursor<FloatType> targetCursor = ImagePlusAdapter.wrapFloat( targetImg ).cursor();
+		final RealRandomAccessible<FloatType> interpolated = Views.interpolate( Views.extendValue( tmpImg, new FloatType( Float.NaN ) ), this.interpolatorFactory );
+		final IntervalView<FloatType> transformed = Views.interval( RealViews.transform( interpolated, lutTransform), this.targetImgWrapped );
+		final Cursor<FloatType> sourceCursor = Views.flatIterable( transformed ).cursor();
 		
-		targetCursor = ImagePlusAdapter.wrapFloat( targetImg ).cursor();
 		while ( targetCursor.hasNext() ) {
-			targetCursor.next().mul( this.multiplier );
+			targetCursor.next().add( sourceCursor.next() );
 		}
-		
+
 
 		IJ.save( targetImg, String.format( this.basePath, iteration ) );
 	}
