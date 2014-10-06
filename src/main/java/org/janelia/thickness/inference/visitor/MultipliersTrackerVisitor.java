@@ -44,7 +44,8 @@ public class MultipliersTrackerVisitor extends AbstractMultiVisitor {
 			final double[] lut, final AbstractLUTRealTransform transform,
 			final double[] multipliers,
 			final double[] weights,
-			final double[] estimatedFit ) {
+			final double[] estimatedFit,
+			final int[] positions ) {
 		
 		
 		final File file = new File( String.format( this.basePath, iteration ) );

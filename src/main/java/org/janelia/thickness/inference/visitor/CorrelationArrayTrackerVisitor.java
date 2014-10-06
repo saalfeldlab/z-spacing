@@ -69,7 +69,8 @@ public class CorrelationArrayTrackerVisitor extends AbstractMultiVisitor {
 			final AbstractLUTRealTransform transform,
 			final double[] multipliers,
 			final double[] weights,
-			final double[] estimatedFit ) {
+			final double[] estimatedFit,
+			final int[] positions ) {
 
 		final PlanarRandomAccess<FloatType> targetAccess = ImagePlusAdapter.wrapFloat( targetImg ).randomAccess();
 		final RealRandomAccessible<DoubleType> sourceInterpolated = Views.interpolate( Views.extendValue( matrix, new DoubleType( Double.NaN ) ), this.interpolatorFactory);

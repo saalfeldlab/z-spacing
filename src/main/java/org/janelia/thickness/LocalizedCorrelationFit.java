@@ -10,6 +10,7 @@ import mpicbg.models.PointMatch;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
+import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.list.ListCursor;
 import net.imglib2.img.list.ListImg;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
@@ -20,6 +21,7 @@ import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.Views;
 
 import org.janelia.thickness.lut.AbstractLUTRealTransform;
+import org.janelia.thickness.lut.LUTRealTransform;
 
 /**
  * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>
@@ -52,6 +54,7 @@ public class LocalizedCorrelationFit {
 	public <M extends Model< M > > void estimateFromMatrix( final RandomAccessibleInterval< DoubleType > correlations,
 			final double[] coordinates,
 			final double[] weights,
+			final double[] multipliers,
 			final AbstractLUTRealTransform transform,
 			final int range,
 			final M correlationFitModel,
@@ -77,9 +80,16 @@ public class LocalizedCorrelationFit {
 		final RealRandomAccessible<DoubleType> source = Views.interpolate( Views.extendValue( correlations, new DoubleType( Double.NaN ) ), new NLinearInterpolatorFactory<DoubleType>());
 		
 		final RealTransformRealRandomAccessible<DoubleType, InverseRealTransform> source2 = RealViews.transformReal(source, transform);
+		final LUTRealTransform tf1d = new LUTRealTransform( coordinates, 1, 1);
+		final RealTransformRealRandomAccessible<DoubleType, InverseRealTransform> multipliersInterpolatedTransformed = 
+				RealViews.transformReal( Views.interpolate( Views.extendValue( ArrayImgs.doubles( multipliers, multipliers.length ), new DoubleType( Double.NaN ) ), new NLinearInterpolatorFactory<DoubleType>()), 
+				tf1d );
 
 		final RealRandomAccess< DoubleType > access  = source2.realRandomAccess();
 		final RealRandomAccess< DoubleType > access2 = source2.realRandomAccess();
+		
+		final RealRandomAccess< DoubleType> m1 = multipliersInterpolatedTransformed.realRandomAccess();
+		final RealRandomAccess< DoubleType> m2 = multipliersInterpolatedTransformed.realRandomAccess();
 		
 		for ( int i = 0; i < correlations.dimension( 1 ); ++i ) {
 			
@@ -89,11 +99,15 @@ public class LocalizedCorrelationFit {
 			transform.apply(access, access);
 			access2.setPosition(access);
 			
+			m1.setPosition( i, 0 );
+			tf1d.apply( m1, m1 );
+			m2.setPosition( m1 );
+			final double mref = m1.get().get();
+			
 			final int lower = Math.max( 0,  i - windowRange );
 			final int upper = Math.min( coordinates.length, i + windowRange );
 			
-			for ( int k = 0; k <= range; ++k, access.fwd( 0 ), access2.bck( 0 ) ) {
-				
+			for ( int k = 0; k <= range; ++k, access.fwd( 0 ), access2.bck( 0 ), m1.fwd( 0 ), m2.bck( 0 ) ) {
 				
 //				if ( i < coordinates.length - 1 && coordinates[i] + k < coordinates[ i + 1 ] )
 //					continue;
@@ -104,28 +118,32 @@ public class LocalizedCorrelationFit {
 				final double a1 = access.get().get();
 				final double a2 = access2.get().get();
 				
-				final double w1 = 1.0; // weights[i + k]; // replace 1.0 by real weight, as soon as weight calculation has become clear 
-				final double w2 = 1.0; // weights[i - k]; // replace 1.0 by real weight, as soon as weight calculation has become clear 
-				
-				
-				if ( ( ! Double.isNaN( a1 ) ) && ( ! Double.isNaN( w1 ) ) )
+				if ( ! Double.isNaN( a1 ) )
 				{
-//					for ( int m = lower; m < upper; ++m ) {
-//						pointCollections.get( m ).get( k ).add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new float[]{ (float)a1 } ) ) );// , (float) ( w1 * weightGenerator.calculate( i, m ) ) ) );
-//					}
-					// no local fits momentarily, just use the same fit:
-					final ArrayList<PointMatch> pC = pointCollections.get( 0 ).get( k );
-					pC.add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new float[]{ (float)a1 } ) ) );
+					final int index = i + k;
+					if ( index < weights.length ) {
+						final float w1 = (float)weights[ index ]; // replace 1.0 by real weight, as soon as weight calculation has become clear 
+	//					for ( int m = lower; m < upper; ++m ) {
+	//						pointCollections.get( m ).get( k ).add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new float[]{ (float)a1 } ) ) );// , (float) ( w1 * weightGenerator.calculate( i, m ) ) ) );
+	//					}
+						// no local fits momentarily, just use the same fit:
+						final ArrayList<PointMatch> pC = pointCollections.get( 0 ).get( k );
+						pC.add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new float[]{ (float)( a1*mref*m1.get().get() ) } ), w1 ) );
+					}
 				}
 				
-				if ( ( ! Double.isNaN( a2 ) ) && ( ! Double.isNaN( w2 ) ) )
+				if ( ( ! Double.isNaN( a2 ) ) )
 				{
-//					for ( int m = lower; m < upper; ++m ) {
-//						pointCollections.get( m ).get( k ).add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new float[]{ (float)a2 } ) ) );// , (float) ( w2 * weightGenerator.calculate( i, m ) ) ) );
-//					}
-					// no local fits momentarily, just use the same fit:
-					final ArrayList<PointMatch> pC = pointCollections.get( 0 ).get( k );
-					pC.add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new float[]{ (float)a2 } ) ) );
+					final int index = i - k;
+					if ( index > 0 ) {
+						final float w2 = (float)weights[ index ]; // replace 1.0 by real weight, as soon as weight calculation has become clear 
+	//					for ( int m = lower; m < upper; ++m ) {
+	//						pointCollections.get( m ).get( k ).add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new float[]{ (float)a2 } ) ) );// , (float) ( w2 * weightGenerator.calculate( i, m ) ) ) );
+	//					}
+						// no local fits momentarily, just use the same fit:
+						final ArrayList<PointMatch> pC = pointCollections.get( 0 ).get( k );
+						pC.add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new float[]{ (float)( a2*mref*m2.get().get() ) } ), w2 ) );
+					}
 				}
 				
 				

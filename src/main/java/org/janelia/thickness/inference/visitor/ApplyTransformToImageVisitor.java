@@ -67,7 +67,8 @@ public class ApplyTransformToImageVisitor extends AbstractMultiVisitor {
 			final AbstractLUTRealTransform transform,
 			final double[] multipliers,
 			final double[] weights,
-			final double[] estimatedFit ) {
+			final double[] estimatedFit,
+			final int[] positions ) {
 		
 		final double[] scaledLut = new double[ lut.length ];
 		for (int i = 0; i < scaledLut.length; i++) {

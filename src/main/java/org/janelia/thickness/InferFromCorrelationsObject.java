@@ -20,6 +20,7 @@ import net.imglib2.RealRandomAccessible;
 import net.imglib2.img.array.ArrayCursor;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.array.ArrayRandomAccess;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.img.list.ListImg;
@@ -41,6 +42,7 @@ import org.janelia.thickness.lut.LUTRealTransform;
 import org.janelia.thickness.lut.SingleDimensionLUTRealTransformField;
 import org.janelia.thickness.lut.TransformRandomAccessibleInterval;
 import org.janelia.thickness.mediator.OpinionMediator;
+import org.janelia.utility.ArraySortedIndices;
 import org.janelia.utility.ConstantPair;
 
 public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L> > {
@@ -72,6 +74,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                         result.multiplierRegularizerDecaySpeed = 10000.0;
                         result.multiplierWeightsSigma = 0.2;
                         result.multiplierEstimationIterations = 10;
+                        result.withReorder = true;
                         return result;
                 }
 
@@ -90,6 +93,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                 public double multiplierRegularizerDecaySpeed;
                 public double multiplierWeightsSigma;
                 public int multiplierEstimationIterations;
+                public boolean withReorder;
                 
                 @Override
 				public String toString() {
@@ -156,7 +160,8 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                                         final AbstractLUTRealTransform transform,
                                         final double[] multipliers,
                                         final double[] weights,
-                                        final double[] estimatedFit ) {
+                                        final double[] estimatedFit,
+                            			final int[] positions ) {
                                 // don't do anything
                         }},
                         options );
@@ -206,7 +211,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 
 
 
-                visitor.act( 0, matrix, lut, transform, weightArr, weightArr, new double[ lut.length ] );
+                visitor.act( 0, matrix, lut, transform, weightArr, weightArr, new double[ lut.length ], null );
                 
                 final double[] weightTable = new double[ lut.length ];
                 for (int i = 0; i < weightTable.length; i++) {
@@ -239,10 +244,14 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 				final double[] multipliers = new double[ weightArr.length ];
 				for ( int i = 0; i < multipliers.length; ++i )
 					multipliers[i] = 1.0;
+				
+				final int[] orderedIndices = new int[ weightArr.length ];
+				for (int i = 0; i < orderedIndices.length; ++i )
+					orderedIndices[ i ] = i;
 
                 for ( int n = 0; n < options.nIterations; ++n ) {
-
-                        this.iterationStep(matrix, weightArr, transform, lut, coordinateArr, coordinates, mediatedShifts, options, visitor, n, lcf, localFits, multipliers );
+                        
+                        this.iterationStep(matrix, weightArr, transform, lut, coordinateArr, coordinates, mediatedShifts, options, visitor, n, lcf, localFits, multipliers, orderedIndices );
                         IJ.showProgress( n, options.nIterations );
                 }
                 return coordinates;
@@ -260,7 +269,8 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                         @Override
                         public void act(final int iteration, final ArrayImg<DoubleType, DoubleArray> matrix,
                                         final double[] lut, final AbstractLUTRealTransform transform, final double[] multipliers,
-                                        final double[] weights, final double[] estimatedFit) {
+                                        final double[] weights, final double[] estimatedFit,
+                            			final int[] positions) {
                                 // do not do anything
                         }
                 }, options );
@@ -299,7 +309,8 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                                 final AbstractLUTRealTransform transform,
                                 final double[] multipliers,
                                 final double[] weights,
-                                final double[] estimatedFit) {
+                                final double[] estimatedFit,
+                    			final int[] positions) {
                                 // do not do anything
                         }
                 },
@@ -498,7 +509,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 					lut[i] = affineArray[0] * lut[i] + affineArray[1];
 				}
 
-                visitor.act( n + 1, matrix, lut, transform, multipliers, weights, estimatedFit );
+                visitor.act( n + 1, matrix, lut, transform, multipliers, weights, estimatedFit, null );
         }
         
         
@@ -514,11 +525,12 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                 final int n,
                 final LocalizedCorrelationFit lcf,
                 final ListImg< double[] > localFits,
-                final double[] multipliers
+                final double[] multipliers,
+                final int[] orderedIndices
                 ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 			final double[] vars = new double[ options.comparisonRange ];
 			
-			lcf.estimateFromMatrix(matrix, coordinateArr, weights, transform, options.comparisonRange, correlationFitModel, localFits, options.windowRange);
+			lcf.estimateFromMatrix(matrix, coordinateArr, weights, multipliers, transform, options.comparisonRange, correlationFitModel, localFits, options.windowRange);
 //			}	
 			
 			final double inverseCoordinateUpdateRegularizerWeight = 1 - options.coordinateUpdateRegularizerWeight;
@@ -616,6 +628,32 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 //				floatWeights[i] = 1.0f;
 //			}
 			
+			if ( options.withReorder ) {
+				final TreeMap<Double, Integer> tm = ArraySortedIndices.sortedKeysAndValues( lut );
+				final int[] indices   = ArraySortedIndices.getSortedIndicesFromMap( tm );
+				final double[] lutTmp = ArraySortedIndices.getSortedArrayFromMap( tm );
+				final int[] orderedIndicesTmp = orderedIndices.clone();
+				for (int i = 0; i < lutTmp.length; i++) {
+					lut[i] = lutTmp[i];
+					// check in indices, where the value at i should go and write into the array at indices[i]
+					orderedIndices[i] = orderedIndicesTmp[indices[i]];
+				}
+				
+				// reorder matrix
+				final ArrayImg<DoubleType, ? > tmpMatrix = matrix.copy(); // ArrayImgs.doubles( matrix.dimension( 0 ), matrix.dimension( 1 ) );
+				final ArrayCursor<DoubleType> mC       = matrix.cursor();
+				final ArrayRandomAccess<DoubleType> ra = tmpMatrix.randomAccess();
+				
+				
+				// run over dummy matrix (tmp) and check in indices, where the value at mC should go. set coordinates of ra accordingly and write into it
+				while( mC.hasNext() ) {
+					mC.fwd();
+					ra.setPosition( indices[ mC.getIntPosition( 0 )], 0 );
+					ra.setPosition( indices[ mC.getIntPosition( 1 )], 1 );
+					mC.get().set( ra.get() );
+				}
+			}
+			
 			if ( options.withRegularization ) {
 				final float[] floatLut = new float[ 2 ]; final float[] arange = new float[ 2 ];
 				final float[] floatWeights = new float[ 2 ];
@@ -643,7 +681,8 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 				}
 			}
 			
-			visitor.act( n + 1, matrix, lut, transform, multipliers, weights, localFits.firstElement() );
+			
+			visitor.act( n + 1, matrix, lut, transform, multipliers, weights, localFits.firstElement(), orderedIndices );
         }
         
         

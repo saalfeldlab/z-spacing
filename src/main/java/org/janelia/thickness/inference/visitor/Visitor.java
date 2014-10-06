@@ -12,5 +12,6 @@ public interface Visitor {
 			AbstractLUTRealTransform transform,
 			double[] multipliers,
 			double[] weights,
-			double[] estimatedFit);
+			double[] estimatedFit,
+			int[] positions );
 }

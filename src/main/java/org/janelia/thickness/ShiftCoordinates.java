@@ -88,7 +88,6 @@ public class ShiftCoordinates {
 		
 		final ListCursor<double[]> cursor = localFits.cursor();
 		
-//		IJ.log( localFits.numDimensions() + " " + localFits.dimension( 0 ) + "");
 		
 		// i is reference index, k is comparison index
 		for ( int i = 0; i < correlations.dimension( 1 ); ++i ) {

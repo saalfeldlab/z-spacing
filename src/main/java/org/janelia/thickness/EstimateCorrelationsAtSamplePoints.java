@@ -67,11 +67,11 @@ public class EstimateCorrelationsAtSamplePoints {
 			
 			for ( int k = 0; k <= nIter; ++k ) {
 				
-//				if ( i < coordinates.length - 1 && coordinates[i] + k < coordinates[ i + 1 ] )
-//					continue;
-//				
-//				if ( i > 0 && coordinates[i] - k > coordinates[ i - 1 ] )
-//					continue;
+				if ( i < coordinates.length - 1 && coordinates[i] + k < coordinates[ i + 1 ] )
+					continue;
+				
+				if ( i > 0 && coordinates[i] - k > coordinates[ i - 1 ] )
+					continue;
 				
 				final double a1 = access.get().get();
 				final double a2 = access2.get().get();
