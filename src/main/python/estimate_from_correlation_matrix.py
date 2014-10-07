@@ -93,18 +93,19 @@ if __name__ == "__main__":
     serializeCorrelations = True
     deserializeCorrelations = not serializeCorrelations
     options = InferFromCorrelationsObject.Options.generateDefaultOptions()
-    options.shiftProportion = 0.6
-    options.nIterations = 100
+    options.shiftProportion = 0.2
+    options.nIterations = 1000
     options.nThreads = nThreads
     options.windowRange = 100
     options.shiftsSmoothingSigma = 4
-    options.shiftsSmoothingRange = 20
+    options.shiftsSmoothingRange = 0
     options.withRegularization = True
-    options.minimumSectionThickness = 0.1
+    options.minimumSectionThickness = Double.NaN # 0.1
     options.multiplierRegularizerDecaySpeed = 50
     options.multiplierWeightsSigma = 0.04 # weights[ i ] = exp( -0.5*(multiplier[i] - 1.0)^2 / multiplierWeightSigma^2 )
     options.multiplierGenerationRegularizerWeight = 0.1
     options.multiplierEstimationIterations = 10
+    options.withReorder = True
     thickness_estimation_repo_dir = '/groups/saalfeld/home/hanslovskyp/workspace/em-thickness-estimation'
 
 
@@ -163,6 +164,14 @@ if __name__ == "__main__":
                                                          matrixSize, # max
                                                          matrixScale, # scale
                                                          NLinearInterpolatorFactory() ) # interpolation
+
+        bp = home + "/matrix_floor/matrixFloor_%02d.tif"
+        make_sure_path_exists( bp )
+        floorTracker = CorrelationMatrixTrackerVisitor( bp, # base path
+                                                        0, # min
+                                                        matrixSize, # max
+                                                        matrixScale, # scale
+                                                        FloorInterpolatorFactory() ) # interpolation
                                                 
              
         bp = home + "/fit_tracker/fitTracker_%d.csv"
@@ -190,7 +199,8 @@ if __name__ == "__main__":
         matrixTracker.addVisitor( fitTracker )
         matrixTracker.addVisitor( coordinateTracker )
         matrixTracker.addVisitor( multiplierTracker )
-        matrixTracker.addVisitor( weightsTracker )                                         
+        matrixTracker.addVisitor( weightsTracker )      
+        matrixTracker.addVisitor( floorTracker )                                   
              
 
         result = inference.estimateZCoordinates( 0, 0, startingCoordinates, matrixTracker, options )

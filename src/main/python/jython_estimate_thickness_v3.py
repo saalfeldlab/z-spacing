@@ -48,6 +48,7 @@ from org.janelia.thickness.inference.visitor import CorrelationArrayTrackerVisit
 from org.janelia.thickness.inference.visitor import CorrelationFitTrackerVisitor
 from org.janelia.thickness.inference.visitor import CorrelationMatrixTrackerVisitor
 from org.janelia.thickness.inference.visitor import MultipliersTrackerVisitor
+from org.janelia.thickness.inference.visitor import PositionTrackerVisitor
 from org.janelia.thickness.inference.visitor import WeightsTrackerVisitor
 from org.janelia.thickness.mediator import OpinionMediatorModel
 
@@ -210,16 +211,25 @@ if __name__ == "__main__":
     t0 = time.time()
     print t0 - t0
 
-    correlationRanges = range( 54, 1001, 222221 )
-    nImages = 600
+    correlationRanges = range( 10, 1001, 222221 )
+    nImages = 62
     # root = '/data/hanslovskyp/playground/pov-ray/constant_thickness=5/850-1149/scale/0.05/250x250+125+125'
     # root = '/data/hanslovskyp/export_from_nobackup/sub_stack_01/data/substacks/01/'
     # root = '/ssd/hanslovskyp/crack_from_john/substacks/03/'
     # root = '/ssd/hanslovskyp/forPhilipp/substacks/03/'
-    # root = '/ssd/hanslovskyp/boergens/substacks/01/'
+    # root = '/data/hanslovskyp/boergens/substacks/01/'
+    # root = '/data/hanslovskyp/forPhilipp/substacks/03/'
     # root = '/ssd/hanslovskyp/tweak_CutOn4-15-2013_ImagedOn1-27-2014/substacks/01/'
-    root = '/data/hanslovskyp/forPhilipp/substacks/03/'
+    # root = '/data/hanslovskyp/playground/pov-ray/variable_thickness_subset2/2200-2799/scale/0.04/200x200+100+100/'
+    # root = '/data/hanslovskyp/playground/pov-ray/constant_thickness=5/850-1149/scale/0.05/250x250+125+125/'
     # root = '/ssd/hanslovskyp/tweak_CutOn4-15-2013_ImagedOn1-27-2014/substacks/01/'
+    # root = '/ssd/hanslovskyp/tweak_CutOn4-15-2013_ImagedOn1-27-2014/substacks/01/distorted/02/'
+    # root = '/data/hanslovskyp/jain-nobackup/234_data_downscaled/crop-150x150+75+175/'
+    # root = '/data/hanslovskyp/crack_from_john/substacks/03/'
+    # root = '/data/hanslovskyp/davi_toy_set/'
+    # root = '/data/hanslovskyp/davi_toy_set/substacks/remove/01/'
+    # root = '/data/hanslovskyp/davi_toy_set/substacks/replace_by_average/01/'
+    root = '/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/'
     IJ.run("Image Sequence...", "open=%s/data number=%d sort" % ( root.rstrip(), nImages ) );
     # imgSource = FolderOpener().open( '%s/data' % root.rstrip('/') )
     imgSource = IJ.getImage()
@@ -228,24 +238,29 @@ if __name__ == "__main__":
     conv.convertToGray32()
     stackSource = imgSource.getStack()
     nThreads = 1
-    scale = 1.0
+    scale = 10.0
     # stackMin, stackMax = ( None, 300 )
-    xyScale = 0.25 # fibsem (crack from john) ~> 0.25
-    # xyScale = 0.1 # fibsem (crop from john) ~> 0.1?
+    # xyScale = 0.25 # fibsem (crack from john) ~> 0.25
+    # xyScale = 0.1 # fibsem (crop from john) ~> 0.1? # boergens
+    xyScale = 0.1
     doXYScale = True
     matrixSize = nImages
-    matrixScale = 2.0
+    matrixScale = 10.0
     serializeCorrelations = True
     deserializeCorrelations = not serializeCorrelations
     options = InferFromCorrelationsObject.Options.generateDefaultOptions()
     options.shiftProportion = 0.6
-    options.nIterations = 200
+    options.nIterations = 100
     options.nThreads = nThreads
     options.windowRange = 100
-    options.shiftsSmoothingSigma = 4
+    options.shiftsSmoothingSigma = 1.5
     options.shiftsSmoothingRange = 0
     options.withRegularization = True
-    options.minimumSectionThickness = 0.1
+    options.minimumSectionThickness = -Double.NaN # 0.1
+    options.multiplierRegularizerDecaySpeed = 50
+    options.multiplierWeightsSigma = 0.04 # weights[ i ] = exp( -0.5*(multiplier[i] - 1.0)^2 / multiplierWeightSigma^2 )
+    options.multiplierGenerationRegularizerWeight = 0.1
+    options.multiplierEstimationIterations = 10
     thickness_estimation_repo_dir = '/groups/saalfeld/home/hanslovskyp/workspace/em-thickness-estimation'
 
     if not doXYScale:
@@ -377,12 +392,12 @@ if __name__ == "__main__":
                                                  
              
              
-        bp = home + "/matrix/matrix_%02d.tif"
+        bp = home + "/matrix_floor/matrixFloor_%02d.tif"
         make_sure_path_exists( bp )
-        matrixTracker = CorrelationMatrixTrackerVisitor( bp, # base path
+        floorTracker = CorrelationMatrixTrackerVisitor( bp, # base path
                                                          0, # min
-                                                         1000, # max
-                                                         1, # scale
+                                                         matrixSize, # max
+                                                         matrixScale, # scale
                                                          FloorInterpolatorFactory() ) # interpolation
              
         bp = home + "/matrix_nlinear/matrixNLinear_%02d.tif"
@@ -399,6 +414,8 @@ if __name__ == "__main__":
                                                        FloorInterpolatorFactory(), # interpolation
                                                        imgSource.getStack().getSize(), # number of data points
                                                        correlationRange ) # range for pairwise correlations
+
+                                                       
              
         bp = home + "/render/render_%02d.tif"
         make_sure_path_exists( bp )
@@ -414,7 +431,9 @@ if __name__ == "__main__":
                                                                  imgSource.getWidth(),
                                                                  nImages)
         for i in xrange(-2, 3, 1):
-            renderTracker.addImage( Views.hyperSlice( ImagePlusImgs.from( imgSource ), 1,  5 + i ) )                                                 
+            renderTracker.addImage( Views.hyperSlice( ImagePlusImgs.from( imgSource ), 1,  30 + i ) )                                                 
+
+        renderTracker.average()
              
         bp = home + "/fit_tracker/fitTracker_%d.csv"
         make_sure_path_exists( bp )
@@ -422,6 +441,13 @@ if __name__ == "__main__":
         fitTracker = CorrelationFitTrackerVisitor( bp, # base path
                                                    correlationRange, # range
                                                    separator ) # csv separator
+
+
+        bp = home + "/position_tracker/positionTracker_%d.csv"
+        make_sure_path_exists( bp )
+        separator = ','
+        positionTracker = PositionTrackerVisitor( bp, # base path
+                                                  separator ) # csv separator
              
         bp = home + "/fit_coordinates/fitCoordinates_%d.csv"
         make_sure_path_exists( bp )
@@ -443,7 +469,9 @@ if __name__ == "__main__":
         matrixTracker.addVisitor( fitTracker )
         matrixTracker.addVisitor( coordinateTracker )
         matrixTracker.addVisitor( multiplierTracker )
-        matrixTracker.addVisitor( weightsTracker )                                         
+        matrixTracker.addVisitor( weightsTracker )
+        matrixTracker.addVisitor( positionTracker )                                         
+        matrixTracker.addVisitor( floorTracker )
              
         # if you want to specify values for options, do:
         # options.multiplierGenerationRegularizerWeight = <value>
