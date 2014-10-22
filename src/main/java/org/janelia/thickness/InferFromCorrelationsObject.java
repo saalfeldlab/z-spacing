@@ -96,6 +96,23 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                 public boolean withReorder;
                 
                 @Override
+				public Options clone() {
+                	final Options result = new Options();
+                	for ( final Field f : this.getClass().getDeclaredFields() ) {
+                		try {
+							f.set( result, f.get( this ) );
+						} catch (final IllegalArgumentException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						} catch (final IllegalAccessException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+                	}
+                	return result;
+                }
+                
+                @Override
 				public String toString() {
                 	final StringBuilder sb = new StringBuilder();
                     sb.append("[");
