@@ -136,7 +136,28 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                     return sb.toString();
                 }
 
-
+                @Override
+                public boolean equals( final Object other ) {
+                	if ( other instanceof Options ) {
+                		for ( final Field f : this.getClass().getDeclaredFields() ) {
+                    		try {
+    							if ( ! f.get( this ).equals( f.get( other ) ) ) {
+    								return false;
+    							}
+    						} catch (final IllegalArgumentException e) {
+    							// TODO Auto-generated catch block
+    							e.printStackTrace();
+    							return false;
+    						} catch (final IllegalAccessException e) {
+    							// TODO Auto-generated catch block
+    							e.printStackTrace();
+    							return false;
+    						}
+                    	}
+                		return true;
+                	} else
+                		return false;
+                }
         }
 
 
