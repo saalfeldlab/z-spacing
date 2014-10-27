@@ -62,7 +62,7 @@ public class LocalizedCorrelationFit {
 			final int windowRange) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 		
 		assert localFits.numDimensions() == 2;
-		assert localFits.dimension( 1 ) == coordinates.length;
+		assert localFits.dimension( 1 )  == coordinates.length;
 		assert localFits.firstElement().length == range;
 		
 		
