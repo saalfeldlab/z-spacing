@@ -43,6 +43,7 @@ from org.janelia.correlations import SparseCorrelationsObjectFactory
 from org.janelia.correlations.pyramid import CorrelationsObjectPyramidFactory
 from org.janelia.correlations.pyramid import InferFromCorrelationsObjectPyramid
 from org.janelia.thickness.inference import InferFromCorrelationsObject
+from org.janelia.thickness.inference import Options
 from org.janelia.thickness.inference import MultiScaleEstimation
 from org.janelia.thickness.inference.visitor import ActualCoordinatesTrackerVisitor
 from org.janelia.thickness.inference.visitor import ApplyTransformToImagesAndAverageVisitor
@@ -129,7 +130,7 @@ if __name__ == "__main__":
     matrixScale = 1
     serializeCorrelations = False
     deserializeCorrelations = not serializeCorrelations
-    options = InferFromCorrelationsObject.Options.generateDefaultOptions()
+    options = Options.generateDefaultOptions()
     options.shiftProportion = 0.6
     options.nIterations = 100
     options.nThreads = nThreads
@@ -224,9 +225,9 @@ if __name__ == "__main__":
 
         wrappedImage = ImagePlusAdapter.wrap( img )
         mse    = MultiScaleEstimation( wrappedImage )
-        radii  = [ [ width, height ], [ 75, 75 ], [ 30, 30 ], [ 15, 15 ], [ 15, 15 ] ]#, [ 15, 15 ] ]
-        steps  = [ [ width, height ], [ 75, 75 ], [ 30, 30 ], [ 15, 15 ], [ 3, 3 ] ]#, [ 1, 1 ] ]
-        opt    = [ options, options2, options2, options2, options2 ]#, options2 ]
+        radii  = [ [ width, height ], [ 75, 75 ], [ 30, 30 ] ]#, [ 15, 15 ], [ 15, 15 ] ]#, [ 15, 15 ] ]
+        steps  = [ [ width, height ], [ 75, 75 ], [ 30, 30 ] ]#, [ 15, 15 ], [ 3, 3 ] ]#, [ 1, 1 ] ]
+        opt    = [ options, options2, options2 ]#, options2, options2 ]#, options2 ]
         result = mse.estimateZCoordinates( startingCoordinates, c, radii, steps, LazyVisitor(), opt )
         IJ.log("done")
 
@@ -251,7 +252,7 @@ if __name__ == "__main__":
         lutField = SingleDimensionLUTGrid(3, 3, result, 2, ratio, shift )
 
         transformed = Views.interval( Views.raster( RealViews.transformReal( Views.interpolate( Views.extendBorder( wrappedImage ), NLinearInterpolatorFactory() ), lutField ) ), wrappedImage )
-        imp = ImageJFunctions.wrap( transformed )
+        imp = ImageJFunctions.wrap( transformed, 'transformed' )
         transformedFileName = '%s/transformed.tif' % home.rstrip('/')
         IJ.saveAsTiff( imp.duplicate(), transformedFileName )
         

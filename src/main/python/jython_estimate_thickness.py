@@ -40,6 +40,7 @@ from org.janelia.correlations import CorrelationsObjectFactory
 from org.janelia.correlations import SparseCorrelationsObject
 from org.janelia.correlations import SparseCorrelationsObjectFactory
 from org.janelia.thickness.inference import InferFromCorrelationsObject
+from org.janelia.thickness.inference import Options
 from org.janelia.thickness.inference.visitor import ActualCoordinatesTrackerVisitor
 from org.janelia.thickness.inference.visitor import ApplyTransformToImagesAndAverageVisitor
 from org.janelia.thickness.inference.visitor import ApplyTransformToImageVisitor
@@ -195,7 +196,7 @@ def parseOptionsFromFile( filename ):
         
     }
     
-    result = InferFromCorrelationsObject.Options()
+    result = Options()
     visitorOptions = {}
 
 if __name__ == "__main__":
@@ -238,7 +239,7 @@ if __name__ == "__main__":
     conv.convertToGray32()
     stackSource = imgSource.getStack()
     nThreads = 1
-    scale = 10.0
+    scale = 5.0
     # stackMin, stackMax = ( None, 300 )
     # xyScale = 0.25 # fibsem (crack from john) ~> 0.25
     # xyScale = 0.1 # fibsem (crop from john) ~> 0.1? # boergens
@@ -246,9 +247,9 @@ if __name__ == "__main__":
     doXYScale = True
     matrixSize = nImages
     matrixScale = 10.0
-    serializeCorrelations = False
+    serializeCorrelations = True
     deserializeCorrelations = not serializeCorrelations
-    options = InferFromCorrelationsObject.Options.generateDefaultOptions()
+    options = Options.generateDefaultOptions()
     options.shiftProportion = 0.6
     options.nIterations = 100
     options.nThreads = nThreads
@@ -382,6 +383,8 @@ if __name__ == "__main__":
         
         t3 = time.time()
         print t3 - t0Prime
+
+        print co, TranslationModel1D(), NLinearInterpolatorFactory(), ScaleModel(), OpinionMediatorModel( TranslationModel1D() )
 
         inference = InferFromCorrelationsObject( co,
                                                  TranslationModel1D(),

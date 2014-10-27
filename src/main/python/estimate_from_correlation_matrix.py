@@ -39,8 +39,8 @@ from org.janelia.correlations import CorrelationsObject
 from org.janelia.correlations import CorrelationsObjectFactory
 from org.janelia.correlations import SparseCorrelationsObject
 from org.janelia.correlations import SparseCorrelationsObjectFactory
-from org.janelia.thickness import InferFromCorrelationsObject
-from org.janelia.thickness.lut import SingleDimensionLUTRealTransform
+from org.janelia.thickness.inference import InferFromCorrelationsObject
+from org.janelia.thickness.inference import Options
 from org.janelia.thickness.inference.visitor import ActualCoordinatesTrackerVisitor
 from org.janelia.thickness.inference.visitor import ApplyTransformToImagesAndAverageVisitor
 from org.janelia.thickness.inference.visitor import ApplyTransformToImageVisitor
@@ -50,6 +50,7 @@ from org.janelia.thickness.inference.visitor import CorrelationMatrixTrackerVisi
 from org.janelia.thickness.inference.visitor import MultipliersTrackerVisitor
 from org.janelia.thickness.inference.visitor import PositionTrackerVisitor
 from org.janelia.thickness.inference.visitor import WeightsTrackerVisitor
+from org.janelia.thickness.lut import SingleDimensionLUTRealTransform
 from org.janelia.thickness.mediator import OpinionMediatorModel
 
 
@@ -79,7 +80,7 @@ if __name__ == "__main__":
     t0 = time.time()
     print t0 - t0
 
-    r = 11
+    r = 5
     correlationRanges = range( r, r + 1 )
     # root = '/data/hanslovskyp/forKhaled'
     # root = '/data/hanslovskyp/khaled_2014_10_22/'
@@ -98,7 +99,7 @@ if __name__ == "__main__":
     matrixScale = 2.0
     serializeCorrelations = True
     deserializeCorrelations = not serializeCorrelations
-    options = InferFromCorrelationsObject.Options.generateDefaultOptions()
+    options = Options.generateDefaultOptions()
     options.shiftProportion = 0.6
     options.nIterations = 100
     options.nThreads = nThreads
@@ -112,7 +113,7 @@ if __name__ == "__main__":
     options.multiplierGenerationRegularizerWeight = 0.1
     options.multiplierEstimationIterations = 10
     options.withReorder = True
-    options.coordinateUpdateRegularizerWeight = 0.01
+    options.coordinateUpdateRegularizerWeight = 0.0
     thickness_estimation_repo_dir = '/groups/saalfeld/home/hanslovskyp/workspace/em-thickness-estimation'
 
 
