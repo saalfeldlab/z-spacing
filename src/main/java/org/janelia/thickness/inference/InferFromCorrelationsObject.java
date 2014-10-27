@@ -35,7 +35,6 @@ import org.janelia.correlations.CorrelationsObjectInterface;
 import org.janelia.correlations.CorrelationsObjectInterface.Meta;
 import org.janelia.thickness.EstimateQualityOfSlice;
 import org.janelia.thickness.LocalizedCorrelationFit;
-import org.janelia.thickness.LocalizedCorrelationFit.WeightGenerator;
 import org.janelia.thickness.ShiftCoordinates;
 import org.janelia.thickness.inference.visitor.Visitor;
 import org.janelia.thickness.lut.AbstractLUTRealTransform;
@@ -138,22 +137,8 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 					weightTable[ i ] = Math.exp( - 0.5*i*i / 40000 );
 				}
                 
-                final WeightGenerator wg = new LocalizedCorrelationFit.WeightGenerator() {
-                	
-					
-					@Override
-					public double calculate(final int c1, final int c2) {
-//						final int dist = Math.abs( c1 - c2 );
-//						return dist >= weightTable.length ? 0.0 : weightTable[ dist ];
-						return weightTable[ Math.abs( c1 - c2 ) ];
-					}
-					
-					@Override
-					public float calculatFloat(final int c1, final int c2) {
-						return (float) calculate(c1, c2);
-					}
-				};
-				final LocalizedCorrelationFit lcf = new LocalizedCorrelationFit( wg );
+
+				final LocalizedCorrelationFit lcf = new LocalizedCorrelationFit( );
 				final ArrayList<double[]> fitList = new ArrayList< double[] >();
 				for ( int i = 0; i < lut.length; ++i ) {
 					fitList.add( new double[ options.comparisonRange ] );

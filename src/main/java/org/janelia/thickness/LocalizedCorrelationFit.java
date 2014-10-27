@@ -29,28 +29,8 @@ import org.janelia.thickness.lut.LUTRealTransform;
  */
 public class LocalizedCorrelationFit {
 	
-	public static interface WeightGenerator {
-		
-		public double calculate( int c1, int c2);
-		
-		public float calculatFloat( int c1, int c2 );
-		
-	}
-	
 	private static final float[] ONE_DIMENSION_ZERO_POSITION = new float[]{ 0.0f };
 	
-	private final WeightGenerator weightGenerator;
-	
-	
-	/**
-	 * @param weightGenerator
-	 */
-	public LocalizedCorrelationFit(final WeightGenerator weightGenerator) {
-		super();
-		this.weightGenerator = weightGenerator;
-	}
-
-
 	public <M extends Model< M > > void estimateFromMatrix( final RandomAccessibleInterval< DoubleType > correlations,
 			final double[] coordinates,
 			final double[] weights,
