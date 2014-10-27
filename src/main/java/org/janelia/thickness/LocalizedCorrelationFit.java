@@ -95,7 +95,7 @@ public class LocalizedCorrelationFit {
 			m2.setPosition( m1 );
 			final double mref = m1.get().get();
 			
-			final int currentSection = (int) (i / correlations.dimension( 1 ));
+			final int currentSection = (int) (i *1.0 / correlations.dimension( 1 ) * numberOfSections );
 			final ArrayList<ArrayList<PointMatch>> pointCollections = samples.get( currentSection );
 			
 			for ( int k = 0; k <= range; ++k, access.fwd( 0 ), access2.bck( 0 ), m1.fwd( 0 ), m2.bck( 0 ) ) {
