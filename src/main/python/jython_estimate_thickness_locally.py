@@ -42,8 +42,8 @@ from org.janelia.correlations import SparseCorrelationsObject
 from org.janelia.correlations import SparseCorrelationsObjectFactory
 from org.janelia.correlations.pyramid import CorrelationsObjectPyramidFactory
 from org.janelia.correlations.pyramid import InferFromCorrelationsObjectPyramid
-from org.janelia.thickness import MultiScaleEstimation
 from org.janelia.thickness.inference import InferFromCorrelationsObject
+from org.janelia.thickness.inference import MultiScaleEstimation
 from org.janelia.thickness.inference.visitor import ActualCoordinatesTrackerVisitor
 from org.janelia.thickness.inference.visitor import ApplyTransformToImagesAndAverageVisitor
 from org.janelia.thickness.inference.visitor import ApplyTransformToImageVisitor
