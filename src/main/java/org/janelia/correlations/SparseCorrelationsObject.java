@@ -32,6 +32,10 @@ import org.janelia.utility.SerializableConstantPair;
 public class SparseCorrelationsObject extends AbstractCorrelationsObject implements CorrelationsObjectInterface {
 	
 	private final TreeMap< SerializableConstantPair< Long, Long >, TreeMap< Long, double[] > > correlations;
+	private long xMin;
+	private long yMin;
+	private long xMax;
+	private long yMax;
 	
 	
 	
@@ -45,11 +49,24 @@ public class SparseCorrelationsObject extends AbstractCorrelationsObject impleme
 			final TreeMap<SerializableConstantPair<Long, Long>, TreeMap< Long, double[] > > correlations) {
 		super(metaMap);
 		this.correlations = correlations;
+		xMin = Long.MAX_VALUE;
+		yMin = Long.MAX_VALUE;
+		xMax = Long.MIN_VALUE;
+		yMax = Long.MIN_VALUE;
+		
+		for ( final SerializableConstantPair<Long, Long> key : correlations.keySet() ) {
+			xMin = Math.min( xMin, key.getA() );
+			yMin = Math.min( yMin, key.getB() );
+			xMax = Math.max( xMax, key.getA() );
+			yMax = Math.max( yMax, key.getB() );
+		}
+		
 	}
 
 	public SparseCorrelationsObject() {
-		super(new TreeMap< Long, Meta > () );
-		this.correlations = new TreeMap< SerializableConstantPair< Long, Long >, TreeMap< Long, double[] > >();
+		this( new TreeMap< Long, Meta > (), new TreeMap< SerializableConstantPair< Long, Long >, TreeMap< Long, double[] > >() );
+//		super(new TreeMap< Long, Meta > () );
+//		this.correlations = new TreeMap< SerializableConstantPair< Long, Long >, TreeMap< Long, double[] > >();
 	}
 	
 	public void addCorrelationsAt( final long x, final long y, final long z, final double[] corrs, final Meta meta ) {
@@ -64,6 +81,10 @@ public class SparseCorrelationsObject extends AbstractCorrelationsObject impleme
 			this.correlations.put( SerializableConstantPair.toPair( x, y ), correlationsAt );
 		}
 		correlationsAt.put( z, corrs );
+		xMin = Math.min( xMin, x );
+		yMin = Math.min( yMin, y );
+		xMax = Math.max( xMax, x );
+		yMax = Math.max( yMax, y );
 	}
 
 	/* (non-Javadoc)
@@ -227,6 +248,26 @@ public class SparseCorrelationsObject extends AbstractCorrelationsObject impleme
 				target.fwd( 0 );
 			}
 		}
+	}
+
+	@Override
+	public long getxMin() {
+			return xMin;
+	}
+
+	@Override
+	public long getyMin() {
+		return yMin;
+	}
+
+	@Override
+	public long getxMax() {
+		return xMax;
+	}
+
+	@Override
+	public long getyMax() {
+		return yMax;
 	}
 
 

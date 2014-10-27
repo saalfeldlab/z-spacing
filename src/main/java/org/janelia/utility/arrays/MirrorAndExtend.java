@@ -1,4 +1,4 @@
-package org.janelia.utilityarrays;
+package org.janelia.utility.arrays;
 
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;

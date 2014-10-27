@@ -29,6 +29,8 @@ U extends RealType< U >,
 S extends RealType< S > & NativeType< S >,
 I extends RealType< I > > extends AbstractCrossCorrelation< T, U, S > {
 	
+	public enum CrossCorrelationType { STANDARD, SIGNED_SQUARED };
+	
 	protected Img< I > sums1;
 	protected Img< I > sums2;
 	protected Img< I > sums11;
@@ -46,7 +48,25 @@ I extends RealType< I > > extends AbstractCrossCorrelation< T, U, S > {
 		
 	}
 	
-	public enum CrossCorrelationType { STANDARD, SIGNED_SQUARED };
+	@Override
+	public void setRadius( final long[] r ) {
+		super.setRadiusArray(r);
+		try {
+			this.generateResultImage( false /* do not calculate integral images */ );
+		} catch (final NotEnoughSpaceException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	@Override
+	public void setRadius( final long r ) {
+		final long[] rArray = new long[ this.r.length ];
+		for (int i = 0; i < rArray.length; i++) {
+			rArray[i] = r;
+		}
+		this.setRadius( rArray );
+	}
 	
 	public AbstractIntegralCrossCorrelation(final RandomAccessibleInterval<T> img1,
 			final RandomAccessibleInterval<U> img2,
@@ -65,7 +85,10 @@ I extends RealType< I > > extends AbstractCrossCorrelation< T, U, S > {
 		this.type = type;
 	}
 	
-	protected void generateResultImage() throws NotEnoughSpaceException {
+	protected void generateResultImage( final boolean calculateIntegralImages ) throws NotEnoughSpaceException {
+		if ( calculateIntegralImages ) {
+			this.calculateIntegralImages();
+		}
 		switch ( type ) {
 		case STANDARD:
 			this.calculateCrossCorrelation();
@@ -117,13 +140,10 @@ I extends RealType< I > > extends AbstractCrossCorrelation< T, U, S > {
 			final double val = c.getRealDouble();
 			c.setReal( (val < 0 ? -Math.sqrt( -val ) : Math.sqrt( val ) ) );
 		}
-
-		
 	}
-
 	
-	private void calculateCrossCorrelationSignedSquared() throws NotEnoughSpaceException {
-		calculateIntegralImages();
+	private void calculateCrossCorrelationSignedSquared() {
+		
 		final RandomAccess< I > ra1  = sums1.randomAccess();
 		final RandomAccess< I > ra2  = sums2.randomAccess();
 		final RandomAccess< I > ra11 = sums11.randomAccess();

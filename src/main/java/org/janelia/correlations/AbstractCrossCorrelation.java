@@ -56,25 +56,31 @@ public abstract class AbstractCrossCorrelation  < T extends RealType< T >, U ext
 		
 		this.correlations = new ArrayImgFactory< S >().create( dim, type );
 		
-		
-		
 		this.r = new long[ this.dim.length ];
-		setRadius ( r );
+		this.setRadiusArray( r );
 	}
 	
 	
-	public void setRadius( final long[] r ) {
+	public void setRadiusArray( final long[] r ) {
 		assert r.length == 1 || r.length == this.r.length: "Dimension mismatch!";
 		if ( r.length == 1 )
-			setRadius( r[0] );
+			setRadiusArray( r[0] );
 		else
 			System.arraycopy( r, 0, this.r, 0, r.length );
 	}
 	
 	
-	public void setRadius( final long r ) {
+	public void setRadiusArray( final long r ) {
 		for ( int i = 0; i < this.r.length; ++i )
 			this.r[ i ] = r;
+	}
+	
+	public void setRadius( final long r ) {
+		this.setRadiusArray( r );
+	}
+	
+	public void setRadius( final long[] r ) {
+		this.setRadiusArray( r );
 	}
 	
 	

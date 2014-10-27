@@ -281,6 +281,36 @@ public class CorrelationsObject extends AbstractCorrelationsObject implements Co
 	}
 
 
+	@Override
+	public long getxMin() {
+		return 0;
+	}
+
+
+	@Override
+	public long getyMin() {
+		return 0;
+	}
+
+
+	@Override
+	public long getxMax() {
+		if ( this.correlationsMap.size() > 0 )
+			return this.correlationsMap.values().iterator().next().dimension( 0 );
+		else
+			return 0;
+	}
+
+
+	@Override
+	public long getyMax() {
+		if ( this.correlationsMap.size() > 0 )
+			return this.correlationsMap.values().iterator().next().dimension( 1 );
+		else
+			return 0;
+	}
+
+
 	
 }
  

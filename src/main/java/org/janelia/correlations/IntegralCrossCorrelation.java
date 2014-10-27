@@ -67,7 +67,7 @@ public class IntegralCrossCorrelation< T extends RealType< T >, U extends RealTy
 		this.converterT = converterT;
 		this.converterU = converterU;
 		this.iiDummy = iiDummy;
-		this.generateResultImage();
+		this.generateResultImage( true );
 	}
 
 	@Override

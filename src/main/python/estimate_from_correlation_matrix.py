@@ -48,6 +48,7 @@ from org.janelia.thickness.inference.visitor import CorrelationArrayTrackerVisit
 from org.janelia.thickness.inference.visitor import CorrelationFitTrackerVisitor
 from org.janelia.thickness.inference.visitor import CorrelationMatrixTrackerVisitor
 from org.janelia.thickness.inference.visitor import MultipliersTrackerVisitor
+from org.janelia.thickness.inference.visitor import PositionTrackerVisitor
 from org.janelia.thickness.inference.visitor import WeightsTrackerVisitor
 from org.janelia.thickness.mediator import OpinionMediatorModel
 
@@ -80,8 +81,13 @@ if __name__ == "__main__":
 
     r = 11
     correlationRanges = range( r, r + 1 )
-    root = '/data/hanslovskyp/forKhaled'
-    sourceFile = '/data/hanslovskyp/forKhaled/corr_matrix.tif' # output dir
+    # root = '/data/hanslovskyp/forKhaled'
+    # root = '/data/hanslovskyp/khaled_2014_10_22/'
+    root = '/data/hanslovskyp/khaled_2014_10_24/'
+    # sourceFile = '/data/hanslovskyp/forKhaled/corr_matrix.tif' # output dir
+    # sourceFile = '/data/hanslovskyp/khaled_2014_10_22/cross_corr_mx.tif'
+    sourceFile = '/data/hanslovskyp/khaled_2014_10_24/cross_corr_mx_x16.tif'
+    
     imgSource = ImagePlus( sourceFile )
     ImageConverter( imgSource ).convertToGray32()
     nImages = imgSource.getHeight()
@@ -93,8 +99,8 @@ if __name__ == "__main__":
     serializeCorrelations = True
     deserializeCorrelations = not serializeCorrelations
     options = InferFromCorrelationsObject.Options.generateDefaultOptions()
-    options.shiftProportion = 0.2
-    options.nIterations = 1000
+    options.shiftProportion = 0.6
+    options.nIterations = 100
     options.nThreads = nThreads
     options.windowRange = 100
     options.shiftsSmoothingSigma = 4
@@ -106,6 +112,7 @@ if __name__ == "__main__":
     options.multiplierGenerationRegularizerWeight = 0.1
     options.multiplierEstimationIterations = 10
     options.withReorder = True
+    options.coordinateUpdateRegularizerWeight = 0.01
     thickness_estimation_repo_dir = '/groups/saalfeld/home/hanslovskyp/workspace/em-thickness-estimation'
 
 
@@ -194,13 +201,19 @@ if __name__ == "__main__":
         bp = home + "/weights/weights_%d.csv"
         make_sure_path_exists( bp )
         weightsTracker = WeightsTrackerVisitor( bp,
-                                                separator )                                                                                                          
+                                                separator )
+
+        bp = home + "/positions/positions_%d.csv"
+        make_sure_path_exists( bp )
+        positionTracker = PositionTrackerVisitor( bp,
+                                                  separator )
              
         matrixTracker.addVisitor( fitTracker )
         matrixTracker.addVisitor( coordinateTracker )
         matrixTracker.addVisitor( multiplierTracker )
         matrixTracker.addVisitor( weightsTracker )      
-        matrixTracker.addVisitor( floorTracker )                                   
+        matrixTracker.addVisitor( floorTracker )
+        matrixTracker.addVisitor( positionTracker )
              
 
         result = inference.estimateZCoordinates( 0, 0, startingCoordinates, matrixTracker, options )

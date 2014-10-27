@@ -1,5 +1,9 @@
+from __future__ import with_statement # need this for with statement
+
 from ij import ImagePlus
 from ij import ImageStack
+from ij import IJ
+from ij.io import FileSaver
 from ij.plugin import FolderOpener
 from ij.process import ImageConverter
 
@@ -29,26 +33,43 @@ from net.imglib2.type.numeric.real import DoubleType
 from org.janelia.models import ScaleModel
 from org.janelia.utility import ConstantPair
 from org.janelia.utility import CopyFromIntervalToInterval
+from org.janelia.utility import SerializableConstantPair
+from org.janelia.utility import Serialization
+from org.janelia.utility.sampler import SparseXYSampler
 from org.janelia.correlations import CorrelationsObject
-from org.janelia.thickness import InferFromCorrelationsObject
-from org.janelia.thickness.lut import SingleDimensionLUTRealTransform
+from org.janelia.correlations import CorrelationsObjectFactory
+from org.janelia.correlations import SparseCorrelationsObject
+from org.janelia.correlations import SparseCorrelationsObjectFactory
+from org.janelia.correlations.pyramid import CorrelationsObjectPyramidFactory
+from org.janelia.correlations.pyramid import InferFromCorrelationsObjectPyramid
+from org.janelia.thickness import MultiScaleEstimation
+from org.janelia.thickness.inference import InferFromCorrelationsObject
 from org.janelia.thickness.inference.visitor import ActualCoordinatesTrackerVisitor
 from org.janelia.thickness.inference.visitor import ApplyTransformToImagesAndAverageVisitor
 from org.janelia.thickness.inference.visitor import ApplyTransformToImageVisitor
 from org.janelia.thickness.inference.visitor import CorrelationArrayTrackerVisitor
 from org.janelia.thickness.inference.visitor import CorrelationFitTrackerVisitor
 from org.janelia.thickness.inference.visitor import CorrelationMatrixTrackerVisitor
+from org.janelia.thickness.inference.visitor import LazyVisitor
 from org.janelia.thickness.inference.visitor import MultipliersTrackerVisitor
+from org.janelia.thickness.inference.visitor import PositionTrackerVisitor
 from org.janelia.thickness.inference.visitor import WeightsTrackerVisitor
+from org.janelia.thickness.lut import SingleDimensionLUTRealTransform
+from org.janelia.thickness.lut import SingleDimensionLUTGrid
 from org.janelia.thickness.mediator import OpinionMediatorModel
 
 
-
-import os
-import math
-import time
-import jarray
+import datetime
 import errno
+import inspect
+import jarray
+import math
+import os
+import time
+import shutil
+import sys
+
+import utility
 
 def make_sure_path_exists(path):
     try:
@@ -57,131 +78,6 @@ def make_sure_path_exists(path):
         if exception.errno != errno.EEXIST:
             raise
 
-class Fitter(object):
-    def __init__(self, offset, initialGuess, function, stepsize, fittingRange):
-        # self.fitter       = StackFitterNoUncertainty(offset, initialGuess, function)
-        self.stepSize     = stepSize
-        self.fittingRange = fittingRange
-
-
-    def fit(self, image):
-        pass
-
-
-class FitterFactory(object):
-    def create(self, offset, initialGuess, function, stepsize, fittingRange):
-        return Fitter(offset, initialGuess, function, stepsize, fittingRange)
-
-    
-
-
-class CorrelationsCreator(object):
-    def __init__(self, imagePlus, radius=[8, 8], offset=[0,0]):
-        self.correlations = {}
-        self.radius = radius
-        self.imagePlus = imagePlus
-        self.offset = [0,0]
-
-    def correlate(self, index1, index2):
-        if (index1, index2) in self.correlations.keys():
-            pass 
-        elif (index2, index1) in self.correlations.keys():
-            self.correlations[(index1, index2)] = self.correlations[(index2, index1)]
-        else:
-            self.correlations[(index1, index2)] = self.computeCorrelation(index1, index2)
-        
-        return self.correlations[(index1, index2)]
-
-    def computeCorrelation(self, index1, index2):
-        ip1  = self.imagePlus.getStack().getProcessor(index1).convertToFloatProcessor()
-        ip2  = self.imagePlus.getStack().getProcessor(index2).convertToFloatProcessor()
-        pmcc = BlockPMCC(ip1, ip2, *self.offset)
-        pmcc.rSignedSquare(self.radius[0], self.radius[1])
-        tp = pmcc.getTargetProcessor()
-        tp.min(0.0)
-        return tp
-        
-
-    def correlateAll(self):
-        size = self.imagePlus.getStack().getSize()
-        # for index1 in xrange(1, size+1):
-        #     for index2 in xrange(1, size+1):
-        #         self.correlate(index1, index2)
-
-        return self.correlateAllWithinRange(size)
-
-        # return self.correlations
-
-    def correlateAllWithinRange(self, maximumRange):
-        size = self.imagePlus.getStack().getSize()
-        for index1 in xrange(1, size+1):
-            for index2 in xrange(1, size+1):
-                if int(math.fabs(index2-index1)) > maximumRange:
-                    continue
-                self.correlate(index1, index2)
-                
-        return self. correlations
-
-    def toStack(self, index):
-        size = self.imagePlus.getStack().getSize()
-        width = self.imagePlus.getStack().getWidth()
-        height = self.imagePlus.getStack().getHeight()
-        resultStack = ImageStack(width, height, size)
-        for k, v in self.correlations.iteritems():
-            if k[0] == index:
-                resultStack.setProcessor(v, k[1])
-        return resultStack, (1, size)
-        # return self.toStackRange(index, size/2)
-
-    def toStackRange(self, index, stackRange):
-        upperEnd = min(index + stackRange, self.imagePlus.getStack().getSize())
-        lowerEnd = max(index - stackRange, 1)
-        size = upperEnd - lowerEnd + 1 # min(self.imagePlus.getStack().getSize(), 2*stackRange+1)
-        width = self.imagePlus.getStack().getWidth()
-        height = self.imagePlus.getStack().getHeight()
-        resultStack = ImageStack(width, height, size)
-        for k, v in self.correlations.iteritems():
-            if k[0] == index:
-                # if int(math.fabs(k[1] - index)) > stackRange:
-                # continue
-                if k[1] > upperEnd or k[1] < lowerEnd:
-                    continue
-                putIndex = k[1] + 1 - lowerEnd
-                resultStack.setProcessor(v, putIndex)
-        return resultStack, (lowerEnd, upperEnd)
-
-
-class Bucket(object):
-    def __init__(self, image, fitterFactory, stepSize, fittingRange):
-        self.buckets = {}
-        self.image   = image
-        self.fitterFactory  = fitterFactory
-        self.stepSize = stepSize
-        self.fittingRange = fittingRange
-
-    def createBucketsAtScaleAndRange(radius, stackRange):
-        co = CorrelationsCreator(self.image, radius=radius)
-        co.correlateAllWithinRange(stackRange)
-        result = []
-        for idx in xrange(1, self.image.getStack().getSize() + 1):
-            stack, interval = co.toStackRange(idx, stackRange)
-            offset = idx - interval[0]
-            initialGuess = [1.0]
-            function = SingleParameterBellCurve()
-            fitter = fitterFactory.create(offset, initialGuess, function, self.stepSize, self.fittingRange)            
-            result.append(fitter.fit(stack, interval))
-        self.buckets[radius] = result
-        return result
-
-
-def parseOptionsFromFile( filename ):
-
-    defaultValues = {
-        
-    }
-    
-    result = InferFromCorrelationsObject.Options()
-    visitorOptions = {}
 
 if __name__ == "__main__":
 
@@ -196,31 +92,78 @@ if __name__ == "__main__":
     t0 = time.time()
     print t0 - t0
 
-    correlationRanges = range(5, 11, 7)
-    # root = '/data/hanslovskyp/playground/pov-ray/variable_thickness_subset2/2200-2799/scale/0.04/200x200+100+100'
-    # root = '/groups/saalfeld/home/hanslovskyp/playground/test_data/davi/intensity_corrected/crop/test/'
-    root = '/data/hanslovskyp/jain-nobackup/30_data/'
-    # root = '/data/hanslovskyp/jain-nobackup/234_data_downscaled/'
-    imgSource = FolderOpener().open( '%s/data' % root.rstrip('/') )
-    stackSource = imgSource.getStack()
+    correlationRanges = range( 10, 1001, 222221 )
+    nImages = 62
+    # root = '/data/hanslovskyp/playground/pov-ray/constant_thickness=5/850-1149/scale/0.05/250x250+125+125'
+    # root = '/data/hanslovskyp/export_from_nobackup/sub_stack_01/data/substacks/01/'
+    # root = '/ssd/hanslovskyp/crack_from_john/substacks/03/'
+    # root = '/ssd/hanslovskyp/forPhilipp/substacks/03/'
+    # root = '/data/hanslovskyp/boergens/substacks/01/'
+    # root = '/data/hanslovskyp/forPhilipp/substacks/03/'
+    # root = '/ssd/hanslovskyp/tweak_CutOn4-15-2013_ImagedOn1-27-2014/substacks/01/'
+    # root = '/data/hanslovskyp/playground/pov-ray/variable_thickness_subset2/2200-2799/scale/0.04/200x200+100+100/'
+    # root = '/data/hanslovskyp/playground/pov-ray/constant_thickness=5/850-1149/scale/0.05/250x250+125+125/'
+    # root = '/ssd/hanslovskyp/tweak_CutOn4-15-2013_ImagedOn1-27-2014/substacks/01/'
+    # root = '/ssd/hanslovskyp/tweak_CutOn4-15-2013_ImagedOn1-27-2014/substacks/01/distorted/02/'
+    root = '/data/hanslovskyp/jain-nobackup/234_data_downscaled/crop-150x150+75+175/'
+    # root = '/data/hanslovskyp/crack_from_john/substacks/03/'
+    # root = '/data/hanslovskyp/davi_toy_set/'
+    # root = '/data/hanslovskyp/davi_toy_set/substacks/remove/01/'
+    # root = '/data/hanslovskyp/davi_toy_set/substacks/replace_by_average/01/'
+    # root = '/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/'
+    IJ.run("Image Sequence...", "open=%s/data number=%d sort" % ( root.rstrip(), nImages ) );
+    # imgSource = FolderOpener().open( '%s/data' % root.rstrip('/') )
+    imgSource = IJ.getImage()
+    # imgSource.show()
     conv = ImageConverter( imgSource )
     conv.convertToGray32()
-    nIterations = 25
-    nThreads = 1
+    stackSource = imgSource.getStack()
+    nThreads = 50
     scale = 1.0
+    # stackMin, stackMax = ( None, 300 )
+    # xyScale = 0.25 # fibsem (crack from john) ~> 0.25
+    # xyScale = 0.1 # fibsem (crop from john) ~> 0.1? # boergens
     xyScale = 1.0
     doXYScale = False
-    step = 2
-    radius = [4, 4]
+    matrixSize = nImages
+    matrixScale = 1
+    serializeCorrelations = False
+    deserializeCorrelations = not serializeCorrelations
     options = InferFromCorrelationsObject.Options.generateDefaultOptions()
-    options.nIterations = nIterations
-    options.nThreads = 1
-    options.neighborRegularizerWeight = 0.0
-    # if you want to specify values for options, do:
-    # options.multiplierGenerationRegularizerWeight = <value>
-    # or equivalent
+    options.shiftProportion = 0.6
+    options.nIterations = 100
+    options.nThreads = nThreads
+    options.windowRange = 100
+    options.shiftsSmoothingSigma = 1.5
+    options.shiftsSmoothingRange = 0
+    options.withRegularization = True
+    options.minimumSectionThickness = 0.00000001 # Double.NaN # 0.1
+    options.withReorder = False
+    options.multiplierRegularizerDecaySpeed = 50
+    options.multiplierWeightsSigma = 0.04 # weights[ i ] = exp( -0.5*(multiplier[i] - 1.0)^2 / multiplierWeightSigma^2 )
+    options.multiplierGenerationRegularizerWeight = 0.1
+    options.multiplierEstimationIterations = 10
+    options.coordinateUpdateRegularizerWeight = 0.0
+    thickness_estimation_repo_dir = '/groups/saalfeld/home/hanslovskyp/workspace/em-thickness-estimation'
 
-    img = imgSource
+    options2 = options.clone()
+    options2.shiftProportion = 0.5
+    options2.nIterations = 10
+    options2.shiftsSmoothingRange = 0
+    options2.withRegularization = False
+    # options2.minimumSectionThickness = 0.05 # Double.NaN
+    options2.withReorder = False
+    options2.multiplierGenerationRegularizerWeight = 0.1
+    options2.multiplierEstimationIterations = 10
+    options2.coordinateUpdateRegularizerWeight = 0.01
+
+    if not doXYScale:
+        xyScale = 1.0
+    
+   
+
+    img = imgSource.clone()
+    print stackSource.getSize()
     if doXYScale:
         stack = ImageStack(int(round(imgSource.getWidth()*xyScale)), int(round(imgSource.getHeight()*xyScale)))
         for z in xrange(stackSource.getSize()):
@@ -231,217 +174,88 @@ if __name__ == "__main__":
                 0.5))
                 
              
-            img = ImagePlus("", stack)
-        else:
-            img = imgSource
+        img = ImagePlus("", stack)
+    else:
+        img = imgSource
 
+    width  = img.getWidth()
+    height =  img.getHeight()
 
-    for c in correlationRanges:
-        options.comparisonRange = c
-    
+    # img.show()
+    print img.getWidth(), img.getHeight(), img.getStack().getSize()
+    for c in correlationRanges:    
         correlationRange = c
-        home = root.rstrip('/') + '/range=%d'.rstrip('/')
-        home = home % correlationRange
+        homeScale = root.rstrip('/') + '/xyScale=%f' % xyScale
+        home = homeScale.rstrip('/') + '/range=%d_%s'.rstrip('/')
+        home = home % ( correlationRange, str(datetime.datetime.now() ) )
+        make_sure_path_exists( home.rstrip('/') + '/' )
+
+        options.comparisonRange = c
+
+        serializationString = '%s/correlations_range=%d.sr' % ( homeScale.rstrip(), correlationRange )
+
+        gitCommitInfoFile = '%s/commitHash' % home.rstrip('/')
+        with open( gitCommitInfoFile, 'w' ) as f:
+            f.write( '%s\n' % utility.gitcommit.getCommit( thickness_estimation_repo_dir ) )
+
+        gitDiffFile = '%s/gitDiff' % home.rstrip('/')
+        with open( gitDiffFile, 'w' ) as f:
+            f.write( '%s\n' % utility.gitcommit.getDiff( thickness_estimation_repo_dir ) )
+
+
+        optionsFile = '%s/options' % home.rstrip('/')
+        with open( optionsFile, 'w' ) as f:
+            f.write( '%s\n' % options.toString() )
         
-             
-             
-             
-       
-             
-             
-        cc = CorrelationsCreator(img, radius)
-        cc.correlateAllWithinRange( correlationRange )
-             
-        t1 = time.time()
-        print t1 - t0
-             
-        co = CorrelationsObject( )
 
+        this_file_name = os.path.realpath( inspect.getfile( lambda : None ) ) # inspect.getfile requires method, class, ... as input and returns the file in which input was defined
+        shutil.copyfile( this_file_name, '%s/%s' % ( home.rstrip('/'), this_file_name.split('/')[-1] ) )
         
-             
-        coordinateBase = ArrayList()
-             
-        positions = TreeMap();
-        positions.put( ConstantPair( Long(0), Long(0) ), ArrayList() );
-             
-        startingCoordinates = []
-             
-        t2 = time.time()
-        print t2 - t0
-             
-        for i in xrange( 1, img.getStack().getSize() + 1 ):
-            stackRange, interval = cc.toStackRange( i, correlationRange )
-             
-            out = ImagePlus('test_%02d' % i, stackRange)
-            # out.show()
-             
-            meta                = CorrelationsObject.Meta()
-            meta.zPosition      = i
-            meta.zCoordinateMin = interval[0]
-            meta.zCoordinateMax = interval[1] + 1 # exclusive
-             
-            adapter = ImagePlusAdapter.wrap(out)
-            co.addCorrelationImage(meta.zPosition, adapter, meta)
-             
-            coordinateBase.add( float(i) )
-             
-            startingCoordinates.append( float(i-1) )
-             
-             
-        t3 = time.time()
-        print t3 - t0
 
-        matrix = co.toMatrix( 0, 0 )
-        print matrix.dimension( 0 ), matrix.dimension( 1 ), matrix.numDimensions()
-        ImgLib2Display.copyToImagePlus( InferFromCorrelationsObject.convertToFloat( matrix ) ).show()
+             
+             
+        start = 1
+        stop  = img.getStack().getSize()
+        if False and stackMin != None:
+            start = stackMin
+        if False and stackMax != None:
+            stop  = stackMax
+        startingCoordinates = range( start - 1, stop )
 
+        wrappedImage = ImagePlusAdapter.wrap( img )
+        mse    = MultiScaleEstimation( wrappedImage )
+        radii  = [ [ width, height ], [ 75, 75 ], [ 30, 30 ], [ 15, 15 ], [ 15, 15 ] ]#, [ 15, 15 ] ]
+        steps  = [ [ width, height ], [ 75, 75 ], [ 30, 30 ], [ 15, 15 ], [ 3, 3 ] ]#, [ 1, 1 ] ]
+        opt    = [ options, options2, options2, options2, options2 ]#, options2 ]
+        result = mse.estimateZCoordinates( startingCoordinates, c, radii, steps, LazyVisitor(), opt )
+        IJ.log("done")
 
-        import sys
-        sys.exit( 1 )
-             
-             
-        inference = InferFromCorrelationsObject( co,
-                                                 nIterations,
-                                                 correlationRange,
-                                                 TranslationModel1D(),
-                                                 NLinearInterpolatorFactory(),
-                                                 ScaleModel(),
-                                                 nThreads,
-                                                 OpinionMediatorModel( TranslationModel1D() )
-                                                 )
-                                                 
-             
-             
-        bp = home + "/matrix/matrix_%02d.tif"
-        make_sure_path_exists( bp )
-        matrixTracker = CorrelationMatrixTrackerVisitor( bp, # base path
-                                                         0, # min
-                                                         100, # max
-                                                         30, # scale
-                                                         FloorInterpolatorFactory() ) # interpolation
-             
-        bp = home + "/matrix_nlinear/matrixNLinear_%02d.tif"
-        make_sure_path_exists( bp )
-        matrixTracker = CorrelationMatrixTrackerVisitor( bp, # base path
-                                                         0, # min
-                                                         300, # max
-                                                         10, # scale
-                                                         NLinearInterpolatorFactory() ) # interpolation
-             
-        bp = home + "/array/array_%02d.tif"
-        make_sure_path_exists( bp )
-        arrayTracker = CorrelationArrayTrackerVisitor( bp, # base path
-                                                       FloorInterpolatorFactory(), # interpolation
-                                                       imgSource.getStack().getSize(), # number of data points
-                                                       correlationRange ) # range for pairwise correlations
-             
-        bp = home + "/render/render_%02d.tif"
-        make_sure_path_exists( bp )
-        hyperSlices = ArrayList()
-        # hyperSlice = Views.hyperSlice( ImagePlusImgs.from( imgSource ), 1,  345 )
-        # ImageJFunctions.show( hyperSlice )
-             
-        renderTracker = ApplyTransformToImagesAndAverageVisitor( bp, # base path
-                                                                 FloorInterpolatorFactory(), # interpolation
-                                                                 scale )
-        for i in xrange(-2, 3, 1):
-            renderTracker.addImage( Views.hyperSlice( ImagePlusImgs.from( imgSource ), 1,  100 + i ) )                                                 
-             
-        bp = home + "/fit_tracker/fitTracker_%d.csv"
-        make_sure_path_exists( bp )
-        separator = ','
-        fitTracker = CorrelationFitTrackerVisitor( bp, # base path
-                                                   correlationRange, # range
-                                                   separator ) # csv separator
-             
-        bp = home + "/fit_coordinates/fitCoordinates_%d.csv"
-        make_sure_path_exists( bp )
-        coordinateTracker = ActualCoordinatesTrackerVisitor( bp,
-                                                             separator )
-                                                             
-        bp = home + "/multipliers/multipliers_%d.csv"
-        make_sure_path_exists( bp )
-        multiplierTracker = MultipliersTrackerVisitor( bp,
-                                                       separator )
-             
-        bp = home + "/weights/weights_%d.csv"
-        make_sure_path_exists( bp )
-        weightsTracker = WeightsTrackerVisitor( bp,
-                                                separator )                                                                                                          
-             
-        matrixTracker.addVisitor( arrayTracker )
-        matrixTracker.addVisitor( renderTracker )
-        matrixTracker.addVisitor( fitTracker )
-        matrixTracker.addVisitor( coordinateTracker )
-        matrixTracker.addVisitor( multiplierTracker )
-        matrixTracker.addVisitor( weightsTracker )                                         
-             
+        resultFileName = '%s/result.tif' % home.rstrip('/')
+        imp = ImageJFunctions.wrap( result, 'result' )
+        IJ.saveAsTiff(imp.duplicate(), resultFileName)
+
+        relativeResult = result.copy()
+        c = relativeResult.cursor()
+        while c.hasNext():
+            c.fwd()
+            cur = c.get()
+            val = cur.get()
+            cur.set( val - c.getDoublePosition( 2 ) )
+
+        relativeResultFileName = '%s/relativeResult.tif' % home.rstrip('/')
+        imp = ImageJFunctions.wrap( relativeResult, 'relative result' )
+        IJ.saveAsTiff(imp.duplicate(), relativeResultFileName)
+
+        ratio = [ wrappedImage.dimension( 0 )*1.0/result.dimension( 0 ), wrappedImage.dimension( 1 )*1.0/result.dimension( 1 ) ]
+        shift = [ 0.0, 0.0 ]
+        lutField = SingleDimensionLUTGrid(3, 3, result, 2, ratio, shift )
+
+        transformed = Views.interval( Views.raster( RealViews.transformReal( Views.interpolate( Views.extendBorder( wrappedImage ), NLinearInterpolatorFactory() ), lutField ) ), wrappedImage )
+        imp = ImageJFunctions.wrap( transformed )
+        transformedFileName = '%s/transformed.tif' % home.rstrip('/')
+        IJ.saveAsTiff( imp.duplicate(), transformedFileName )
+        
         # result = inference.estimateZCoordinates( 0, 0, startingCoordinates, matrixTracker, options )
-        print img.getWidth(), img.getHeight()
-        result = inference.estimateZCoordinatesLocally( 0, # startX
-                                                        0, # startY
-                                                        img.getWidth(), # stopX
-                                                        img.getHeight(), # stopY
-                                                        step, # stepX
-                                                        step, # stepY
-                                                        startingCoordinates,
-                                                        options ) # no visitor for now, need to think of how to do this in the future
 
-        show  = ImgLib2Display.copyToImagePlus( InferFromCorrelationsObject.convertToFloat( result ) )
-        show2 = show.duplicate()
-        showStack = show2.getStack()
-        for i in xrange( showStack.getSize() ):
-            ip = showStack.getProcessor( i + 1 )
-            ip.add( -i )
-        show2.show()
-
-        tf = InferFromCorrelationsObject.convertToTransformField2D( result, step, step, img.getWidth(), img.getHeight() )
-        interpolated = Views.interpolate( Views.extendValue( ImagePlusImgs.from( imgSource), DoubleType( Double.NaN ) ), FloorInterpolatorFactory() )
-
-        resultImage = ImagePlusImgs.floats( imgSource.getWidth(), imgSource.getHeight(), imgSource.getStack().getSize() )
-        transformed = Views.interval( RealViews.transform( interpolated, tf ), resultImage )
-        
-        CopyFromIntervalToInterval.copyToRealType( transformed, resultImage )
-
-        ImageJFunctions.show( resultImage )
-        
-
-             
-             
-        # array = jarray.zeros( result.dimension(0), 'd' )
-        # cursor = result.cursor()
-        # for i in xrange(result.dimension(0) ):
-        #     array[i] = scale * cursor.next().get()
-             
-        # lutTransform = SingleDimensionLUTRealTransform( array, 3, 3, 2 )
-             
-        # resultImage = ImagePlusImgs.unsignedBytes( imgSource.getWidth(), imgSource.getHeight(), int(scale) * stack.getSize() )
-        # interpolated = Views.interpolate( Views.extendValue( ImagePlusImgs.from(imgSource), DoubleType( Double.NaN ) ), FloorInterpolatorFactory() )
-        # transformed =  Views.interval( RealViews.transform( interpolated, lutTransform ), resultImage )
-             
-        # print type(transformed)
-        # print type(resultImage)
-        # CopyFromIntervalToInterval.copy( transformed, resultImage )
-             
-             
-        # ImageJFunctions.show( resultImage )
-             
-             
-             
-             
-        # t4 = time.time()
-        # print t4 - t0
-        # print
-        # for r in result:
-        #     print r
-             
-             
-             
-        # metaMap = co.getMetaMap()
-        # fitMap = co.getFitMap()
-        # for entryset in fitMap.entrySet():
-        #     show = ImgLib2Display.copyToImagePlus(entryset.getValue())
-        #     show.show()
-        #     print entryset
              
  

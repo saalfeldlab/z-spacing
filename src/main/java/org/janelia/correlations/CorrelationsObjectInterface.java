@@ -70,7 +70,15 @@ public interface CorrelationsObjectInterface extends Serializable {
 	
 	public long getzMin();
 	
+	public long getxMin();
+	
+	public long getyMin();
+	
 	public long getzMax();
+	
+	public long getxMax();
+	
+	public long getyMax();
 	
 	public TreeMap<Long, Meta> getMetaMap();
 	

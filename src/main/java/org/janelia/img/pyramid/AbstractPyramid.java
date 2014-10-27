@@ -57,7 +57,11 @@ public abstract class AbstractPyramid< T extends RealType< T > > implements Pyra
 		final RandomAccessibleInterval<T> lower = this.images.get( level0 );
 		final RandomAccessibleInterval<T> upper = this.images.get( level1 );
 		
-		final double[] scalingFactors = new double[] { lower.dimension( 0 )*1.0/upper.dimension( 0 ), lower.dimension( 1 )*1.0/upper.dimension( 1 ) };
+		final double[] scalingFactors = new double[ lower.numDimensions() ];
+		for (int i = 0; i < scalingFactors.length; i++) {
+			scalingFactors[i] = lower.dimension( i )*1.0/upper.dimension( i );
+		}
+//		{ lower.dimension( 0 )*1.0/upper.dimension( 0 ), lower.dimension( 1 )*1.0/upper.dimension( 1 ) };
 		
 		tmpList.add( lower );
 		tmpList.add( Views.interval(

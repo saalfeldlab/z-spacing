@@ -1,5 +1,7 @@
 package org.janelia.correlations;
 
+import ij.IJ;
+
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.TreeMap;
@@ -15,6 +17,7 @@ import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
 import org.janelia.correlations.CorrelationsObjectInterface.Meta;
+import org.janelia.utility.ConstantPair;
 import org.janelia.utility.ConstantRealRandomAccesssible;
 import org.janelia.utility.SerializableConstantPair;
 import org.janelia.utility.sampler.DenseXYSampler;
@@ -29,26 +32,54 @@ public class CorrelationsObjectFactory < T extends RealType< T > > {
 	
 	private final RandomAccessibleInterval< T > images;
 	private final XYSampler sampler;
+	private final CrossCorrelationFactoryInterface< T, T, FloatType > ccFactory;
 	
 	
 	/**
 	 * @param images
+	 * @param sampler
+	 * @param ccFactory
 	 */
-	public CorrelationsObjectFactory(final RandomAccessibleInterval<T> images, final XYSampler sampler ) {
+	public CorrelationsObjectFactory(final RandomAccessibleInterval<T> images,
+			final XYSampler sampler,
+			final CrossCorrelationFactoryInterface<T, T, FloatType> ccFactory) {
 		super();
 		this.images = images;
 		this.sampler = sampler;
+		this.ccFactory = ccFactory;
+	}
+
+	/**
+	 * @param images
+	 */
+	public CorrelationsObjectFactory(final RandomAccessibleInterval<T> images, final XYSampler sampler ) {
+		this( images, sampler, new CrossCorrelationFactory< T, T, FloatType >( new FloatType() ) );
 	}
 	
 	
 	public CorrelationsObjectFactory(final RandomAccessibleInterval<T> images) {
-		super();
-		this.images = images;
-		this.sampler = new DenseXYSampler( images.dimension(0), images.dimension(1) );
+		this(images, new DenseXYSampler( images.dimension(0), images.dimension(1) ) );
 	}
 
 
-	public CorrelationsObjectInterface create( final long range, final long[] radius ) {
+	public CorrelationsObject create( final long range, final long[] radius ) {
+		
+		final ConstantPair<TreeMap<Long, RandomAccessibleInterval<FloatType>>, TreeMap<Long, Meta>> correlationsAndMeta = createCorrelationsMetaPair( images, range, radius, sampler, ccFactory );
+		final TreeMap<Long, RandomAccessibleInterval<FloatType>> correlations = correlationsAndMeta.getA();
+		final TreeMap<Long, Meta> metaMap = correlationsAndMeta.getB();
+		
+		final CorrelationsObject co = new CorrelationsObject( );
+
+		for ( final Entry<Long, RandomAccessibleInterval<FloatType>> entry : correlations.entrySet() ) {
+			co.addCorrelationImage( entry.getKey(), entry.getValue(), metaMap.get( entry.getKey() ) );
+		}
+		
+		return co;
+	}
+	
+	
+	public static < U extends RealType< U > > ConstantPair< TreeMap< Long, RandomAccessibleInterval< FloatType> >, TreeMap< Long, Meta > > 
+	createCorrelationsMetaPair( final RandomAccessibleInterval< U > images, final long range, final long[] radius, final XYSampler sampler, final CrossCorrelationFactoryInterface< U, U, FloatType > ccFactory ) {
 		
 		final long stop = images.dimension( 2 ) - 1;
 		
@@ -57,7 +88,9 @@ public class CorrelationsObjectFactory < T extends RealType< T > > {
 		
 		for ( long zRef = 0; zRef <= stop; ++zRef ) {
 			
-			final long lowerBound = Math.max( 0, zRef - range);
+			IJ.log( "zRef + " + zRef );
+			
+			final long lowerBound = Math.max( 0, zRef - range );
 			final long upperBound = Math.min( stop, zRef + range );
 			
 			final Meta meta = new Meta();
@@ -66,7 +99,8 @@ public class CorrelationsObjectFactory < T extends RealType< T > > {
 			meta.zPosition      = zRef;
 			
 			final ArrayImg<FloatType, FloatArray> localCorrelations = ArrayImgs.floats(images.dimension( 0 ), images.dimension( 1 ), ( upperBound - lowerBound) + 1 );
-			
+
+			final long t00 = System.currentTimeMillis();
 			
 			for ( long z = lowerBound; z <= upperBound; ++z ) {
 				final long relativePosition = z - lowerBound;
@@ -81,12 +115,20 @@ public class CorrelationsObjectFactory < T extends RealType< T > > {
 				} else if ( z == zRef ) {
 					correlationsSource = Views.interval( Views.raster( new ConstantRealRandomAccesssible< FloatType >( 2, new FloatType( 1.0f ) ) ), correlationsTarget );
 				} else {
-					correlationsSource = new CrossCorrelation<T, T, FloatType >( 
-							Views.hyperSlice( images, 2, z ), 
+					final long t0 = System.currentTimeMillis();
+					correlationsSource = ccFactory.create( Views.hyperSlice( images, 2, z ), 
 							Views.hyperSlice( images, 2, zRef ), 
-							radius,
-							new FloatType() );
+							radius );
+					final long t1 = System.currentTimeMillis();
+					IJ.log ( "Calculation time: " + ( t1 - t0 ) );
+//					correlationsSource = new CrossCorrelation<U, U, FloatType >( 
+//							Views.hyperSlice( images, 2, z ), 
+//							Views.hyperSlice( images, 2, zRef ), 
+//							radius,
+//							new FloatType() );
 				}
+				
+				final long t10 = System.currentTimeMillis();
 				
 				final Iterator<SerializableConstantPair<Long, Long>> it = sampler.iterator();
 				final RandomAccess<FloatType> s = correlationsSource.randomAccess();
@@ -99,20 +141,21 @@ public class CorrelationsObjectFactory < T extends RealType< T > > {
 					t.get().set( s.get() );
 				}
 				
+				final long t11 = System.currentTimeMillis();
+				IJ.log( "Writing time=" + (t11-t10) );
+				
 			}
+			
+			final long t01 = System.currentTimeMillis();
+			
+			IJ.log( "Time for z: " + ( t01 - t00 ) );
 			
 			metaMap.put( zRef, meta );
 			correlations.put( zRef, localCorrelations );
 			
 		}
 		
-		final CorrelationsObject co = new CorrelationsObject( );
-
-		for ( final Entry<Long, RandomAccessibleInterval<FloatType>> entry : correlations.entrySet() ) {
-			co.addCorrelationImage( entry.getKey(), entry.getValue(), metaMap.get( entry.getKey() ) );
-		}
-		
-		return co;
+		return ConstantPair.toPair( correlations, metaMap );
 	}
 	
 }

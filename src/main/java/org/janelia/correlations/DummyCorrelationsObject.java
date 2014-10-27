@@ -125,4 +125,24 @@ public class DummyCorrelationsObject implements CorrelationsObjectInterface {
 		
 	}
 
+	@Override
+	public long getxMin() {
+		return 0;
+	}
+
+	@Override
+	public long getyMin() {
+		return 0;
+	}
+
+	@Override
+	public long getxMax() {
+		return 1;
+	}
+
+	@Override
+	public long getyMax() {
+		return 1;
+	}
+
 }

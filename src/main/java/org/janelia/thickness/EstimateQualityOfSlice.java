@@ -23,7 +23,7 @@ import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.Views;
 
-import org.janelia.utilityarrays.MirrorAndExtend;
+import org.janelia.utility.arrays.MirrorAndExtend;
 
 public class EstimateQualityOfSlice {
 	

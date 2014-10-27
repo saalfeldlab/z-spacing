@@ -1,11 +1,21 @@
-package org.janelia.thickness;
+/**
+ * 
+ */
+package org.janelia.thickness.inference;
 
-import org.janelia.thickness.InferFromCorrelationsObject.Options;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-public class InferFromCorrelationsObjectTest {
+/**
+ * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>
+ *
+ */
+public class OptionsTest {
+
+	/**
+	 * @throws java.lang.Exception
+	 */
 	Options baseOptions = Options.generateDefaultOptions();
 
 	@Before
