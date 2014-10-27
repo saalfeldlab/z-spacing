@@ -82,9 +82,9 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 
 
         public ArrayImg< DoubleType, DoubleArray > estimateZCoordinates( final long x,
-                                                                         final long y,
-                                                                         final double[] startingCoordinates,
-                                                                         final Options options) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+                                                                          final long y,
+                                                                          final double[] startingCoordinates,
+                                                                          final Options options) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
                 return estimateZCoordinates( x, y, startingCoordinates, new Visitor() {
 
                         @Override
