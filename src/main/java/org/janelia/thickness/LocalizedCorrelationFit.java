@@ -7,10 +7,14 @@ import mpicbg.models.Model;
 import mpicbg.models.NotEnoughDataPointsException;
 import mpicbg.models.Point;
 import mpicbg.models.PointMatch;
+import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
+import net.imglib2.converter.TypeIdentity;
+import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.img.list.ListCursor;
 import net.imglib2.img.list.ListImg;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
@@ -18,10 +22,14 @@ import net.imglib2.realtransform.InverseRealTransform;
 import net.imglib2.realtransform.RealTransformRealRandomAccessible;
 import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.numeric.real.DoubleType;
+import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
+import net.imglib2.view.composite.CompositeIntervalView;
+import net.imglib2.view.composite.RealComposite;
 
 import org.janelia.thickness.lut.AbstractLUTRealTransform;
 import org.janelia.thickness.lut.LUTRealTransform;
+import org.janelia.utility.CopyFromIntervalToInterval;
 
 /**
  * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>
@@ -37,24 +45,27 @@ public class LocalizedCorrelationFit {
 			final double[] multipliers,
 			final AbstractLUTRealTransform transform,
 			final int range,
+			final int diameter,
 			final M correlationFitModel,
-			final ListImg< double[] > localFits,
-			final int windowRange) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+			final ListImg< double[] > localFits) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 		
 		assert localFits.numDimensions() == 2;
 		assert localFits.dimension( 1 )  == coordinates.length;
 		assert localFits.firstElement().length == range;
 		
+		final long numberOfSections = Math.round( coordinates.length * 1.0 / diameter );
+		final double correctedDiameter = coordinates.length * 1.0 / numberOfSections;
+		final double halfDiameter = correctedDiameter / 2.0;
 		
+		final ArrayImg<DoubleType, DoubleArray> extendedFits = ArrayImgs.doubles( numberOfSections + 2, range );
 		
-		final ArrayList< ArrayList< ArrayList< PointMatch > > > pointCollections = new ArrayList< ArrayList<  ArrayList< PointMatch > > >();
-		
-		for ( int i = 0; i < coordinates.length; ++i ) {
-			final ArrayList< ArrayList< PointMatch> > localArrayList = new ArrayList<ArrayList<PointMatch>>();
+		final ArrayList< ArrayList< ArrayList< PointMatch > > > samples = new ArrayList< ArrayList< ArrayList< PointMatch > > >();
+		for ( int s = 0; s < numberOfSections; ++s ) {
+			final ArrayList<ArrayList<PointMatch>> al = new ArrayList< ArrayList< PointMatch> >();
 			for ( int k = 0; k <= range; ++k ) {
-				localArrayList.add( new ArrayList<PointMatch>() );
+				al.add( new ArrayList<PointMatch>() );
 			}
-			pointCollections.add( localArrayList );
+			samples.add( al );
 		}
 		
 		final RealRandomAccessible<DoubleType> source = Views.interpolate( Views.extendValue( correlations, new DoubleType( Double.NaN ) ), new NLinearInterpolatorFactory<DoubleType>());
@@ -84,8 +95,8 @@ public class LocalizedCorrelationFit {
 			m2.setPosition( m1 );
 			final double mref = m1.get().get();
 			
-			final int lower = Math.max( 0,  i - windowRange );
-			final int upper = Math.min( coordinates.length, i + windowRange );
+			final int currentSection = (int) (i / correlations.dimension( 1 ));
+			final ArrayList<ArrayList<PointMatch>> pointCollections = samples.get( currentSection );
 			
 			for ( int k = 0; k <= range; ++k, access.fwd( 0 ), access2.bck( 0 ), m1.fwd( 0 ), m2.bck( 0 ) ) {
 				
@@ -98,17 +109,15 @@ public class LocalizedCorrelationFit {
 				final double a1 = access.get().get();
 				final double a2 = access2.get().get();
 				
+				final ArrayList<PointMatch> pointCollection = pointCollections.get( k );
+				
 				if ( ! Double.isNaN( a1 ) )
 				{
 					final int index = i + k;
 					if ( index < weights.length ) {
-						final float w1 = (float)weights[ index ]; // replace 1.0 by real weight, as soon as weight calculation has become clear 
-	//					for ( int m = lower; m < upper; ++m ) {
-	//						pointCollections.get( m ).get( k ).add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new float[]{ (float)a1 } ) ) );// , (float) ( w1 * weightGenerator.calculate( i, m ) ) ) );
-	//					}
-						// no local fits momentarily, just use the same fit:
-						final ArrayList<PointMatch> pC = pointCollections.get( 0 ).get( k );
-						pC.add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new float[]{ (float)( a1*mref*m1.get().get() ) } ), w1 ) );
+						final float w1 = (float)weights[ index ]; // replace 1.0 by real weight, as soon as weight calculation has become clear
+						pointCollection.add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new float[]{ (float)( a1*mref*m1.get().get() ) } ), w1 ) );
+//						IJ.log( " ADDING point match for i,k=" + i + "," + k + " at section " + currentSection );
 					}
 				}
 				
@@ -117,56 +126,80 @@ public class LocalizedCorrelationFit {
 					final int index = i - k;
 					if ( index > 0 ) {
 						final float w2 = (float)weights[ index ]; // replace 1.0 by real weight, as soon as weight calculation has become clear 
-	//					for ( int m = lower; m < upper; ++m ) {
-	//						pointCollections.get( m ).get( k ).add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new float[]{ (float)a2 } ) ) );// , (float) ( w2 * weightGenerator.calculate( i, m ) ) ) );
-	//					}
-						// no local fits momentarily, just use the same fit:
-						final ArrayList<PointMatch> pC = pointCollections.get( 0 ).get( k );
-						pC.add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new float[]{ (float)( a2*mref*m2.get().get() ) } ), w2 ) );
+						pointCollection.add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new float[]{ (float)( a2*mref*m2.get().get() ) } ), w2 ) );
+//						IJ.log( " ADDING point match for i,k=" + i + "," + (-k) + " at section " + currentSection );
 					}
 				}
-				
-				
-				
 			}
-					
 		}
 		
-		
-		/* TODO inverts because LUTRealTransform can only increasing */
-		final ListCursor<double[]> cursor = localFits.cursor();
-		// no local fits momentarily, just use the same fit:
-		final double[] lf = localFits.firstElement();
-		lf[0] = -1;
-		final ArrayList<ArrayList<PointMatch>> pC = pointCollections.get( 0 );
-		for ( int k = 1; k < lf.length; ++k ) {
-			correlationFitModel.fit( pC.get( k ) );
-			lf[ k ] = -correlationFitModel.apply( ONE_DIMENSION_ZERO_POSITION )[ 0 ];
+		for ( int s = 0; s < numberOfSections; ++s ) {
+			final IntervalView<DoubleType> hs = Views.hyperSlice( extendedFits, 0, s+1 );
+			final RandomAccess<DoubleType> ra = hs.randomAccess();
+			ra.get().set( -1.0 );
+			final ArrayList<ArrayList<PointMatch>> pC = samples.get( s );
+			for ( int k = 1; k < range; ++k ) {
+				ra.fwd( 0 );
+//				IJ.log( " DOING SECTION " + s + " at k=" + k + " (size=" + pC.get( k ).size() + ") range=" + range );
+				correlationFitModel.fit( pC.get( k ) );
+				ra.get().set( -correlationFitModel.apply( ONE_DIMENSION_ZERO_POSITION )[ 0 ] );
+			}
 		}
 		
-		while ( cursor.hasNext() ) {
-			cursor.fwd();
-			cursor.set( lf );
+		final IntervalView<DoubleType> zero = Views.hyperSlice( extendedFits, 0, 0 );
+		final IntervalView<DoubleType> first = Views.hyperSlice( extendedFits, 0, 1 );
+		CopyFromIntervalToInterval.copy( first, zero, new TypeIdentity<DoubleType>());
+		
+		final IntervalView<DoubleType> last = Views.hyperSlice( extendedFits, 0, extendedFits.dimension(0) - 1 );
+		final IntervalView<DoubleType> secondToLast = Views.hyperSlice( extendedFits, 0, extendedFits.dimension(0) - 2 );
+		CopyFromIntervalToInterval.copy( secondToLast, last, new TypeIdentity<DoubleType>());
+		
+		final CompositeIntervalView<DoubleType, RealComposite<DoubleType>> collapsed = Views.collapseReal( extendedFits );
+		final RealRandomAccessible<RealComposite<DoubleType>> interpolated = Views.interpolate( collapsed, new NLinearInterpolatorFactory<RealComposite<DoubleType>>());
+		
+		final ListCursor<double[]> c = localFits.cursor();
+		final RealRandomAccess<RealComposite<DoubleType>> i = interpolated.realRandomAccess();
+		
+		while( c.hasNext() ) {
+			c.fwd();
+			final double pos = c.getDoublePosition( 0 );
+			i.setPosition( pos / correctedDiameter + 0.5, 0 );
+			final double[] arr = c.get();
+			final RealComposite<DoubleType> composite = i.get();
+			for (int j = 0; j < arr.length; j++) {
+				arr[j] = composite.get( j ).get();
+			}
 		}
 		
-		// when back to local fits, use this:
-//		for ( int m = 0; cursor.hasNext(); ++m ) {
-//			
-//			final double[] localFit = cursor.next();
-//			localFit[0] = -1;
-//			final ArrayList<ArrayList<PointMatch>> localPoints = pointCollections.get( m );
-//			
-//			for ( int k = 1; k < localFit.length; ++k ) {
-//				correlationFitModel.fit( localPoints.get( k ) );
-//				
-//				
-//				
-//				/* TODO inverts because LUTRealTransform can only increasing */
-//				localFit[ k ] = -correlationFitModel.apply( ONE_DIMENSION_ZERO_POSITION )[ 0 ];
-//
-//			}
+//		/* TODO inverts because LUTRealTransform can only increasing */
+//		final ListCursor<double[]> cursor = localFits.cursor();
+//		// no local fits momentarily, just use the same fit:
+//		final double[] lf = localFits.firstElement();
+//		lf[0] = -1;
+//		final ArrayList<ArrayList<PointMatch>> pC = pointCollections.get( 0 );
+//		for ( int k = 1; k < lf.length; ++k ) {
+//			correlationFitModel.fit( pC.get( k ) );
+//			lf[ k ] = -correlationFitModel.apply( ONE_DIMENSION_ZERO_POSITION )[ 0 ];
+//		}
+//		
+//		while ( cursor.hasNext() ) {
+//			cursor.fwd();
+//			cursor.set( lf );
 //		}
 		
+	}
+	
+	
+	public <M extends Model< M > > void estimateFromMatrix( final RandomAccessibleInterval< DoubleType > correlations,
+			final double[] coordinates,
+			final double[] weights,
+			final double[] multipliers,
+			final AbstractLUTRealTransform transform,
+			final int range,
+			final M correlationFitModel,
+			final ListImg< double[] > localFits) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+		final int diameter = (int) correlations.dimension( 0 );
+		this.estimateFromMatrix( correlations, coordinates, weights, multipliers, transform, range, diameter, correlationFitModel, localFits );
 	}
 
 }
