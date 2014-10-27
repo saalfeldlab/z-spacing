@@ -117,7 +117,6 @@ public class LocalizedCorrelationFit {
 					if ( index < weights.length ) {
 						final float w1 = (float)weights[ index ]; // replace 1.0 by real weight, as soon as weight calculation has become clear
 						pointCollection.add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new float[]{ (float)( a1*mref*m1.get().get() ) } ), w1 ) );
-//						IJ.log( " ADDING point match for i,k=" + i + "," + k + " at section " + currentSection );
 					}
 				}
 				
@@ -127,7 +126,6 @@ public class LocalizedCorrelationFit {
 					if ( index > 0 ) {
 						final float w2 = (float)weights[ index ]; // replace 1.0 by real weight, as soon as weight calculation has become clear 
 						pointCollection.add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new float[]{ (float)( a2*mref*m2.get().get() ) } ), w2 ) );
-//						IJ.log( " ADDING point match for i,k=" + i + "," + (-k) + " at section " + currentSection );
 					}
 				}
 			}
@@ -140,8 +138,8 @@ public class LocalizedCorrelationFit {
 			final ArrayList<ArrayList<PointMatch>> pC = samples.get( s );
 			for ( int k = 1; k < range; ++k ) {
 				ra.fwd( 0 );
-//				IJ.log( " DOING SECTION " + s + " at k=" + k + " (size=" + pC.get( k ).size() + ") range=" + range );
 				correlationFitModel.fit( pC.get( k ) );
+				/* TODO inverts because LUTRealTransform can only increasing */
 				ra.get().set( -correlationFitModel.apply( ONE_DIMENSION_ZERO_POSITION )[ 0 ] );
 			}
 		}
@@ -170,22 +168,6 @@ public class LocalizedCorrelationFit {
 				arr[j] = composite.get( j ).get();
 			}
 		}
-		
-//		/* TODO inverts because LUTRealTransform can only increasing */
-//		final ListCursor<double[]> cursor = localFits.cursor();
-//		// no local fits momentarily, just use the same fit:
-//		final double[] lf = localFits.firstElement();
-//		lf[0] = -1;
-//		final ArrayList<ArrayList<PointMatch>> pC = pointCollections.get( 0 );
-//		for ( int k = 1; k < lf.length; ++k ) {
-//			correlationFitModel.fit( pC.get( k ) );
-//			lf[ k ] = -correlationFitModel.apply( ONE_DIMENSION_ZERO_POSITION )[ 0 ];
-//		}
-//		
-//		while ( cursor.hasNext() ) {
-//			cursor.fwd();
-//			cursor.set( lf );
-//		}
 		
 	}
 	
