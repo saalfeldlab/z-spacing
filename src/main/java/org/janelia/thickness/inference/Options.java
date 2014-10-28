@@ -7,6 +7,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.reflect.Field;
 
 /**
@@ -164,6 +165,16 @@ public class Options {
 	    }
 	    
 	    return sb.toString();
+	}
+	
+	
+	public void toFile( final String filename ) throws FileNotFoundException {
+		final String optionString = this.toString();
+		final PrintWriter outFile = new PrintWriter( filename );
+		outFile.println( optionString );
+		System.out.println( filename + " " + optionString );
+		outFile.close();
+		System.out.println( filename + " " + optionString );
 	}
 	
 	

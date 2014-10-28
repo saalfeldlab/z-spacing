@@ -3,6 +3,8 @@
  */
 package org.janelia.thickness.inference;
 
+import java.io.FileNotFoundException;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,6 +35,17 @@ public class OptionsTest {
 		
 		Assert.assertEquals( baseOptions, derivedOptions );
 		Assert.assertNotEquals( baseOptions, defaultOptions );
+		
+		final String fn = "options.test";
+		try {
+			System.out.println("OKK");
+			derivedOptions.toFile( fn );
+		} catch (final FileNotFoundException e) {
+			Assert.fail( "Was not able to write file " + fn );
+		}
+		final Options readOptions = Options.read( fn );
+		Assert.assertEquals( derivedOptions, readOptions);
+		Assert.assertNotEquals( readOptions, defaultOptions );
 	}
 
 }
