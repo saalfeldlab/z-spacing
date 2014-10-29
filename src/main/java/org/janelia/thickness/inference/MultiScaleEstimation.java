@@ -39,7 +39,8 @@ import org.janelia.correlations.CorrelationsObjectInterface.Meta;
 import org.janelia.correlations.FloatingPointIntegralCrossCorrelation;
 import org.janelia.correlations.ListCorrelationsObject;
 import org.janelia.models.ScaleModel;
-import org.janelia.thickness.inference.visitor.Visitor;
+import org.janelia.thickness.inference.visitor.multiscale.LazyMultiScaleVisitor;
+import org.janelia.thickness.inference.visitor.multiscale.MultiScaleVisitor;
 import org.janelia.thickness.mediator.OpinionMediatorModel;
 
 public class MultiScaleEstimation< T extends RealType< T > > {
@@ -54,12 +55,23 @@ public class MultiScaleEstimation< T extends RealType< T > > {
 		this.images = images;
 	}
 	
+	
 	public RandomAccessibleInterval< DoubleType > estimateZCoordinates(
             final double[] startingCoordinates,
             final int range,
             final long[][] radii,
             final int[][] steps,
-            final Visitor visitor,
+            final Options[] options) throws NotEnoughDataPointsException, IllDefinedDataPointsException, NotEnoughSpaceException {
+		return this.estimateZCoordinates(startingCoordinates, range, radii, steps, new LazyMultiScaleVisitor(), options);
+	}
+	
+	
+	public RandomAccessibleInterval< DoubleType > estimateZCoordinates(
+            final double[] startingCoordinates,
+            final int range,
+            final long[][] radii,
+            final int[][] steps,
+            final MultiScaleVisitor visitor,
             final Options[] options) throws NotEnoughDataPointsException, IllDefinedDataPointsException, NotEnoughSpaceException {
 		
 		assert radii.length == steps.length;
@@ -198,6 +210,9 @@ public class MultiScaleEstimation< T extends RealType< T > > {
 				final double[] arr = coordinateRa.get();
 				c.get().set( arr[ c.getIntPosition( 2 ) ] );
 			}
+			
+			visitor.act( i, coordinates, Views.interval( Views.raster( transformed ), coordinates), radii[i], steps[i], co, options[i] );
+			
 		}
 		
 		return coordinates;

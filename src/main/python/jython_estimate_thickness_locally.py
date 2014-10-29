@@ -55,6 +55,14 @@ from org.janelia.thickness.inference.visitor import LazyVisitor
 from org.janelia.thickness.inference.visitor import MultipliersTrackerVisitor
 from org.janelia.thickness.inference.visitor import PositionTrackerVisitor
 from org.janelia.thickness.inference.visitor import WeightsTrackerVisitor
+from org.janelia.thickness.inference.visitor.multiscale import CoordinateDifferenceMultiScaleVisitor
+from org.janelia.thickness.inference.visitor.multiscale import CoordinateDifferenceToGridMultiScaleVisitor
+from org.janelia.thickness.inference.visitor.multiscale import CoordinateMultiScaleVisitor
+from org.janelia.thickness.inference.visitor.multiscale import ListMultiScaleVisitor
+from org.janelia.thickness.inference.visitor.multiscale import OptionsMultiScaleVisitor
+from org.janelia.thickness.inference.visitor.multiscale import RadiiMultiScaleVisitor
+from org.janelia.thickness.inference.visitor.multiscale import RenderImageMultiScaleVisitor
+from org.janelia.thickness.inference.visitor.multiscale import StepsMultiScaleVisitor
 from org.janelia.thickness.lut import SingleDimensionLUTRealTransform
 from org.janelia.thickness.lut import SingleDimensionLUTGrid
 from org.janelia.thickness.mediator import OpinionMediatorModel
@@ -94,7 +102,7 @@ if __name__ == "__main__":
     print t0 - t0
 
     correlationRanges = range( 10, 1001, 222221 )
-    nImages = 62
+    nImages = 237
     # root = '/data/hanslovskyp/playground/pov-ray/constant_thickness=5/850-1149/scale/0.05/250x250+125+125'
     # root = '/data/hanslovskyp/export_from_nobackup/sub_stack_01/data/substacks/01/'
     # root = '/ssd/hanslovskyp/crack_from_john/substacks/03/'
@@ -106,12 +114,14 @@ if __name__ == "__main__":
     # root = '/data/hanslovskyp/playground/pov-ray/constant_thickness=5/850-1149/scale/0.05/250x250+125+125/'
     # root = '/ssd/hanslovskyp/tweak_CutOn4-15-2013_ImagedOn1-27-2014/substacks/01/'
     # root = '/ssd/hanslovskyp/tweak_CutOn4-15-2013_ImagedOn1-27-2014/substacks/01/distorted/02/'
-    root = '/data/hanslovskyp/jain-nobackup/234_data_downscaled/crop-150x150+75+175/'
     # root = '/data/hanslovskyp/crack_from_john/substacks/03/'
     # root = '/data/hanslovskyp/davi_toy_set/'
     # root = '/data/hanslovskyp/davi_toy_set/substacks/remove/01/'
     # root = '/data/hanslovskyp/davi_toy_set/substacks/replace_by_average/01/'
     # root = '/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/'
+    # root = '/data/hanslovskyp/jain-nobackup/234/'
+    root = '/data/hanslovskyp/jain-nobackup/234_data_downscaled/crop-150x150+75+175/'
+    # root = '/data/hanslovskyp/jain-nobackup/234/substacks/crop-150x150+75+175/'
     IJ.run("Image Sequence...", "open=%s/data number=%d sort" % ( root.rstrip(), nImages ) );
     # imgSource = FolderOpener().open( '%s/data' % root.rstrip('/') )
     imgSource = IJ.getImage()
@@ -124,6 +134,7 @@ if __name__ == "__main__":
     # stackMin, stackMax = ( None, 300 )
     # xyScale = 0.25 # fibsem (crack from john) ~> 0.25
     # xyScale = 0.1 # fibsem (crop from john) ~> 0.1? # boergens
+    nImages = stackSource.getSize()
     xyScale = 1.0
     doXYScale = False
     matrixSize = nImages
@@ -134,7 +145,7 @@ if __name__ == "__main__":
     options.shiftProportion = 0.6
     options.nIterations = 100
     options.nThreads = nThreads
-    options.windowRange = 100
+    options.windowRange = nImages
     options.shiftsSmoothingSigma = 1.5
     options.shiftsSmoothingRange = 0
     options.withRegularization = True
@@ -156,7 +167,7 @@ if __name__ == "__main__":
     options2.withReorder = False
     options2.multiplierGenerationRegularizerWeight = 0.1
     options2.multiplierEstimationIterations = 10
-    options2.coordinateUpdateRegularizerWeight = 0.01
+    options2.coordinateUpdateRegularizerWeight = 0.3
 
     if not doXYScale:
         xyScale = 1.0
@@ -225,10 +236,41 @@ if __name__ == "__main__":
 
         wrappedImage = ImagePlusAdapter.wrap( img )
         mse    = MultiScaleEstimation( wrappedImage )
-        radii  = [ [ width, height ], [ 75, 75 ], [ 30, 30 ] ]#, [ 15, 15 ], [ 15, 15 ] ]#, [ 15, 15 ] ]
-        steps  = [ [ width, height ], [ 75, 75 ], [ 30, 30 ] ]#, [ 15, 15 ], [ 3, 3 ] ]#, [ 1, 1 ] ]
-        opt    = [ options, options2, options2 ]#, options2, options2 ]#, options2 ]
-        result = mse.estimateZCoordinates( startingCoordinates, c, radii, steps, LazyVisitor(), opt )
+        radii  = [ [ width, height ], [ 75, 75 ], [ 30, 30 ], [ 15, 15 ], [ 15, 15 ] ]#, [ 15, 15 ] ]
+        steps  = [ [ width, height ], [ 75, 75 ], [ 30, 30 ], [ 15, 15 ], [ 3, 3 ] ]#, [ 1, 1 ] ]
+        opt    = [ options, options2, options2, options2, options2 ]#, options2 ]
+
+        visitor = ListMultiScaleVisitor( ArrayList() )
+
+        bp = home.rstrip('/') + '/transformed/%02d.tif'
+        imageVisitor = RenderImageMultiScaleVisitor( wrappedImage, bp )
+        visitor.addVisitor( imageVisitor )
+    
+        bp = home.rstrip('/') + '/coordinates/%02d.tif'
+        coordinateVisitor = CoordinateMultiScaleVisitor( bp )
+        visitor.addVisitor( coordinateVisitor )
+
+        bp = home.rstrip('/') + '/coordinateDiff/%02d.tif'
+        coordinateDiffVisitor = CoordinateDifferenceMultiScaleVisitor( bp )
+        visitor.addVisitor( coordinateDiffVisitor )
+
+        bp = home.rstrip('/') + '/coordinateDiffToGrid/%02d.tif'
+        coordinateDiffToGridVisitor = CoordinateDifferenceToGridMultiScaleVisitor( bp )
+        visitor.addVisitor( coordinateDiffToGridVisitor )
+
+        bp = home.rstrip('/') + '/opts/%02d'
+        optionsVisitor = OptionsMultiScaleVisitor( bp )
+        visitor.addVisitor( optionsVisitor )
+
+        bp = home.rstrip('/') + '/radii/%02d'
+        radiiVisitor = RadiiMultiScaleVisitor( bp )
+        visitor.addVisitor( radiiVisitor )
+
+        bp = home.rstrip('/') + '/steps/%02d'
+        stepsVisitor = StepsMultiScaleVisitor( bp )
+        visitor.addVisitor( stepsVisitor )
+
+        result = mse.estimateZCoordinates( startingCoordinates, c, radii, steps, visitor, opt )
         IJ.log("done")
 
         resultFileName = '%s/result.tif' % home.rstrip('/')
