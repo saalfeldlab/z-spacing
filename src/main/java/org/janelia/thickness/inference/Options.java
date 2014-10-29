@@ -172,9 +172,7 @@ public class Options {
 		final String optionString = this.toString();
 		final PrintWriter outFile = new PrintWriter( filename );
 		outFile.println( optionString );
-		System.out.println( filename + " " + optionString );
 		outFile.close();
-		System.out.println( filename + " " + optionString );
 	}
 	
 	

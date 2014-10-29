@@ -38,7 +38,6 @@ public class OptionsTest {
 		
 		final String fn = "options.test";
 		try {
-			System.out.println("OKK");
 			derivedOptions.toFile( fn );
 		} catch (final FileNotFoundException e) {
 			Assert.fail( "Was not able to write file " + fn );
