@@ -45,7 +45,7 @@ public class LocalizedCorrelationFit {
 			final double[] multipliers,
 			final AbstractLUTRealTransform transform,
 			final int range,
-			final int diameter,
+			final int windowRange,
 			final M correlationFitModel,
 			final ListImg< double[] > localFits) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 		
@@ -53,6 +53,7 @@ public class LocalizedCorrelationFit {
 		assert localFits.dimension( 1 )  == coordinates.length;
 		assert localFits.firstElement().length == range;
 		
+		final int diameter = Math.min( windowRange, multipliers.length );
 		final long numberOfSections = Math.round( coordinates.length * 1.0 / diameter );
 		final double correctedDiameter = coordinates.length * 1.0 / numberOfSections;
 		final double halfDiameter = correctedDiameter / 2.0;
