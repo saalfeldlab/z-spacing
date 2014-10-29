@@ -238,7 +238,13 @@ if __name__ == "__main__":
         mse    = MultiScaleEstimation( wrappedImage )
         radii  = [ [ width, height ], [ 75, 75 ], [ 30, 30 ], [ 15, 15 ], [ 15, 15 ] ]#, [ 15, 15 ] ]
         steps  = [ [ width, height ], [ 75, 75 ], [ 30, 30 ], [ 15, 15 ], [ 3, 3 ] ]#, [ 1, 1 ] ]
-        opt    = [ options, options2, options2, options2, options2 ]#, options2 ]
+        opt = [options]
+        ratio = 0.8
+        for idx in xrange(len(radii)-1):
+            tmpOptions = options2.clone()
+            tmpOptions.windowRange = int( opt[idx].windowRange * 0.8 )
+            opt.append( tmpOptions )
+        # opt    = [ options, options2, options2, options2, options2 ]#, options2 ]
 
         visitor = ListMultiScaleVisitor( ArrayList() )
 
