@@ -192,9 +192,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 					lf.set( initialFit );
 				}
 			} else 
-//				lcf.estimateFromMatrix(matrix, coordinateArr, weights, multipliers, transform, options.comparisonRange, options.windowRange, correlationFitModel, localFits ); // this has window range
-				lcf.estimateFromMatrix(matrix, coordinateArr, weights, multipliers, transform, options.comparisonRange, correlationFitModel, localFits );
-//			}	
+				lcf.estimateFromMatrix(matrix, coordinateArr, weights, multipliers, transform, options.comparisonRange, options.windowRange, correlationFitModel, localFits ); // this has window range
 			
 			final double inverseCoordinateUpdateRegularizerWeight = 1 - options.coordinateUpdateRegularizerWeight;
 			
