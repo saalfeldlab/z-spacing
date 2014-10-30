@@ -44,6 +44,10 @@
 			<groupId>net.imglib2</groupId>
 			<artifactId>imglib2-algorithms</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-math3</artifactId>
+		</dependency>
 	</dependencies>
 	<parent>
 		<groupId>sc.fiji</groupId>
