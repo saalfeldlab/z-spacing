@@ -2,15 +2,18 @@ package org.janelia.correlations.pyramid;
 
 import java.util.Random;
 
+import net.imglib2.Cursor;
 import net.imglib2.converter.RealDoubleConverter;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.view.Views;
 
 import org.janelia.correlations.AbstractIntegralCrossCorrelation.CrossCorrelationType;
-import org.janelia.correlations.CrossCorrelationFactory;
+import org.janelia.correlations.CorrelationsObjectInterface;
+import org.janelia.correlations.CorrelationsObjectInterface.Meta;
 import org.janelia.correlations.IntegralCrossCorrelationFactory;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,29 +43,20 @@ public class CorrelationsObjectPyramidTest {
 
 	@Test
 	public void test() {
-		final CrossCorrelationFactory<DoubleType, DoubleType, FloatType > ccFactory = new CrossCorrelationFactory<DoubleType, DoubleType, FloatType >( new FloatType() );
 		final IntegralCrossCorrelationFactory<DoubleType, DoubleType, FloatType, DoubleType> iiFactory = new IntegralCrossCorrelationFactory< DoubleType, DoubleType, FloatType, DoubleType >( CrossCorrelationType.SIGNED_SQUARED, new FloatType(), new DoubleType(), new RealDoubleConverter<DoubleType>(), new RealDoubleConverter<DoubleType>() );
 		
-//		final long t00 = System.currentTimeMillis();
-//		final CorrelationsObjectPyramidFactory<DoubleType> factory = new CorrelationsObjectPyramidFactory< DoubleType >( images, ccFactory );
-//		final CorrelationsObjectPyramid pyr = factory.create(range, new long[] {8, 8}, new int[] { 3 }, 0.5, true /*forceCoarsestLevel*/, true /*forceFinestLevel*/ );
-//		final long t01 = System.currentTimeMillis();
-		
-		final long t10 = System.currentTimeMillis();
 		final CorrelationsObjectPyramidFactory<DoubleType> factory2 = new CorrelationsObjectPyramidFactory< DoubleType >( images, iiFactory );
 		final CorrelationsObjectPyramid pyr2 = factory2.create(range, new long[] {8, 8}, new int[] { 3 }, 0.5, true /*forceCoarsestLevel*/, true /*forceFinestLevel*/ );
-		final long t11 = System.currentTimeMillis();
 		
-//		for ( int i = 0; i < pyr.getNumberOfLevels(); ++i ) {
-//			final CorrelationsObjectInterface l = pyr.get( i );
-//			final Set<SerializableConstantPair<Long, Long>> cs = l.getXYCoordinates();
-//			System.out.println( i );
-//			for ( final SerializableConstantPair<Long, Long> c : cs ) 
-//				System.out.print( c.getA() + " " + c.getB() + ", " );
-//			System.out.println();
-//		}
-//		
-//		System.out.println( ( t01 - t00 ) + " vs. " + ( t11 - t10 ) );
+		final int pos = depth / 2;
+		final int x = width / 2;
+		final int y = height / 2;
+		
+		final CorrelationsObjectInterface co = pyr2.get( pyr2.getMaxLevel() );
+		final Meta meta = co.getMetaMap().get( pos );
+		final Cursor<DoubleType> c = Views.flatIterable( co.extractDoubleCorrelationsAt(x, y, pos).getA() ).cursor();
+		
+		
 	}
 
 }
