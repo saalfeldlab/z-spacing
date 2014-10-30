@@ -46,14 +46,15 @@ public class CorrelationsObjectPyramidTest {
 		final IntegralCrossCorrelationFactory<DoubleType, DoubleType, FloatType, DoubleType> iiFactory = new IntegralCrossCorrelationFactory< DoubleType, DoubleType, FloatType, DoubleType >( CrossCorrelationType.SIGNED_SQUARED, new FloatType(), new DoubleType(), new RealDoubleConverter<DoubleType>(), new RealDoubleConverter<DoubleType>() );
 		
 		final CorrelationsObjectPyramidFactory<DoubleType> factory2 = new CorrelationsObjectPyramidFactory< DoubleType >( images, iiFactory );
-		final CorrelationsObjectPyramid pyr2 = factory2.create(range, new long[] {8, 8}, new int[] { 3 }, 0.5, true /*forceCoarsestLevel*/, true /*forceFinestLevel*/ );
+		final double scale = 0.5;
+		final CorrelationsObjectPyramid pyr2 = factory2.create(range, new long[] {8, 8}, new int[] { 3 }, scale, true /*forceCoarsestLevel*/, true /*forceFinestLevel*/ );
 		
 		final int pos = depth / 2;
-		final int x = width / 2;
-		final int y = height / 2;
+		final int x = 0;
+		final int y = 0;
 		
 		final CorrelationsObjectInterface co = pyr2.get( pyr2.getMaxLevel() );
-		final Meta meta = co.getMetaMap().get( pos );
+		final Meta meta = co.getMetaMap().get( (long)pos );
 		final Cursor<DoubleType> c = Views.flatIterable( co.extractDoubleCorrelationsAt(x, y, pos).getA() ).cursor();
 		
 		
