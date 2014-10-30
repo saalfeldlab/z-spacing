@@ -1,7 +1,5 @@
 package org.janelia.correlations.pyramid;
 
-import ij.IJ;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -54,7 +52,6 @@ public class CorrelationsObjectPyramidFactory< T extends RealType< T > > {
 		final ArrayList<PyramidInterface<FloatType>> correlationPyramids = new ArrayList< PyramidInterface< FloatType > >();
 		for ( final Entry<Long, RandomAccessibleInterval<FloatType>> entry : highResCorrelations.entrySet() ) {
 			// need to calculate sigma properly: Math.sqrt( scale )?
-			IJ.log( "creating pyramid at z=" + entry.getKey() );
 			final GaussianPyramid<FloatType> pyr = new GaussianPyramid<FloatType>( entry.getValue(), scale, Math.sqrt( scale ), new ArrayImgFactory<FloatType>());
 			correlationPyramids.add( pyr );
 		}
@@ -85,7 +82,6 @@ public class CorrelationsObjectPyramidFactory< T extends RealType< T > > {
 		
 		while ( l.hasNext() ) {
 			final int currentLevel = l.next();
-			IJ.log( "creating at level " + currentLevel );
 			final CorrelationsObject co = new CorrelationsObject();
 			
 			for ( int z = 0; z < correlationPyramids.size(); ++z ) {

@@ -1,7 +1,5 @@
 package org.janelia.correlations;
 
-import ij.IJ;
-
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.TreeMap;
@@ -88,8 +86,6 @@ public class CorrelationsObjectFactory < T extends RealType< T > > {
 		
 		for ( long zRef = 0; zRef <= stop; ++zRef ) {
 			
-			IJ.log( "zRef + " + zRef );
-			
 			final long lowerBound = Math.max( 0, zRef - range );
 			final long upperBound = Math.min( stop, zRef + range );
 			
@@ -120,7 +116,6 @@ public class CorrelationsObjectFactory < T extends RealType< T > > {
 							Views.hyperSlice( images, 2, zRef ), 
 							radius );
 					final long t1 = System.currentTimeMillis();
-					IJ.log ( "Calculation time: " + ( t1 - t0 ) );
 //					correlationsSource = new CrossCorrelation<U, U, FloatType >( 
 //							Views.hyperSlice( images, 2, z ), 
 //							Views.hyperSlice( images, 2, zRef ), 
@@ -142,13 +137,10 @@ public class CorrelationsObjectFactory < T extends RealType< T > > {
 				}
 				
 				final long t11 = System.currentTimeMillis();
-				IJ.log( "Writing time=" + (t11-t10) );
 				
 			}
 			
 			final long t01 = System.currentTimeMillis();
-			
-			IJ.log( "Time for z: " + ( t01 - t00 ) );
 			
 			metaMap.put( zRef, meta );
 			correlations.put( zRef, localCorrelations );
