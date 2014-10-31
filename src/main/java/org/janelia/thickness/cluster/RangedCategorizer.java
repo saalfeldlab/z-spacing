@@ -30,7 +30,7 @@ public class RangedCategorizer implements Categorizer {
 	}
 	
 	
-	protected void generateLabels( final int length ) {
+	public void generateLabels( final int length ) {
 		final int diameter = Math.min( windowRange, length );
 		this.numberOfSections = (int) Math.round( length * 1.0 / diameter );
 		final int correctedDiameter = (int) (length * 1.0 / numberOfSections);
