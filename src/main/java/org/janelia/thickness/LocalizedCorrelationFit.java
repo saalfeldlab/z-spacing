@@ -165,7 +165,6 @@ public class LocalizedCorrelationFit {
 			final int pos = c.getIntPosition( 0 );
 			final double[] localAssignments = assignments[pos];
 			for ( int m = 0; m < numberOfModels; ++m ) {
-				System.out.println( Views.flatIterable( Views.hyperSlice( fits, 0, m ) ).dimension( 0 ) + " vs " + arr.length );
 				final Cursor<DoubleType> cursor = Views.flatIterable( Views.hyperSlice( fits, 0, m ) ).cursor();
 				for ( int k = 0; cursor.hasNext(); ++k ) {
 					arr[k] += cursor.next().get() * localAssignments[m];
