@@ -9,6 +9,6 @@ package org.janelia.thickness.cluster;
  */
 public interface Categorizer {
 	
-	public int[] getLabels( final double[] coordinates );
+	public double[][] getLabels( final double[] coordinates );
 
 }

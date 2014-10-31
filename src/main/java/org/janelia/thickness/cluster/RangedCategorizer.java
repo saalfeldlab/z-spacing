@@ -10,7 +10,8 @@ package org.janelia.thickness.cluster;
 public class RangedCategorizer implements Categorizer {
 
 	private final int windowRange;
-	private int[] labels = null;
+	private double[][] labels = null;
+	private int numberOfSections = 1;
 	
 	/**
 	 * @param windowRange
@@ -21,7 +22,7 @@ public class RangedCategorizer implements Categorizer {
 	}
 
 	@Override
-	public int[] getLabels( final double[] coordinates ) {
+	public double[][] getLabels( final double[] coordinates ) {
 		
 		if ( this.labels == null || coordinates.length != this.labels.length )
 			this.generateLabels( coordinates.length );
@@ -31,11 +32,19 @@ public class RangedCategorizer implements Categorizer {
 	
 	protected void generateLabels( final int length ) {
 		final int diameter = Math.min( windowRange, length );
-		final long numberOfSections = Math.round( length * 1.0 / diameter );
+		this.numberOfSections = (int) Math.round( length * 1.0 / diameter );
 		final int correctedDiameter = (int) (length * 1.0 / numberOfSections);
-		final int[] labels = new int[ length ];
+		final double[][] labels = new double[ length ][ this.numberOfSections ];
 		for (int i = 0; i < labels.length; i++) {
-			labels[i] = i /correctedDiameter;
+			final double currentSectionDouble = i * 1.0 /correctedDiameter;
+			final int currentSectionFloor = (int) Math.floor( currentSectionDouble );
+			final int currentSectionCeil  = currentSectionFloor + 1;
+			
+			final double r1 = currentSectionCeil   - currentSectionDouble;
+			final double r2 = 1 - r1;
+			
+			labels[i][ currentSectionFloor ] = r1;
+			labels[i][ currentSectionCeil  ] = r2;
 		}
 		this.labels = labels;
 	}

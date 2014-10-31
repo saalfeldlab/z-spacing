@@ -45,14 +45,18 @@ public class ClusteringCategorizerTest {
 		final ClusteringCategorizer<Clusterer<ZPositionWrapper>> c1 = new ClusteringCategorizer<Clusterer<ZPositionWrapper>>( clustering1 );
 		final ClusteringCategorizer<Clusterer<ZPositionWrapper>> c2 = new ClusteringCategorizer<Clusterer<ZPositionWrapper>>( clustering2 );
 		
-		final int[] r1 = c1.getLabels( samples );
-		final int[] r2 = c2.getLabels( samples );
+		final double[][] r1 = c1.getLabels( samples );
+		final double[][] r2 = c2.getLabels( samples );
 		
 		Assert.assertEquals( r1.length, nSamples );
-		Assert.assertEquals( r2, null );
+		Assert.assertNull( r2 );
 		
-		for ( final int r : r1 )
-			Assert.assertTrue( r == 0 || r == 1 );
+		for (  final double[] r : r1 ) {
+			double sum = 0.0;
+			for ( final double p : r )
+				sum += p;
+			Assert.assertEquals( 1.0, sum, 0.0 );
+		}
 		
 	}
 

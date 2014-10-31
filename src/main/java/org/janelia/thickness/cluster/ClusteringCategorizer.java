@@ -28,16 +28,15 @@ public class ClusteringCategorizer< T extends Clusterer< ZPositionWrapper > > im
 	}
 
 
-	@SuppressWarnings("unchecked")
 	@Override
-	public int[] getLabels(final double[] coordinates) {
+	public double[][] getLabels(final double[] coordinates) {
 		final List<ZPositionWrapper> list = ZPositionWrapper.toList( coordinates );
 		final List<? extends Cluster<ZPositionWrapper>> result = this.clusterer.cluster( list );
 		if ( (result.get(0) instanceof CentroidCluster<?> ) ) {
 			final ArrayList<CentroidCluster<ZPositionWrapper>> centroids = new ArrayList< CentroidCluster< ZPositionWrapper > >();
 			for ( final Cluster<ZPositionWrapper> r : result )
 				centroids.add( (CentroidCluster< ZPositionWrapper >) r );
-			return Convenience.getAssignments( coordinates, centroids, clusterer.getDistanceMeasure() );
+			return Convenience.getSoftAssignments( coordinates, centroids, clusterer.getDistanceMeasure() );
 		} else
 			return null;
 		
