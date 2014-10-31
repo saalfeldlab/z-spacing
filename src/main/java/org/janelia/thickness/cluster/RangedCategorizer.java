@@ -43,8 +43,12 @@ public class RangedCategorizer implements Categorizer {
 			final double r1 = currentSectionCeil   - currentSectionDouble;
 			final double r2 = 1 - r1;
 			
-			labels[i][ currentSectionFloor ] = r1;
-			labels[i][ currentSectionCeil  ] = r2;
+			if ( currentSectionCeil == this.numberOfSections )
+				labels[i][ currentSectionFloor ] = 1.0;
+			else {
+				labels[i][ currentSectionFloor ] = r1;
+				labels[i][ currentSectionCeil  ] = r2;
+			}
 		}
 		this.labels = labels;
 	}
