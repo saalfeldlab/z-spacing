@@ -36,6 +36,8 @@ import org.janelia.correlations.CorrelationsObjectInterface.Meta;
 import org.janelia.thickness.EstimateQualityOfSlice;
 import org.janelia.thickness.LocalizedCorrelationFit;
 import org.janelia.thickness.ShiftCoordinates;
+import org.janelia.thickness.cluster.Categorizer;
+import org.janelia.thickness.cluster.RangedCategorizer;
 import org.janelia.thickness.inference.visitor.Visitor;
 import org.janelia.thickness.lut.AbstractLUTRealTransform;
 import org.janelia.thickness.lut.LUTRealTransform;
@@ -98,6 +100,16 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                         }},
                         options );
         }
+        
+        public ArrayImg< DoubleType, DoubleArray > estimateZCoordinates(
+                final long x,
+                final long y,
+                final double[] startingCoordinates,
+                final Visitor visitor,
+                final Options options) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+        	final RangedCategorizer categorizer = new RangedCategorizer( startingCoordinates.length );
+        	return estimateZCoordinates(x, y, startingCoordinates, visitor, categorizer, options);
+        }
 
 
         public ArrayImg< DoubleType, DoubleArray > estimateZCoordinates(
@@ -105,6 +117,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                 final long y,
                 final double[] startingCoordinates,
                 final Visitor visitor,
+                final Categorizer categorizer,
                 final Options options) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 
                 final ArrayImg<DoubleType, DoubleArray> matrix = this.correlationsToMatrix( x, y );
@@ -156,7 +169,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 
                 for ( int n = 0; n < options.nIterations; ++n ) {
                         
-                        this.iterationStep(matrix, weightArr, transform, lut, coordinateArr, coordinates, mediatedShifts, options, visitor, n, lcf, localFits, multipliers, orderedIndices, originalCoordinates );
+                        this.iterationStep(matrix, weightArr, transform, lut, coordinateArr, coordinates, mediatedShifts, options, visitor, n, lcf, localFits, multipliers, orderedIndices, originalCoordinates, categorizer );
                         IJ.showProgress( n, options.nIterations );
 //                        IJ.log( Arrays.toString( orderedIndices ) );
                 }
@@ -177,7 +190,8 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                 final ListImg< double[] > localFits,
                 final double[] multipliers,
                 final int[] orderedIndices,
-                final double[] originalCoordinates
+                final double[] originalCoordinates,
+                final Categorizer categorizer
                 ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 			final double[] vars = new double[ options.comparisonRange ];
 			
@@ -191,8 +205,8 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 					lf.fwd();
 					lf.set( initialFit );
 				}
-			} else 
-				lcf.estimateFromMatrix(matrix, coordinateArr, weights, multipliers, transform, options.comparisonRange, options.windowRange, correlationFitModel, localFits ); // this has window range
+			} else
+				lcf.estimateFromMatrix( matrix, coordinateArr, weights, multipliers, transform, options.comparisonRange, correlationFitModel, categorizer, localFits ); // this has window range
 			
 			final double inverseCoordinateUpdateRegularizerWeight = 1 - options.coordinateUpdateRegularizerWeight;
 			
