@@ -39,6 +39,9 @@ import org.janelia.correlations.CorrelationsObjectInterface.Meta;
 import org.janelia.correlations.FloatingPointIntegralCrossCorrelation;
 import org.janelia.correlations.ListCorrelationsObject;
 import org.janelia.models.ScaleModel;
+import org.janelia.thickness.cluster.Categorizer;
+import org.janelia.thickness.cluster.RangedCategorizer;
+import org.janelia.thickness.inference.visitor.LazyVisitor;
 import org.janelia.thickness.inference.visitor.multiscale.LazyMultiScaleVisitor;
 import org.janelia.thickness.inference.visitor.multiscale.MultiScaleVisitor;
 import org.janelia.thickness.mediator.OpinionMediatorModel;
@@ -65,6 +68,18 @@ public class MultiScaleEstimation< T extends RealType< T > > {
 		return this.estimateZCoordinates(startingCoordinates, range, radii, steps, new LazyMultiScaleVisitor(), options);
 	}
 	
+	public RandomAccessibleInterval< DoubleType > estimateZCoordinates(
+            final double[] startingCoordinates,
+            final int range,
+            final long[][] radii,
+            final int[][] steps,
+            final MultiScaleVisitor visitor,
+            final Options[] options) throws NotEnoughDataPointsException, IllDefinedDataPointsException, NotEnoughSpaceException {
+		final RangedCategorizer categorizer = new RangedCategorizer( startingCoordinates.length );
+		categorizer.generateLabels( startingCoordinates.length );
+		return estimateZCoordinates(startingCoordinates, range, radii, steps, visitor, categorizer, options);
+	}
+	
 	
 	public RandomAccessibleInterval< DoubleType > estimateZCoordinates(
             final double[] startingCoordinates,
@@ -72,6 +87,7 @@ public class MultiScaleEstimation< T extends RealType< T > > {
             final long[][] radii,
             final int[][] steps,
             final MultiScaleVisitor visitor,
+            final Categorizer categorizer,
             final Options[] options) throws NotEnoughDataPointsException, IllDefinedDataPointsException, NotEnoughSpaceException {
 		
 		assert radii.length == steps.length;
@@ -176,7 +192,7 @@ public class MultiScaleEstimation< T extends RealType< T > > {
 								new NLinearInterpolatorFactory<DoubleType>(), 
 								new ScaleModel(), 
 								new OpinionMediatorModel<TranslationModel1D>( new TranslationModel1D() ) );
-						inference.estimateZCoordinates( x, y, arr, currentOptions );
+						inference.estimateZCoordinates( x, y, arr, new LazyVisitor(), categorizer, currentOptions );
 						return null;
 					}
 				});
