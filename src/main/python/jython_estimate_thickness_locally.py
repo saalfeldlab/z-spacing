@@ -30,6 +30,8 @@ from net.imglib2.realtransform import RealViews
 from net.imglib2.img.imageplus import ImagePlusImgs
 from net.imglib2.type.numeric.real import DoubleType
 
+from org.apache.commons.math3.ml.clustering import KMeansPlusPlusClusterer
+
 from org.janelia.models import ScaleModel
 from org.janelia.utility import ConstantPair
 from org.janelia.utility import CopyFromIntervalToInterval
@@ -42,6 +44,8 @@ from org.janelia.correlations import SparseCorrelationsObject
 from org.janelia.correlations import SparseCorrelationsObjectFactory
 from org.janelia.correlations.pyramid import CorrelationsObjectPyramidFactory
 from org.janelia.correlations.pyramid import InferFromCorrelationsObjectPyramid
+from org.janelia.thickness.cluster import ClusteringCategorizer
+from org.janelia.thickness.cluster import RangedCategorizer
 from org.janelia.thickness.inference import InferFromCorrelationsObject
 from org.janelia.thickness.inference import Options
 from org.janelia.thickness.inference import MultiScaleEstimation
@@ -276,7 +280,8 @@ if __name__ == "__main__":
         stepsVisitor = StepsMultiScaleVisitor( bp )
         visitor.addVisitor( stepsVisitor )
 
-        result = mse.estimateZCoordinates( startingCoordinates, c, radii, steps, visitor, opt )
+        categorizer = ClusteringCategorizer( KMeansPlusPlusClusterer( 5 ) )
+        result = mse.estimateZCoordinates( startingCoordinates, c, radii, steps, visitor, categorizer, opt )
         IJ.log("done")
 
         resultFileName = '%s/result.tif' % home.rstrip('/')
