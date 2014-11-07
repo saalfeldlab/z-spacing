@@ -46,6 +46,8 @@ from org.janelia.correlations.pyramid import CorrelationsObjectPyramidFactory
 from org.janelia.correlations.pyramid import InferFromCorrelationsObjectPyramid
 from org.janelia.thickness.cluster import ClusteringCategorizer
 from org.janelia.thickness.cluster import RangedCategorizer
+from org.janelia.thickness.cluster import ChooseBestClusteringCategorizer
+from org.janelia.thickness.cluster.evaluation import CalinskiHarabasz
 from org.janelia.thickness.inference import InferFromCorrelationsObject
 from org.janelia.thickness.inference import Options
 from org.janelia.thickness.inference import MultiScaleEstimation
@@ -280,7 +282,15 @@ if __name__ == "__main__":
         stepsVisitor = StepsMultiScaleVisitor( bp )
         visitor.addVisitor( stepsVisitor )
 
-        categorizer = ClusteringCategorizer( KMeansPlusPlusClusterer( 5 ) )
+        categorizer = ClusteringCategorizer( KMeansPlusPlusClusterer( 5, # number of clusters
+        100 # max iterations, if unset, it will be -1 (unlimited)
+        ) )
+
+        cs = ArrayList()
+        for i in xrange( 1, 7 ):
+            cs.add( KMeansPlusPlusClusterer( i, 100 ) )
+        categorizer = ChooseBestClusteringCategorizer( cs, CalinskiHarabasz() )
+        
         result = mse.estimateZCoordinates( startingCoordinates, c, radii, steps, visitor, categorizer, opt )
         IJ.log("done")
 
