@@ -196,18 +196,8 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
         	
        
 			
-			if ( n < 0 ) {
-				final double[] initialFit = localFits.firstElement().clone();
-				for ( int i = 0; i < initialFit.length; ++i ) {
-					initialFit[ i ] = 1 - i * 1.0 / initialFit.length;
-				}
-				final ListCursor<double[]> lf = localFits.cursor();
-				while ( lf.hasNext() ) {
-					lf.fwd();
-					lf.set( initialFit );
-				}
-			} else
-				lcf.estimateFromMatrix( matrix, coordinateArr, weights, multipliers, transform, options.comparisonRange, correlationFitModel, categorizer, localFits ); // this has window range
+
+			lcf.estimateFromMatrix( matrix, coordinateArr, weights, multipliers, transform, options.comparisonRange, correlationFitModel, categorizer, localFits ); // this has window range
 			
 			final double inverseCoordinateUpdateRegularizerWeight = 1 - options.coordinateUpdateRegularizerWeight;
 			
