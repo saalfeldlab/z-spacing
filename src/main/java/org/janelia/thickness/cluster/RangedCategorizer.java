@@ -3,6 +3,9 @@
  */
 package org.janelia.thickness.cluster;
 
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.type.numeric.RealType;
+
 /**
  * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>
  *
@@ -51,6 +54,14 @@ public class RangedCategorizer implements Categorizer {
 			}
 		}
 		this.labels = labels;
+	}
+
+	@Override
+	public <T extends RealType<T>> double[][] getLabels(
+			final RandomAccessibleInterval<T> strip) {
+		if ( this.labels == null || strip.dimension( 1 ) != this.labels.length )
+			this.generateLabels( (int)strip.dimension( 1 ) );
+		return this.labels;
 	}
 
 }

@@ -6,6 +6,9 @@ package org.janelia.thickness.cluster;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.type.numeric.RealType;
+
 import org.apache.commons.math3.ml.clustering.CentroidCluster;
 import org.apache.commons.math3.ml.clustering.Cluster;
 import org.apache.commons.math3.ml.clustering.Clusterer;
@@ -46,6 +49,14 @@ public class ClusteringCategorizer< T extends Clusterer< ZPositionWrapper > > im
 			return null;
 		
 		
+	}
+
+
+	@Override
+	public <U extends RealType<U>> double[][] getLabels(
+			final RandomAccessibleInterval<U> strip) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

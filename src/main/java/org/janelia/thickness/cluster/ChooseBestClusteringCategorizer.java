@@ -8,6 +8,9 @@ import ij.IJ;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.type.numeric.RealType;
+
 import org.apache.commons.math3.ml.clustering.CentroidCluster;
 import org.apache.commons.math3.ml.clustering.Cluster;
 import org.apache.commons.math3.ml.clustering.Clusterer;
@@ -78,6 +81,14 @@ public class ChooseBestClusteringCategorizer implements Categorizer {
 		IJ.log( "Chose number of clusters == " + softLabels[0].length );
 		
 		return softLabels;
+	}
+
+
+	@Override
+	public <T extends RealType<T>> double[][] getLabels(
+			final RandomAccessibleInterval<T> strip) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }
