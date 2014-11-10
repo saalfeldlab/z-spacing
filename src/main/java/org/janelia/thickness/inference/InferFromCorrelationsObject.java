@@ -193,7 +193,8 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                 final double[] originalCoordinates,
                 final Categorizer categorizer
                 ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
-			final double[] vars = new double[ options.comparisonRange ];
+        	
+       
 			
 			if ( n < 0 ) {
 				final double[] initialFit = localFits.firstElement().clone();
