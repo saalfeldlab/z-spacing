@@ -2,19 +2,20 @@ package org.janelia.utility;
 
 import java.io.Serializable;
 
-import net.imglib2.Pair;
+import net.imglib2.util.Pair;
+
 
 public class ConstantPair<A, B> implements Pair<A, B>, Comparable< ConstantPair< A, B> >, Serializable {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = -7963474267757313817L;
 	private final A entryA;
 	private final B entryB;
-	
-	
-	
+
+
+
 	public ConstantPair(final A entryA, final B entryB) {
 		super();
 		this.entryA = entryA;
@@ -63,22 +64,22 @@ public class ConstantPair<A, B> implements Pair<A, B>, Comparable< ConstantPair<
 	@Override
 	@SuppressWarnings("unchecked")
 	public int compareTo(final ConstantPair<A, B> o) {
-		if ( !( entryA instanceof Comparable<?> ) || 
+		if ( !( entryA instanceof Comparable<?> ) ||
 		     !( entryB instanceof Comparable<?> )) {
 				return 0;
 			}
 			if ( ( (Comparable<A>) entryA ).compareTo( o.entryA ) == 0 ) {
 				return ( (Comparable<B>) entryB ).compareTo( o.entryB );
-			} else { 
-				return ( (Comparable<A>) entryA ).compareTo( o.entryA ); 
+			} else {
+				return ( (Comparable<A>) entryA ).compareTo( o.entryA );
 			}
 	}
-	
-	
+
+
 	public static < U , B > ConstantPair< U, B > toPair( final U u, final B b ) {
 		return new ConstantPair<U, B >( u, b );
 	}
-	
-	
+
+
 
 }
