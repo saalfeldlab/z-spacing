@@ -1,28 +1,73 @@
+import fiji.util.gui.GenericDialogPlus;
+
+import ij.IJ;
+import ij.*;
+
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.PrintWriter;
 import java.util.TreeMap;
 import java.util.Random;
 import java.util.Collections;
 import java.util.ArrayList;
 
-import ij.IJ;
-import ij.*;
 
 al = new ArrayList();
-
-rng = new Random( 100 );
-
-for (int i = 0; i < 63; ++i) 
-{ 
-    al.add( i );
-}
-
-Collections.shuffle(al);
-
 stack = IJ.getImage().getStack();
-newStack = new ImageStack(stack.getWidth(), stack.getHeight());
 
-for ( int i = 0; i < al.size(); ++i )
-{
-  newStack.addSlice(stack.getProcessor(al.get(i).intValue() + 1));
+seed = 100;
+
+dialog = new GenericDialogPlus( "Random Seed" );
+dialog.addMessage( "Set random seed for shuffling the section order." );
+dialog.addNumericField( "seed : ", seed, 0 );
+dialog.showDialog();
+if ( ! dialog.wasCanceled() ) {
+                                     
+  rng = new Random( seed );
+  size = stack.getSize();
+                                     
+  for (int i = 0; i < size; ++i)       
+  {                                  
+      al.add( i );                   
+  }                                  
+                                     
+  Collections.shuffle( al, rng );           
+  
+  newStack = new ImageStack(stack.getWidth(), stack.getHeight());
+                                     
+  for ( int i = 0; i < al.size(); ++i )
+  {                                  
+    newStack.addSlice(stack.getProcessor(al.get(i).intValue() + 1));
+  }
+  new ImagePlus("shuffled", newStack).show();
+
+  dialog = new GenericDialogPlus( "Save results" );
+  dialog.addMessage( "Specify path to file for storing mapping from original (source) to shuffled stack (target). Do not write results, if empty string." );
+  dialog.addFileField( "result path : ", "" );
+  dialog.showDialog();
+
+  resultPath = dialog.getNextString();
+
+  stringResult = "" + al.get( 0 );
+  for ( int i = 1; i < al.size(); ++i ) {
+    stringResult += "," + al.get( i );
+  }
+
+  IJ.log( "Section mapping: " + stringResult );
+
+  if ( ( ! dialog.wasCanceled() ) && ( ! resultPath.equals( "" ) ) ) {
+     result = "";
+     for ( int i = 0; i < al.size(); ++i ) {
+       result += i + "," + al.get( i ) + "\n"; // String.format( "%d,%d\n", i, al.get( i ) );
+     }
+     file   = new File( resultPath );
+     fs     = new FileOutputStream( file );
+     buffer = new BufferedOutputStream( fs );
+     output = new PrintWriter( buffer );
+     output.print( result );
+     output.close();
+     buffer.close();
+     fs.close();
+  }
+
 }
-
-new ImagePlus("", newStack).show();
