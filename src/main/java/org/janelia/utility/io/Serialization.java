@@ -1,4 +1,4 @@
-package org.janelia.utility;
+package org.janelia.utility.io;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;

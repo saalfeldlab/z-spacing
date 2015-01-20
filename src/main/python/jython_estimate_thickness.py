@@ -33,7 +33,7 @@ from org.janelia.models import ScaleModel
 from org.janelia.utility import ConstantPair
 from org.janelia.utility import CopyFromIntervalToInterval
 from org.janelia.utility import SerializableConstantPair
-from org.janelia.utility import Serialization
+from org.janelia.utility.io import Serialization
 from org.janelia.utility.sampler import SparseXYSampler
 from org.janelia.correlations import CorrelationsObject
 from org.janelia.correlations import CorrelationsObjectFactory
