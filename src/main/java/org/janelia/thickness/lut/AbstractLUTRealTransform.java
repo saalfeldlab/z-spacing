@@ -36,7 +36,8 @@ abstract public class AbstractLUTRealTransform implements InvertibleRealTransfor
 	protected double applyChecked( final double x )
 	{
 		if ( x < 0 ) return -Double.MAX_VALUE;
-		else if ( x >= lutMaxIndex ) return Double.MAX_VALUE;
+		else if ( x > lutMaxIndex ) return Double.MAX_VALUE;
+		else if ( x == lutMaxIndex ) return lut[lutMaxIndex];
 		else return apply( x );
 	}
 	
