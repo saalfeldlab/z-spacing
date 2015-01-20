@@ -58,5 +58,12 @@ public class CrispClusteringCategorizer< T extends Clusterer< ZPositionWrapper >
 		// TODO Auto-generated method stub
 		return null;
 	}
+	
+	
+	@Override
+	public void setState(final int n) {
+		// do nothing
+	}
+
 
 }

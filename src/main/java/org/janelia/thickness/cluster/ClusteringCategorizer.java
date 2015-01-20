@@ -58,5 +58,12 @@ public class ClusteringCategorizer< T extends Clusterer< ZPositionWrapper > > im
 		// TODO Auto-generated method stub
 		return null;
 	}
+	
+	
+	@Override
+	public void setState(final int n) {
+		// do nothing
+	}
+
 
 }

@@ -63,5 +63,12 @@ public class RangedCategorizer implements Categorizer {
 			this.generateLabels( (int)strip.dimension( 1 ) );
 		return this.labels;
 	}
+	
+	
+	@Override
+	public void setState(final int n) {
+		// do nothing
+	}
+
 
 }

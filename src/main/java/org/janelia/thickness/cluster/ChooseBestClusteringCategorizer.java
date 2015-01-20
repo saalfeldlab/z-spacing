@@ -91,4 +91,10 @@ public class ChooseBestClusteringCategorizer implements Categorizer {
 		return null;
 	}
 
+
+	@Override
+	public void setState(final int n) {
+		// do nothing
+	}
+
 }
