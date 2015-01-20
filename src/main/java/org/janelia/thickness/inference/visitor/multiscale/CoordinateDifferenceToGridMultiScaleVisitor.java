@@ -11,7 +11,7 @@ import net.imglib2.view.Views;
 
 import org.janelia.correlations.CorrelationsObjectInterface;
 import org.janelia.thickness.inference.Options;
-import org.janelia.utility.IO;
+import org.janelia.utility.io.IO;
 
 public class CoordinateDifferenceToGridMultiScaleVisitor implements
 		MultiScaleVisitor {

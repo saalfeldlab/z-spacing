@@ -17,7 +17,7 @@ import net.imglib2.view.Views;
 import org.janelia.correlations.CorrelationsObjectInterface;
 import org.janelia.thickness.inference.Options;
 import org.janelia.thickness.lut.SingleDimensionLUTGrid;
-import org.janelia.utility.IO;
+import org.janelia.utility.io.IO;
 
 /**
  * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>

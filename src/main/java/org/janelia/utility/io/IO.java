@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.janelia.utility;
+package org.janelia.utility.io;
 
 import ij.IJ;
 import ij.ImagePlus;

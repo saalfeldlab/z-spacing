@@ -8,7 +8,7 @@ import net.imglib2.type.numeric.real.DoubleType;
 
 import org.janelia.correlations.CorrelationsObjectInterface;
 import org.janelia.thickness.inference.Options;
-import org.janelia.utility.IO;
+import org.janelia.utility.io.IO;
 
 public class RadiiMultiScaleVisitor implements MultiScaleVisitor {
 	
