@@ -1,4 +1,4 @@
-package org.janelia.utility;
+package org.janelia.utility.arrays;
 
 import java.util.Arrays;
 import java.util.TreeMap;
