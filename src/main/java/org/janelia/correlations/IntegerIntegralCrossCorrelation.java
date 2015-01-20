@@ -18,7 +18,7 @@ import net.imglib2.type.numeric.integer.LongType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
-import org.janelia.utility.RealLongConverter;
+import org.janelia.utility.converter.RealLongConverter;
 
 
 

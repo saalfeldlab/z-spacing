@@ -22,8 +22,8 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
-import org.janelia.utility.ConstantPair;
-import org.janelia.utility.SerializableConstantPair;
+import org.janelia.utility.tuple.ConstantPair;
+import org.janelia.utility.tuple.SerializableConstantPair;
 
 /**
  * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>

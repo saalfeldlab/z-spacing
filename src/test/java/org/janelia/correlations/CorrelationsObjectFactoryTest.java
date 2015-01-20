@@ -16,10 +16,10 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
 import org.janelia.correlations.CorrelationsObjectInterface.Meta;
-import org.janelia.utility.ConstantPair;
-import org.janelia.utility.SerializableConstantPair;
 import org.janelia.utility.sampler.SparseXYSampler;
 import org.janelia.utility.sampler.XYSampler;
+import org.janelia.utility.tuple.ConstantPair;
+import org.janelia.utility.tuple.SerializableConstantPair;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;

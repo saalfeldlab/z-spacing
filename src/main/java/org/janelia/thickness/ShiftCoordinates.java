@@ -12,7 +12,7 @@ import net.imglib2.img.list.ListImg;
 import net.imglib2.type.numeric.real.DoubleType;
 
 import org.janelia.thickness.lut.LUTRealTransform;
-import org.janelia.utility.ConstantPair;
+import org.janelia.utility.tuple.ConstantPair;
 
 public class ShiftCoordinates {
 	

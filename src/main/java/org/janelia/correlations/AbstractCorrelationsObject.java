@@ -19,7 +19,7 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.Views;
 
-import org.janelia.utility.SerializableConstantPair;
+import org.janelia.utility.tuple.SerializableConstantPair;
 
 public abstract class AbstractCorrelationsObject implements
 		CorrelationsObjectInterface {

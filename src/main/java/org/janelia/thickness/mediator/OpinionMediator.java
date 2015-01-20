@@ -7,7 +7,7 @@ import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.type.numeric.real.DoubleType;
 
-import org.janelia.utility.ConstantPair;
+import org.janelia.utility.tuple.ConstantPair;
 
 public interface OpinionMediator {
 	

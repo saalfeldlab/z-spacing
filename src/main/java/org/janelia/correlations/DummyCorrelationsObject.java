@@ -12,9 +12,9 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 
-import org.janelia.utility.ConstantPair;
-import org.janelia.utility.ConstantTriple;
-import org.janelia.utility.SerializableConstantPair;
+import org.janelia.utility.tuple.ConstantPair;
+import org.janelia.utility.tuple.ConstantTriple;
+import org.janelia.utility.tuple.SerializableConstantPair;
 
 /**
  * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>

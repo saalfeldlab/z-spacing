@@ -1,4 +1,4 @@
-package org.janelia.utility;
+package org.janelia.utility.tuple;
 
 public class ConstantTriple<A, B, C> implements Comparable< ConstantTriple< A, B, C> > {
 	private final A entryA;

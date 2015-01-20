@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.janelia.utility;
+package org.janelia.utility.tuple;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;

@@ -43,8 +43,8 @@ import org.janelia.thickness.lut.LUTRealTransform;
 import org.janelia.thickness.lut.SingleDimensionLUTRealTransformField;
 import org.janelia.thickness.mediator.OpinionMediator;
 import org.janelia.utility.ArraySortedIndices;
-import org.janelia.utility.ConstantPair;
 import org.janelia.utility.realtransform.MatrixToStrip;
+import org.janelia.utility.tuple.ConstantPair;
 
 public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L> > {
 

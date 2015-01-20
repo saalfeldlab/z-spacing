@@ -12,9 +12,9 @@ import net.imglib2.view.Views;
 
 import org.janelia.correlations.CorrelationsObjectInterface.Meta;
 import org.janelia.correlations.CrossCorrelation.CrossCorrelationRandomAccess;
-import org.janelia.utility.SerializableConstantPair;
 import org.janelia.utility.sampler.DenseXYSampler;
 import org.janelia.utility.sampler.XYSampler;
+import org.janelia.utility.tuple.SerializableConstantPair;
 
 /**
  * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>
