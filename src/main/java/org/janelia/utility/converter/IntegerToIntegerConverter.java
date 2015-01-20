@@ -1,4 +1,4 @@
-package org.janelia.utility;
+package org.janelia.utility.converter;
 
 import net.imglib2.converter.Converter;
 import net.imglib2.type.numeric.IntegerType;
