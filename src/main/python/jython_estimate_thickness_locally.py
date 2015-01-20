@@ -44,9 +44,11 @@ from org.janelia.correlations import SparseCorrelationsObject
 from org.janelia.correlations import SparseCorrelationsObjectFactory
 from org.janelia.correlations.pyramid import CorrelationsObjectPyramidFactory
 from org.janelia.correlations.pyramid import InferFromCorrelationsObjectPyramid
+from org.janelia.thickness.cluster import CategorizerWithState
 from org.janelia.thickness.cluster import ClusteringCategorizer
 from org.janelia.thickness.cluster import RangedCategorizer
 from org.janelia.thickness.cluster import ChooseBestClusteringCategorizer
+from org.janelia.thickness.cluster import FilterRansac
 from org.janelia.thickness.cluster.evaluation import CalinskiHarabasz
 from org.janelia.thickness.inference import InferFromCorrelationsObject
 from org.janelia.thickness.inference import Options
@@ -108,7 +110,7 @@ if __name__ == "__main__":
     print t0 - t0
 
     correlationRanges = range( 10, 1001, 222221 )
-    nImages = 237
+    nImages = 600
     # root = '/data/hanslovskyp/playground/pov-ray/constant_thickness=5/850-1149/scale/0.05/250x250+125+125'
     # root = '/data/hanslovskyp/export_from_nobackup/sub_stack_01/data/substacks/01/'
     # root = '/ssd/hanslovskyp/crack_from_john/substacks/03/'
@@ -126,8 +128,11 @@ if __name__ == "__main__":
     # root = '/data/hanslovskyp/davi_toy_set/substacks/replace_by_average/01/'
     # root = '/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/'
     # root = '/data/hanslovskyp/jain-nobackup/234/'
-    root = '/data/hanslovskyp/jain-nobackup/234_data_downscaled/crop-150x150+75+175/'
+    # root = '/data/hanslovskyp/jain-nobackup/234_data_downscaled/crop-150x150+75+175/'
     # root = '/data/hanslovskyp/jain-nobackup/234/substacks/crop-150x150+75+175/'
+    # root = '/data/hanslovskyp/forPhilipp/substacks/04/'
+    # root = '/data/hanslovskyp/forPhilipp/substacks/05/'
+    root = '/data/hanslovskyp/jain-nobackup/234_data_downscaled/crop-100x100+100+200/'
     IJ.run("Image Sequence...", "open=%s/data number=%d sort" % ( root.rstrip(), nImages ) );
     # imgSource = FolderOpener().open( '%s/data' % root.rstrip('/') )
     imgSource = IJ.getImage()
@@ -137,6 +142,7 @@ if __name__ == "__main__":
     stackSource = imgSource.getStack()
     nThreads = 50
     scale = 1.0
+    scaleZBy = 1.0 # 5.0
     # stackMin, stackMax = ( None, 300 )
     # xyScale = 0.25 # fibsem (crack from john) ~> 0.25
     # xyScale = 0.1 # fibsem (crop from john) ~> 0.1? # boergens
@@ -173,7 +179,7 @@ if __name__ == "__main__":
     options2.withReorder = False
     options2.multiplierGenerationRegularizerWeight = 0.1
     options2.multiplierEstimationIterations = 10
-    options2.coordinateUpdateRegularizerWeight = 0.3
+    options2.coordinateUpdateRegularizerWeight = 0.1
 
     if not doXYScale:
         xyScale = 1.0
@@ -242,13 +248,14 @@ if __name__ == "__main__":
 
         wrappedImage = ImagePlusAdapter.wrap( img )
         mse    = MultiScaleEstimation( wrappedImage )
-        radii  = [ [ width, height ], [ 75, 75 ], [ 30, 30 ], [ 15, 15 ], [ 15, 15 ] ]#, [ 15, 15 ] ]
-        steps  = [ [ width, height ], [ 75, 75 ], [ 30, 30 ], [ 15, 15 ], [ 3, 3 ] ]#, [ 1, 1 ] ]
+        radii  = [ [ width, height ], [ 50, 50 ], [ 20, 20 ], [ 7, 7 ], [ 7, 7 ] ] #,[ 75, 75 ] ]#, [ 30, 30 ], [ 15, 15 ], [ 7, 7 ] ]#, [ 15, 15 ] ]
+        steps  = [ [ width, height ], [ 50, 50 ], [ 20, 20 ], [ 7, 7 ], [ 1, 1 ] ] #,[ 75, 75 ] ]#, [ 30, 30 ], [ 15, 15 ], [ 3, 3 ] ]#, [ 1, 1 ] ]
+        ranges = [ int( scaleZBy*max(x) ) for x in radii ]
         opt = [options]
-        ratio = 0.8
+        ratio = 1.0
         for idx in xrange(len(radii)-1):
             tmpOptions = options2.clone()
-            tmpOptions.windowRange = int( opt[idx].windowRange * 0.8 )
+            tmpOptions.windowRange = int( opt[idx].windowRange * ratio )
             opt.append( tmpOptions )
         # opt    = [ options, options2, options2, options2, options2 ]#, options2 ]
 
@@ -285,11 +292,15 @@ if __name__ == "__main__":
         categorizer = ClusteringCategorizer( KMeansPlusPlusClusterer( 5, # number of clusters
         100 # max iterations, if unset, it will be -1 (unlimited)
         ) )
-
         cs = ArrayList()
         for i in xrange( 1, 7 ):
             cs.add( KMeansPlusPlusClusterer( i, 100 ) )
         categorizer = ChooseBestClusteringCategorizer( cs, CalinskiHarabasz() )
+        categorizer = FilterRansac()
+
+        categorizer = CategorizerWithState.generateFixedRange( ranges )
+
+        categorizer = RangedCategorizer( nImages )
         
         result = mse.estimateZCoordinates( startingCoordinates, c, radii, steps, visitor, categorizer, opt )
         IJ.log("done")

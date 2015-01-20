@@ -21,7 +21,6 @@ import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.array.ArrayRandomAccess;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.img.basictypeaccess.array.FloatArray;
-import net.imglib2.img.list.ListCursor;
 import net.imglib2.img.list.ListImg;
 import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
@@ -45,6 +44,7 @@ import org.janelia.thickness.lut.SingleDimensionLUTRealTransformField;
 import org.janelia.thickness.mediator.OpinionMediator;
 import org.janelia.utility.ArraySortedIndices;
 import org.janelia.utility.ConstantPair;
+import org.janelia.utility.realtransform.MatrixToStrip;
 
 public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L> > {
 
@@ -195,9 +195,15 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                 ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
         	
        
-			
+        	final int numCorrelations  = 2*options.comparisonRange + 1;
+        	final long numZCoordinates = matrix.dimension( 0 );
+        	final RandomAccessibleInterval<DoubleType> transformedCorrelations = MatrixToStrip.toStrip( matrix, transform, options.comparisonRange );
+        	final ArrayImg<DoubleType, DoubleArray> multipliersTransformed  = ArrayImgs.doubles( multipliers, numZCoordinates );
+        	
+//        	ImageJFunctions.show( transformedCorrelations );
 
 			lcf.estimateFromMatrix( matrix, coordinateArr, weights, multipliers, transform, options.comparisonRange, correlationFitModel, categorizer, localFits ); // this has window range
+			lcf.estimateFromStrip( transformedCorrelations, multipliersTransformed, weights, options.comparisonRange, correlationFitModel, categorizer, localFits );
 			
 			final double inverseCoordinateUpdateRegularizerWeight = 1 - options.coordinateUpdateRegularizerWeight;
 			

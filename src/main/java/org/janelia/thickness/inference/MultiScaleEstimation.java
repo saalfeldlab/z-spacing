@@ -102,7 +102,22 @@ public class MultiScaleEstimation< T extends RealType< T > > {
 		final long height = images.dimension( 1 );
 		final long depth  = images.dimension( 2 );
 		
+		final long mb = 1024l*1024l;
+		
+		final Runtime rt = Runtime.getRuntime();
+		
+		long total = rt.totalMemory() / mb;
+		long max   = rt.maxMemory() / mb;
+		long free  = rt.freeMemory() / mb;
+		long used = total - free;
+		
 		for ( long zRef = 0; zRef < images.dimension( 2 ); ++zRef ) {
+			
+			final long previousTotal = total;
+			final long previousMax   = max;
+			final long previousFree  = free;
+			final long previousUsed  = used;
+			
 			
 			final Meta meta = new Meta();
 			final long zMin = Math.max( zRef - range, 0 );
@@ -130,6 +145,20 @@ public class MultiScaleEstimation< T extends RealType< T > > {
 			metaMap.put( zRef, meta );
 			correlationsMap.put( zRef, al );
 			
+			total = rt.totalMemory() / mb;
+			max   = rt.maxMemory() / mb;
+			free  = rt.freeMemory() / mb;
+			used = total - free;
+			
+			IJ.log( String.format(
+					"%d\n" +
+					"%-20s%dMB\n" +
+					"%-20s%dMB\n" + 
+					"%-20s%dMB\n" +
+					"%-20s%dMB\n" + 
+					"%-20s%dMB\n   \n",
+					zRef , "total:", total, "max:", max, "free:", free, "used:", used, "diff:", used-previousUsed ) );
+			
 		}
 		
 		ArrayImg< DoubleType, DoubleArray > coordinates = ArrayImgs.doubles( width/steps[0][0], height/steps[0][1], depth );
@@ -141,6 +170,8 @@ public class MultiScaleEstimation< T extends RealType< T > > {
 		for ( int i = 0; i < radii.length; ++i ) {
 			
 			IJ.log( " Radii " + i + ": " + Arrays.toString( radii[i] ) );
+			
+			categorizer.setState( i );
 			
 			for ( final Entry<Long, List<FloatingPointIntegralCrossCorrelation<T, T, FloatType>>> entry : correlationsMap.entrySet() ) {
 				for ( final FloatingPointIntegralCrossCorrelation<T, T, FloatType> cc : entry.getValue() )
@@ -168,11 +199,13 @@ public class MultiScaleEstimation< T extends RealType< T > > {
 			for ( int k = 0; k < currentWidth * currentHeight; ++k ) {
 				al.add( startingCoordinates.clone() );
 			}
+			IJ.log( "WxH = " + currentWidth + "x" + currentHeight );
 			final ListImg< double[] > coordinateListImage = new ListImg< double[] >( al, currentWidth, currentHeight );// new ListImgFactory< double[] >().create( new FinalInterval( currentWidth, currentHeight ), new double[ (int) depth ] );
 			
 			final RealRandomAccess< DoubleType > ra = transformed.realRandomAccess();
 			final ArrayList<Callable<Void>> tasks = new ArrayList< Callable<Void> >();
 			for ( final Cursor<double[]> c = coordinateListImage.cursor(); c.hasNext(); ) {
+				IJ.log( "Iterating at c=" + c.getIntPosition( 0 ) + "x" + c.getIntPosition( 1 ) );
 				final double[] arr = c.next();
 				ra.setPosition( c.getDoublePosition( 0 ), 0 );
 				ra.setPosition( c.getDoublePosition( 1 ), 1 );
@@ -226,8 +259,13 @@ public class MultiScaleEstimation< T extends RealType< T > > {
 				final double[] arr = coordinateRa.get();
 				c.get().set( arr[ c.getIntPosition( 2 ) ] );
 			}
-			
+
+			IJ.log( "before rendering" );
+			final long t0 = System.currentTimeMillis();
 			visitor.act( i, coordinates, Views.interval( Views.raster( transformed ), coordinates), radii[i], steps[i], co, options[i] );
+			final long t1 = System.currentTimeMillis();
+			final long diff = t1 - t0;
+			IJ.log( "after rendering (t=" + diff + "ms)" );
 			
 		}
 		
