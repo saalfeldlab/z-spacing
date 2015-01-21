@@ -7,8 +7,6 @@ import java.util.TreeMap;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
-import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
 
 import org.janelia.utility.tuple.ConstantPair;
@@ -102,13 +100,6 @@ public class DummyCorrelationsObject implements CorrelationsObjectInterface {
 	public boolean equalsXYCoordinates(final CorrelationsObjectInterface other) {
 		// TODO Auto-generated method stub
 		return false;
-	}
-
-	@Override
-	public <T extends RealType<T> & NativeType<T>> void toCorrelationStripe(
-			final long x, final long y, final RandomAccessibleInterval<T> stripe) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override

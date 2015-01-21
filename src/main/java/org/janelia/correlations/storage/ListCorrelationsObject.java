@@ -15,7 +15,6 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
-import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
@@ -111,13 +110,6 @@ public class ListCorrelationsObject< T extends RealType< T > > extends
 			coordinates.add( SerializableConstantPair.toPair( c.getLongPosition( 0 ), c.getLongPosition( 1 ) ) );
 		}
 		return coordinates;
-	}
-
-	@Override
-	public <U extends RealType<U> & NativeType<U>> void toCorrelationStripe(
-			final long x, final long y, final RandomAccessibleInterval<U> stripe) {
-		// TODO Auto-generated method stub
-
 	}
 
 }

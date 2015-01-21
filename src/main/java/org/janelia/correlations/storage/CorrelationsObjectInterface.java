@@ -7,8 +7,6 @@ import java.util.TreeMap;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
-import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
 
 import org.janelia.utility.tuple.SerializableConstantPair;
@@ -82,8 +80,6 @@ public interface CorrelationsObjectInterface extends Serializable {
 	
 	public Set< SerializableConstantPair< Long, Long > > getXYCoordinates();
 	
-	public < T extends RealType< T> & NativeType< T > > void toCorrelationStripe( long x, long y, RandomAccessibleInterval< T > stripe );
-
 	@Override
 	public boolean equals( Object other );
 	

@@ -8,15 +8,12 @@ import ij.ImageJ;
 import java.util.Set;
 import java.util.TreeMap;
 
-import net.imglib2.Cursor;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.img.display.imagej.ImageJFunctions;
-import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
@@ -182,37 +179,6 @@ public class SparseCorrelationsObject extends AbstractCorrelationsObject impleme
 	}
 	
 	
-	@Override
-	public <T extends RealType<T> & NativeType<T>> void toCorrelationStripe(
-			final long x, final long y, final RandomAccessibleInterval< T > stripe) {
-		assert stripe.numDimensions() == 2;
-		// stripe should have odd dimension 0 ( range + reference + range = 2*n+1 values at each row )
-		assert ( stripe.dimension( 0 ) & 1 ) == 1;
-		assert stripe.dimension( 1 ) == this.zMax - this.zMin;
-		for ( final T s : Views.flatIterable( stripe ) )
-			s.setReal( Double.NaN );
-		
-		final TreeMap<Long, double[]> subMap = this.correlations.get( SerializableConstantPair.toPair( x, y ) );
-		
-		final long midIndex = stripe.dimension( 0 ) / 2;
-		
-		for ( long zRef = this.zMin, zeroBasedCount = 0; zRef < this.zMax; ++zRef, ++zeroBasedCount ) {
-			final IntervalView<T> hs = Views.hyperSlice( stripe, 1, zeroBasedCount );
-			final Meta meta = this.metaMap.get( zRef );
-			final double[] corr = subMap.get( zRef );
-			
-			final RandomAccess<T> target    = hs.randomAccess();
-			final Cursor<DoubleType> source = ArrayImgs.doubles( corr, corr.length ).cursor();
-			
-			final long relativeStart = midIndex - ( meta.zPosition - meta.zCoordinateMin );
-			target.setPosition( relativeStart, 0 );
-			while( source.hasNext() ) {
-				target.get().setReal( source.next().get() );
-				target.fwd( 0 );
-			}
-		}
-	}
-
 	@Override
 	public long getxMin() {
 			return xMin;
