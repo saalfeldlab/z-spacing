@@ -98,8 +98,6 @@ public class CorrelationsObjectFactory < T extends RealType< T > > {
 			
 			final ArrayImg<FloatType, FloatArray> localCorrelations = ArrayImgs.floats(images.dimension( 0 ), images.dimension( 1 ), ( upperBound - lowerBound) + 1 );
 
-			final long t00 = System.currentTimeMillis();
-			
 			for ( long z = lowerBound; z <= upperBound; ++z ) {
 				final long relativePosition = z - lowerBound;
 				final IntervalView<FloatType> correlationsTarget = Views.hyperSlice( localCorrelations, 2, relativePosition );
@@ -113,19 +111,10 @@ public class CorrelationsObjectFactory < T extends RealType< T > > {
 				} else if ( z == zRef ) {
 					correlationsSource = Views.interval( Views.raster( new ConstantRealRandomAccesssible< FloatType >( 2, new FloatType( 1.0f ) ) ), correlationsTarget );
 				} else {
-					final long t0 = System.currentTimeMillis();
 					correlationsSource = ccFactory.create( Views.hyperSlice( images, 2, z ), 
 							Views.hyperSlice( images, 2, zRef ), 
 							radius );
-					final long t1 = System.currentTimeMillis();
-//					correlationsSource = new CrossCorrelation<U, U, FloatType >( 
-//							Views.hyperSlice( images, 2, z ), 
-//							Views.hyperSlice( images, 2, zRef ), 
-//							radius,
-//							new FloatType() );
 				}
-				
-				final long t10 = System.currentTimeMillis();
 				
 				final Iterator<SerializableConstantPair<Long, Long>> it = sampler.iterator();
 				final RandomAccess<FloatType> s = correlationsSource.randomAccess();
@@ -138,11 +127,8 @@ public class CorrelationsObjectFactory < T extends RealType< T > > {
 					t.get().set( s.get() );
 				}
 				
-				final long t11 = System.currentTimeMillis();
-				
 			}
 			
-			final long t01 = System.currentTimeMillis();
 			
 			metaMap.put( zRef, meta );
 			correlations.put( zRef, localCorrelations );
