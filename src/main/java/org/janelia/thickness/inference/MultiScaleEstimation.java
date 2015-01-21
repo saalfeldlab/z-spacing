@@ -102,21 +102,8 @@ public class MultiScaleEstimation< T extends RealType< T > > {
 		final long height = images.dimension( 1 );
 		final long depth  = images.dimension( 2 );
 		
-		final long mb = 1024l*1024l;
-		
-		final Runtime rt = Runtime.getRuntime();
-		
-		long total = rt.totalMemory() / mb;
-		long max   = rt.maxMemory() / mb;
-		long free  = rt.freeMemory() / mb;
-		long used = total - free;
 		
 		for ( long zRef = 0; zRef < images.dimension( 2 ); ++zRef ) {
-			
-			final long previousTotal = total;
-			final long previousMax   = max;
-			final long previousFree  = free;
-			final long previousUsed  = used;
 			
 			
 			final Meta meta = new Meta();
@@ -145,20 +132,6 @@ public class MultiScaleEstimation< T extends RealType< T > > {
 			metaMap.put( zRef, meta );
 			correlationsMap.put( zRef, al );
 			
-			total = rt.totalMemory() / mb;
-			max   = rt.maxMemory() / mb;
-			free  = rt.freeMemory() / mb;
-			used = total - free;
-			
-			IJ.log( String.format(
-					"%d\n" +
-					"%-20s%dMB\n" +
-					"%-20s%dMB\n" + 
-					"%-20s%dMB\n" +
-					"%-20s%dMB\n" + 
-					"%-20s%dMB\n   \n",
-					zRef , "total:", total, "max:", max, "free:", free, "used:", used, "diff:", used-previousUsed ) );
-			
 		}
 		
 		ArrayImg< DoubleType, DoubleArray > coordinates = ArrayImgs.doubles( width/steps[0][0], height/steps[0][1], depth );
@@ -168,8 +141,6 @@ public class MultiScaleEstimation< T extends RealType< T > > {
 		}
 		
 		for ( int i = 0; i < radii.length; ++i ) {
-			
-			IJ.log( " Radii " + i + ": " + Arrays.toString( radii[i] ) );
 			
 			categorizer.setState( i );
 			
@@ -238,17 +209,7 @@ public class MultiScaleEstimation< T extends RealType< T > > {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-//			es.shutdown();
-//			try {
-//				es.awaitTermination( 3600, TimeUnit.SECONDS );
-//			} catch (final InterruptedException e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//			}
-			
-			
-			
-			
+
 			
 			coordinates = ArrayImgs.doubles( currentWidth, currentHeight, depth );
 			final RandomAccess<double[]> coordinateRa = coordinateListImage.randomAccess(); 
