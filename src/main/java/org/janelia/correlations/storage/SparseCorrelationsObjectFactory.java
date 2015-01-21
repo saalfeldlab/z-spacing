@@ -11,8 +11,6 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
 import org.janelia.correlations.CrossCorrelation;
-import org.janelia.correlations.CrossCorrelation.CrossCorrelationRandomAccess;
-import org.janelia.correlations.CrossCorrelation.TYPE;
 import org.janelia.correlations.storage.CorrelationsObjectInterface.Meta;
 import org.janelia.utility.sampler.DenseXYSampler;
 import org.janelia.utility.sampler.XYSampler;
@@ -103,8 +101,8 @@ public class SparseCorrelationsObjectFactory < T extends RealType< T > > {
 								radius,
 								this.type,
 								new FloatType() );
-						final CrossCorrelationRandomAccess ra = cc.randomAccess();
-						ra.setPosition( new long[] { xy.getA(), xy.getB() } );
+						final RandomAccess< FloatType > ra = cc.randomAccess();
+						ra.setPosition( new long[] { x, y } );
 						correlationsAt[ relativePosition ] = ra.get().getRealDouble();
 					}
 				}
