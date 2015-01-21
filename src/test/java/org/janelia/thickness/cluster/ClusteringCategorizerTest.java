@@ -55,7 +55,7 @@ public class ClusteringCategorizerTest {
 			double sum = 0.0;
 			for ( final double p : r )
 				sum += p;
-			Assert.assertEquals( 1.0, sum, 0.0 );
+			Assert.assertEquals( 1.0, sum, 1e-10 );
 		}
 		
 	}
