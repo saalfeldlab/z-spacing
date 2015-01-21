@@ -3,7 +3,6 @@ package org.janelia.thickness.inference;
 import ij.IJ;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.TreeMap;
@@ -35,9 +34,9 @@ import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
 import org.janelia.correlations.AbstractIntegralCrossCorrelation.NotEnoughSpaceException;
-import org.janelia.correlations.storage.ListCorrelationsObject;
-import org.janelia.correlations.storage.CorrelationsObjectInterface.Meta;
 import org.janelia.correlations.FloatingPointIntegralCrossCorrelation;
+import org.janelia.correlations.storage.CorrelationsObjectInterface.Meta;
+import org.janelia.correlations.storage.ListCorrelationsObject;
 import org.janelia.models.ScaleModel;
 import org.janelia.thickness.cluster.Categorizer;
 import org.janelia.thickness.cluster.RangedCategorizer;
