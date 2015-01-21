@@ -9,8 +9,6 @@ import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.type.numeric.real.DoubleType;
 
-import org.janelia.utility.tuple.ConstantPair;
-import org.janelia.utility.tuple.ConstantTriple;
 import org.janelia.utility.tuple.SerializableConstantPair;
 
 /**
@@ -22,9 +20,9 @@ import org.janelia.utility.tuple.SerializableConstantPair;
 public class DummyCorrelationsObject implements CorrelationsObjectInterface {
 		
 	
+	private static final long serialVersionUID = 215592469910432642L;
 	private final long zMin;
 	private final long zMax;
-	private final TreeMap< ConstantTriple<Long, Long, Long>, ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType> > > corrs;
 	private final TreeMap< Long, Meta > metaMap;
 		
 	public DummyCorrelationsObject(
@@ -32,12 +30,10 @@ public class DummyCorrelationsObject implements CorrelationsObjectInterface {
 			final long zMax,
 			final int range,
 			final int nData,
-			final TreeMap<ConstantTriple<Long, Long, Long>, ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType>>> corrs,
 			final TreeMap< Long, Meta > metaMap ) {
 		super();
 		this.zMin    = zMin;
 		this.zMax    = zMax;
-		this.corrs   = corrs;
 		this.metaMap = metaMap;
 	}
 

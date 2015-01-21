@@ -27,6 +27,7 @@ import org.janelia.utility.tuple.SerializableConstantPair;
  */
 public class SparseCorrelationsObject extends AbstractCorrelationsObject implements CorrelationsObjectInterface {
 	
+	private static final long serialVersionUID = -1307125505327467911L;
 	private final TreeMap< SerializableConstantPair< Long, Long >, TreeMap< Long, double[] > > correlations;
 	private long xMin;
 	private long yMin;

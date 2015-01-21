@@ -35,6 +35,7 @@ public class CorrelationsObject extends AbstractCorrelationsObject implements Co
 
 
 
+	private static final long serialVersionUID = -7390337451098486971L;
 	private final HashMap<Long, RandomAccessibleInterval<FloatType> > correlationsMap;
 	private final HashMap<Long, RandomAccessibleInterval<FloatType> > fitMap;
 

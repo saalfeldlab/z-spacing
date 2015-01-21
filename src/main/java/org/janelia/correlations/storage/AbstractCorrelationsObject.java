@@ -13,6 +13,7 @@ import org.janelia.utility.tuple.SerializableConstantPair;
 public abstract class AbstractCorrelationsObject implements
 		CorrelationsObjectInterface {
 	
+	private static final long serialVersionUID = -1867538268242423956L;
 	protected TreeMap< Long, Meta > metaMap;
 	protected long zMin;
 	protected long zMax;
