@@ -68,7 +68,7 @@ public class InferFromMatrix< M extends Model<M>, L extends Model<L> > {
 
 
         public < T extends RealType< T > > ArrayImg< DoubleType, DoubleArray > estimateZCoordinates(  
-        		RandomAccessibleInterval< T > matrix,
+        		final RandomAccessibleInterval< T > matrix,
         		final double[] startingCoordinates,
         		final Options options
         		) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
@@ -88,7 +88,7 @@ public class InferFromMatrix< M extends Model<M>, L extends Model<L> > {
         }
         
         public < T extends RealType< T > > ArrayImg< DoubleType, DoubleArray > estimateZCoordinates(
-                RandomAccessibleInterval< T > input,
+                final RandomAccessibleInterval< T > input,
                 final double[] startingCoordinates,
                 final Visitor visitor,
                 final Options options) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
@@ -98,13 +98,13 @@ public class InferFromMatrix< M extends Model<M>, L extends Model<L> > {
 
 
         public < T extends RealType< T > > ArrayImg< DoubleType, DoubleArray > estimateZCoordinates(
-                RandomAccessibleInterval< T > input,
+                final RandomAccessibleInterval< T > input,
                 final double[] startingCoordinates,
                 final Visitor visitor,
                 final Categorizer categorizer,
                 final Options options) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
         	
-        	    ArrayImg<DoubleType, DoubleArray> matrix = ArrayImgs.doubles( input.dimension( 0 ), input.dimension( 1 ) );
+        	    final ArrayImg<DoubleType, DoubleArray> matrix = ArrayImgs.doubles( input.dimension( 0 ), input.dimension( 1 ) );
         	    CopyFromIntervalToInterval.copyToRealType( input, matrix );
 
                 final double[] weightArr = new double[ ( int )matrix.dimension( 1 ) ];
