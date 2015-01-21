@@ -69,16 +69,6 @@ public class DummyCorrelationsObject implements CorrelationsObjectInterface {
 	 * Is implementation of this method necessary for dummy?
 	 */
 	@Override
-	public ArrayImg<DoubleType, DoubleArray> toMatrix(final long x, final long y,
-			final long zMin, final long zMax) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/**
-	 * Is implementation of this method necessary for dummy?
-	 */
-	@Override
 	public void toMatrix(final long x, final long y,
 			final RandomAccessibleInterval<DoubleType> matrix) {
 

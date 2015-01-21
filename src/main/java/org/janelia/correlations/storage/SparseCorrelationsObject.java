@@ -135,17 +135,6 @@ public class SparseCorrelationsObject extends AbstractCorrelationsObject impleme
 	    }
 	}
 
-	/* (non-Javadoc)
-	 * @see org.janelia.correlations.CorrelationsObjectInterface#toMatrix(long, long, long, long)
-	 */
-	@Override
-	public ArrayImg<DoubleType, DoubleArray> toMatrix(final long x, final long y,
-			final long zMin, final long zMax) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
-	
 	public static void main(final String[] args) {
 		
 		final SparseCorrelationsObject sco = new SparseCorrelationsObject();

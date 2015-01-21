@@ -1,7 +1,6 @@
 package org.janelia.correlations.storage;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -113,28 +112,9 @@ public class CorrelationsObject extends AbstractCorrelationsObject implements Co
 	public ArrayImg<DoubleType, DoubleArray> toMatrix (
 			final long x,
 			final long y) {
-		final Iterator<Long> iterator = this.metaMap.keySet().iterator();
-        final long zMin = iterator.next();
-        long zMaxTmp = zMin;
-
-        while ( iterator.hasNext() )
-                zMaxTmp = iterator.next();
-        final long zMax = zMaxTmp + 1;
-        return toMatrix( x, y, zMin, zMax );
-	}
-
-	@Override
-	public ArrayImg<DoubleType, DoubleArray> toMatrix(
-			final long x,
-			final long y,
-			final long zMin,
-			final long zMax ) {
-		 final int nSlices = this.getMetaMap().size();
-         final ArrayImg<DoubleType, DoubleArray> matrix = ArrayImgs.doubles( nSlices, nSlices );
-
-         this.toMatrix(x, y, matrix);
-
-         return matrix;
+        final ArrayImg<DoubleType, DoubleArray> matrix = ArrayImgs.doubles( metaMap.size(), metaMap.size() );
+        toMatrix( x, y, matrix );
+        return matrix;
 	}
 
 

@@ -75,13 +75,6 @@ public class ListCorrelationsObject< T extends RealType< T > > extends
 	}
 
 	@Override
-	public ArrayImg<DoubleType, DoubleArray> toMatrix(final long x, final long y,
-			final long zMin, final long zMax) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public long getxMin() {
 		return 0;
 	}
