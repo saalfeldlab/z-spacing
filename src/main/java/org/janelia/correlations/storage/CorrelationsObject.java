@@ -9,11 +9,9 @@ import java.util.TreeSet;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.array.ArrayCursor;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
-import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
@@ -22,7 +20,6 @@ import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
 import org.janelia.utility.sampler.DenseXYSampler;
-import org.janelia.utility.tuple.ConstantPair;
 import org.janelia.utility.tuple.SerializableConstantPair;
 
 
@@ -112,57 +109,6 @@ public class CorrelationsObject extends AbstractCorrelationsObject implements Co
 	{
 		this.correlationsMap.put(index, correlations);
 		this.addToMeta( index, meta );
-	}
-
-	/**
-	 * Extract correlations and coordinates at (x,y,z)
-	 *
-	 * @param x extract correlations at x
-	 * @param y extract correlations at y
-	 * @param z extract correlations at z
-	 * @return {@link Pair} holding correlations and coordinates in terms of z slices. The actual "thicknesses" or real world coordinates need to be saved seperately.
-	 */
-	@Override
-	public ConstantPair<RandomAccessibleInterval<FloatType>, RandomAccessibleInterval<FloatType> > extractCorrelationsAt(final long x, final long y, final long z) {
-		final IntervalView<FloatType> entryA         = Views.hyperSlice( Views.hyperSlice( correlationsMap.get( z ), 0, x ), 0, y );
-		final ArrayImg<FloatType, FloatArray> entryB = ArrayImgs.floats(entryA.dimension(0));
-
-		long zPosition = metaMap.get(z).zCoordinateMin;
-		final ArrayCursor<FloatType> cursor = entryB.cursor();
-
-		while ( cursor.hasNext() ) {
-			cursor.next().set( zPosition );
-			++zPosition;
-		}
-
-		assert zPosition == metaMap.get(z).zCoordinateMax: "Inconsistency!";
-
-		return new ConstantPair<RandomAccessibleInterval<FloatType>, RandomAccessibleInterval<FloatType> >( entryA, entryB );
-	}
-
-
-	@Override
-	public ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType>> extractDoubleCorrelationsAt(
-			final long x, final long y, final long z) {
-		final IntervalView<FloatType> entryAFloat      = Views.hyperSlice( Views.hyperSlice( correlationsMap.get( z ), 0, x ), 0, y );
-		final ArrayImg<DoubleType, DoubleArray> entryA = ArrayImgs.doubles(entryAFloat.dimension(0));
-		final ArrayImg<DoubleType, DoubleArray> entryB = ArrayImgs.doubles(entryAFloat.dimension(0));
-
-		long zPosition               = metaMap.get(z).zCoordinateMin;
-
-		final Cursor<FloatType> cursorFloat   = Views.flatIterable( entryAFloat ).cursor();
-		final ArrayCursor<DoubleType> cursorA = entryA.cursor();
-		final ArrayCursor<DoubleType> cursorB = entryB.cursor();
-
-		while ( cursorA.hasNext() ) {
-			cursorA.next().set( cursorFloat.next().getRealDouble() );
-			cursorB.next().set( zPosition );
-			++zPosition;
-		}
-
-		assert zPosition == metaMap.get(z).zCoordinateMax: "Inconsistency!";
-
-		return new ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType> >( entryA, entryB );
 	}
 
 

@@ -18,7 +18,6 @@ import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
-import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
@@ -87,42 +86,6 @@ public class SparseCorrelationsObject extends AbstractCorrelationsObject impleme
 		yMax = Math.max( yMax, y );
 	}
 
-	/* (non-Javadoc)
-	 * @see org.janelia.correlations.CorrelationsObjectInterface#extractCorrelationsAt(long, long, long)
-	 */
-	@Override
-	public ConstantPair<RandomAccessibleInterval<FloatType>, RandomAccessibleInterval<FloatType>> extractCorrelationsAt(
-			final long x, final long y, final long z) {
-		final double[] correlationsAt = getCorrelationsAt(x, y, z );
-		if ( correlationsAt == null ) {
-			return null;
-		}
-		final float[] correlationResult = new float[ correlationsAt.length ];
-		final float[] coordinatesResult = new float[ correlationResult.length ];
-		for (int i = 0; i < correlationResult.length; i++) {
-			correlationResult[ i ] = (float) correlationsAt[ i ];
-			coordinatesResult[ i ] = i;
-		}
-		return new ConstantPair<RandomAccessibleInterval<FloatType>, RandomAccessibleInterval<FloatType>>( ArrayImgs.floats( correlationResult, correlationResult.length), ArrayImgs.floats(coordinatesResult, coordinatesResult.length ) );
-	}
-
-	/* (non-Javadoc)
-	 * @see org.janelia.correlations.CorrelationsObjectInterface#extractDoubleCorrelationsAt(long, long, long)
-	 */
-	@Override
-	public ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType>> extractDoubleCorrelationsAt(
-			final long x, final long y, final long z) {
-		final double[] correlationsAt = getCorrelationsAt(x, y, z );
-		if ( correlationsAt == null ) {
-			return null;
-		}
-		final double[] coordinatesResult = new double[ correlationsAt.length ];
-		for (int i = 0; i < coordinatesResult.length; i++) {
-			coordinatesResult[ i ] = i;
-		}
-		return new ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType>>( ArrayImgs.doubles( correlationsAt, correlationsAt.length ), ArrayImgs.doubles( coordinatesResult, coordinatesResult.length ) );
-	}
-	
 	
 	protected double[] getCorrelationsAt( final long x, final long y, final long z ) {
 		final TreeMap< Long, double[] > correlationsAt = this.correlations.get( new ConstantPair< Long, Long >( x, y ));

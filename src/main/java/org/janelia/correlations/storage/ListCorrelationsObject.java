@@ -22,7 +22,6 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
 import org.janelia.correlations.FloatingPointIntegralCrossCorrelation;
-import org.janelia.utility.tuple.ConstantPair;
 import org.janelia.utility.tuple.SerializableConstantPair;
 
 /**
@@ -43,46 +42,6 @@ public class ListCorrelationsObject< T extends RealType< T > > extends
 			final TreeMap<Long, List< FloatingPointIntegralCrossCorrelation<T, T, FloatType> > > correlationsMap) {
 		super(metaMap);
 		this.correlationsMap = correlationsMap;
-	}
-
-	@Override
-	public ConstantPair<RandomAccessibleInterval<FloatType>, RandomAccessibleInterval<FloatType>> extractCorrelationsAt(
-			final long x, final long y, final long z) {
-		final List<FloatingPointIntegralCrossCorrelation<T, T, FloatType>> al = correlationsMap.get( z );
-		final RandomAccessibleInterval< FloatType > corrs = ArrayImgs.floats( al.size() );
-		
-		final long[] pos = new long[] { x, y };
-		
-		final Cursor<FloatType> c = Views.flatIterable( corrs ).cursor();
-		
-		for ( int i = 0; c.hasNext(); ++i ) {
-			final RandomAccess<FloatType> ra = al.get( i ).randomAccess();
-			ra.setPosition( pos );
-			
-			c.next().setReal( ra.get().get() );
-		}
-		
-		return ConstantPair.toPair( corrs, corrs );
-	}
-
-	@Override
-	public ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType>> extractDoubleCorrelationsAt(
-			final long x, final long y, final long z) {
-		final List<FloatingPointIntegralCrossCorrelation<T, T, FloatType>> al = correlationsMap.get( z );
-		final RandomAccessibleInterval< DoubleType > corrs = ArrayImgs.doubles( al.size() );
-		
-		final long[] pos = new long[] { x, y };
-		
-		final Cursor<DoubleType> c = Views.flatIterable( corrs ).cursor();
-		
-		for ( int i = 0; c.hasNext(); ++i ) {
-			final RandomAccess<FloatType> ra = al.get( i ).randomAccess();
-			ra.setPosition( pos );
-			
-			c.next().setReal( ra.get().get() );
-		}
-		
-		return ConstantPair.toPair( corrs, corrs );
 	}
 
 	@Override

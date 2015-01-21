@@ -10,7 +10,6 @@ import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
-import net.imglib2.type.numeric.real.FloatType;
 
 import org.janelia.utility.tuple.ConstantPair;
 import org.janelia.utility.tuple.ConstantTriple;
@@ -57,19 +56,6 @@ public class DummyCorrelationsObject implements CorrelationsObjectInterface {
 	@Override
 	public TreeMap<Long, Meta> getMetaMap() {
 		return this.metaMap;
-	}
-
-	@Override
-	public ConstantPair<RandomAccessibleInterval<FloatType>, RandomAccessibleInterval<FloatType>> extractCorrelationsAt(
-			final long x, final long y, final long z) {
-		return null;
-	}
-
-
-	@Override
-	public ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType>> extractDoubleCorrelationsAt(
-			final long x, final long y, final long z) {
-		return corrs.get( new ConstantTriple<Long, Long, Long>( x, y, z) );
 	}
 
 	/**

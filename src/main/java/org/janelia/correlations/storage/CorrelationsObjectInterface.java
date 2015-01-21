@@ -10,9 +10,7 @@ import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
-import net.imglib2.type.numeric.real.FloatType;
 
-import org.janelia.utility.tuple.ConstantPair;
 import org.janelia.utility.tuple.SerializableConstantPair;
 
 /**
@@ -57,10 +55,6 @@ public interface CorrelationsObjectInterface extends Serializable {
 		}
 	}
 
-	public ConstantPair<RandomAccessibleInterval<FloatType>, RandomAccessibleInterval<FloatType> > extractCorrelationsAt(long x, long y, long z);
-	
-	public ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType> > extractDoubleCorrelationsAt(long x, long y, long z);
-	
 	public ArrayImg<DoubleType, DoubleArray> toMatrix( long x, long y );
 	
 	void toMatrix( final long x, final long y, RandomAccessibleInterval< DoubleType > matrix );
