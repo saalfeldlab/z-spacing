@@ -44,23 +44,6 @@ public class Options implements Serializable {
 	        return result;
 	}
 	
-//	public double multiplierGenerationRegularizerWeight; // m_regularized = m * ( 1 - w ) + 1 * w
-//	public double coordinateUpdateRegularizerWeight; // coordinate_regularized = predicted * ( 1 - w ) + original * w
-//	public double shiftProportion; // actual_shift = shift * shiftProportion
-//	public int nIterations; // number of iterations
-//	public int nThreads; // number of threads
-//	public int comparisonRange; // range for cross correlations
-//	public double neighborRegularizerWeight;
-//	public double minimumSectionThickness;
-//	public int windowRange;
-//	public double shiftsSmoothingSigma;
-//	public int shiftsSmoothingRange;
-//	public boolean withRegularization;
-//	public double multiplierRegularizerDecaySpeed;
-//	public double multiplierWeightsSigma;
-//	public int multiplierEstimationIterations;
-//	public boolean withReorder;
-	
 	public Double multiplierGenerationRegularizerWeight; // m_regularized = m * ( 1 - w ) + 1 * w
 	public Double coordinateUpdateRegularizerWeight; // coordinate_regularized = predicted * ( 1 - w ) + original * w
 	public Double shiftProportion; // actual_shift = shift * shiftProportion
@@ -77,7 +60,6 @@ public class Options implements Serializable {
 	public Double multiplierWeightsSigma;
 	public Integer multiplierEstimationIterations;
 	public Boolean withReorder;
-	
 	
 	public static Options read( final String filename ) {
 		final String defaultString = String.format( "Options.read( \"%s\" )", filename );
