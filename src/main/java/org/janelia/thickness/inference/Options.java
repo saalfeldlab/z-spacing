@@ -118,6 +118,8 @@ public class Options implements Serializable {
 	public Options clone() {
 		final Options result = new Options();
 		for ( final Field f : this.getClass().getDeclaredFields() ) {
+			if ( f.getName().equals( "serialVersionUID" ) )
+				continue;
 			try {
 				f.set( result, f.get( this ) );
 			} catch (final IllegalArgumentException e) {
@@ -139,10 +141,12 @@ public class Options implements Serializable {
 	    sb.append(getClass().getName());
 	    sb.append("]\n");
 	    for ( final Field f : this.getClass().getDeclaredFields() ) {
-	  	  sb.append( f.getName() );
-	  	  sb.append( "\t" );
-	  	  try {
-				sb.append( f.get( this ) );
+	    	if ( f.getName().equals( "serialVersionUID" ) )
+	    		continue;
+	    	sb.append( f.getName() );
+	  	  	sb.append( "\t" );
+	  	  	try {
+	  	  		sb.append( f.get( this ) );
 			} catch (final IllegalArgumentException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
