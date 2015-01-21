@@ -75,8 +75,8 @@ public class InferFromMatrix< M extends Model<M>, L extends Model<L> > {
                 return estimateZCoordinates( matrix, startingCoordinates, new Visitor() {
 
                         @Override
-                        public < T extends RealType< T > > void act(final int iteration,
-                        		final RandomAccessibleInterval< T > input, final double[] lut,
+                        public < U extends RealType< U > > void act(final int iteration,
+                        		final RandomAccessibleInterval< U > input, final double[] lut,
                                         final AbstractLUTRealTransform transform,
                                         final double[] multipliers,
                                         final double[] weights,
