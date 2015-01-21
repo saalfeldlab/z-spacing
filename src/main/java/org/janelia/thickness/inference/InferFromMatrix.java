@@ -3,14 +3,12 @@ package org.janelia.thickness.inference;
 import ij.IJ;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.TreeMap;
 
 import mpicbg.models.AffineModel1D;
 import mpicbg.models.IllDefinedDataPointsException;
 import mpicbg.models.Model;
 import mpicbg.models.NotEnoughDataPointsException;
-import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccess;
@@ -28,11 +26,8 @@ import net.imglib2.outofbounds.OutOfBounds;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
-import org.janelia.correlations.storage.CorrelationsObjectInterface;
-import org.janelia.correlations.storage.CorrelationsObjectInterface.Meta;
 import org.janelia.thickness.EstimateQualityOfSlice;
 import org.janelia.thickness.LocalizedCorrelationFit;
 import org.janelia.thickness.ShiftCoordinates;
