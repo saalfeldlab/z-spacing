@@ -18,7 +18,6 @@ import org.janelia.utility.tuple.SerializableConstantPair;
  * The function {@link CorrelationsObjectInterface#getMetaMap()} returns a map that stores {@link Meta} information for each z-slice. 
  *
  */
-// get Serializable out of interface, only needed in SparseCorrelations
 public interface CorrelationsObjectInterface {
 	
 	public static class Meta implements Serializable {
