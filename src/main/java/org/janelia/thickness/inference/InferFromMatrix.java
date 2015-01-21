@@ -9,7 +9,6 @@ import mpicbg.models.AffineModel1D;
 import mpicbg.models.IllDefinedDataPointsException;
 import mpicbg.models.Model;
 import mpicbg.models.NotEnoughDataPointsException;
-import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
@@ -20,7 +19,6 @@ import net.imglib2.img.array.ArrayRandomAccess;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.img.list.ListImg;
-import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.outofbounds.OutOfBounds;
 import net.imglib2.type.numeric.RealType;
@@ -43,24 +41,18 @@ import org.janelia.utility.arrays.ArraySortedIndices;
 import org.janelia.utility.realtransform.MatrixToStrip;
 import org.janelia.utility.tuple.ConstantPair;
 
-public class InferFromMatrix< M extends Model<M>, L extends Model<L> > {
+public class InferFromMatrix< M extends Model<M> > {
 
         private final M correlationFitModel;
-        private final InterpolatorFactory< DoubleType, RandomAccessible< DoubleType>> fitInterpolatorFactory;
-        private final L measurementsMultiplierModel;
         private final OpinionMediator shiftMediator;
 
 
         public InferFromMatrix(
                 final M correlationFitModel,
-                final InterpolatorFactory< DoubleType, RandomAccessible< DoubleType>> fitInterpolatorFactory,
-                final L measurementsMultiplierModel,
                 final OpinionMediator shiftMediator ) {
                 super();
 
                 this.correlationFitModel = correlationFitModel;
-                this.fitInterpolatorFactory = fitInterpolatorFactory;
-                this.measurementsMultiplierModel = measurementsMultiplierModel;
                 this.shiftMediator = shiftMediator;
 
                
