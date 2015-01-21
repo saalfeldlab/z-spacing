@@ -8,20 +8,18 @@ import java.util.TreeMap;
 
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.array.ArrayCursor;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
-import org.janelia.correlations.storage.CorrelationsObjectFactory;
-import org.janelia.correlations.storage.CorrelationsObjectInterface;
-import org.janelia.correlations.storage.SparseCorrelationsObjectFactory;
 import org.janelia.correlations.storage.CorrelationsObjectInterface.Meta;
 import org.janelia.utility.sampler.SparseXYSampler;
 import org.janelia.utility.sampler.XYSampler;
-import org.janelia.utility.tuple.ConstantPair;
 import org.janelia.utility.tuple.SerializableConstantPair;
 import org.junit.Assert;
 import org.junit.Before;
@@ -73,13 +71,15 @@ public class CorrelationsObjectFactoryTest {
 		
 		for ( int x = 0; x < imgs.dimension( 0 ); ++x ) {
 			for ( int y = 0; y < imgs.dimension( 1 ); ++y ) {
-				for ( int z = 0; z < imgs.dimension( 2 ); ++z ) {
-					final RandomAccessibleInterval<DoubleType> corrs = co.extractDoubleCorrelationsAt(x, y, z).getA();
-					if ( corrs != null ) {
-						for ( final DoubleType c : Views.flatIterable( corrs) ) {
-							Assert.assertEquals( 1.0, c.get(), 0.0 );
-						}
-					}
+				final ArrayImg<DoubleType, DoubleArray> m = co.toMatrix( x, y );
+				final ArrayCursor<DoubleType> c           = m.cursor();
+				while( c.hasNext() ) {
+					final double val = c.next().get();
+					final int z1     = c.getIntPosition( 0 );
+					final int z2     = c.getIntPosition( 1 );
+					if ( Math.abs( z1 - z2 ) > range )
+						continue;
+					Assert.assertEquals( 1.0, val, 0.0 );
 				}
 			}
 		}
@@ -109,11 +109,17 @@ public class CorrelationsObjectFactoryTest {
 		}
 		
 		for ( final SerializableConstantPair<Long, Long> s : sampler ) {
-			for ( int z = 0; z < imgs.dimension( 2 ); ++z ) {
-				final ConstantPair<RandomAccessibleInterval<DoubleType>, RandomAccessibleInterval<DoubleType>> corrs = sco.extractDoubleCorrelationsAt( s.getA(), s.getB(), z);
-				Assert.assertNotEquals( corrs, null );
-				for ( final DoubleType c : Views.flatIterable( corrs.getA() ) )
-					Assert.assertEquals( 1.0,  c.get(), 0.0 );
+			final Long x = s.getA();
+			final Long y = s.getB();
+			final ArrayImg<DoubleType, DoubleArray> m = sco.toMatrix( x, y );
+			final ArrayCursor<DoubleType> c           = m.cursor();
+			while( c.hasNext() ) {
+				final double val = c.next().get();
+				final int z1     = c.getIntPosition( 0 );
+				final int z2     = c.getIntPosition( 1 );
+				if ( Math.abs( z1 - z2 ) > range )
+					continue;
+				Assert.assertEquals( 1.0, val, 0.0 );
 			}
 						
 		}
