@@ -333,42 +333,6 @@ public class InferFromMatrix< M extends Model<M>, L extends Model<L> > {
 			visitor.act( n + 1, matrix, lut, transform, multipliers, weights, localFits.firstElement(), orderedIndices );
         }
         
-//        public ArrayImg< DoubleType, DoubleArray > correlationsToMatrix( final long x, final long y ) {
-//
-//                final int nSlices = this.correlationsObject.getMetaMap().size();
-//                final ArrayImg<DoubleType, DoubleArray> matrix = ArrayImgs.doubles( nSlices, nSlices );
-//                for ( final DoubleType m : matrix ) {
-//                        m.set( Double.NaN );
-//                }
-//
-//                for ( long zRef = zMin; zRef < zMax; ++zRef ) {
-//                        final long relativeZ = zRef - zMin;
-//                        final RandomAccessibleInterval<DoubleType> correlations = this.correlationsObject.extractDoubleCorrelationsAt( x, y, zRef ).getA();
-//                        final IntervalView<DoubleType> row = Views.hyperSlice( matrix, 1, relativeZ);
-//
-//                        final RandomAccess<DoubleType> correlationsAccess = correlations.randomAccess();
-//                        final RandomAccess<DoubleType> rowAccess          = row.randomAccess();
-//
-//                        final Meta meta = this.correlationsObject.getMetaMap().get( zRef );
-//
-//                        rowAccess.setPosition( Math.max( meta.zCoordinateMin - this.zMin, 0 ), 0 );
-//
-//                        for ( long zComp = meta.zCoordinateMin; zComp < meta.zCoordinateMax; ++zComp ) {
-//                                if ( zComp < this.zMin || zComp >= this.zMax ) {
-//                                        correlationsAccess.fwd( 0 );
-//                                        continue;
-//                                }
-//                                rowAccess.get().set( correlationsAccess.get() );
-//                                rowAccess.fwd( 0 );
-//                                correlationsAccess.fwd( 0 );
-//
-//                        }
-//
-//                }
-//
-//
-//                return matrix;
-//        }
 
         public static ArrayImg<FloatType, FloatArray> convertToFloat( final ArrayImg<DoubleType, DoubleArray> input ) {
                 final long[] dims = new long[ input.numDimensions() ];
