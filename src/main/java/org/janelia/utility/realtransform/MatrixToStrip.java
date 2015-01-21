@@ -5,6 +5,7 @@ package org.janelia.utility.realtransform;
 
 import net.imglib2.Cursor;
 import net.imglib2.FinalInterval;
+import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
@@ -26,6 +27,51 @@ import net.imglib2.view.Views;
  */
 public class MatrixToStrip  {
 	
+	
+	public static < T extends RealType< T > & NativeType<T> > 
+	RandomAccessibleInterval<T> toStrip( 
+			final RandomAccessibleInterval< T > input, 
+			final int range ) {
+		final T fillType = input.randomAccess().get().copy();
+		fillType.setReal( Double.NaN );
+		return toStrip( input, range, fillType );
+	}
+	
+	
+	public static < T extends RealType< T > & NativeType<T> > 
+	RandomAccessibleInterval<T> toStrip( 
+			final RandomAccessibleInterval< T > input, 
+			final int range,
+			final T fillType ) {
+		final int width   = 2*range + 1;
+		final long height = input.dimension( 0 );
+		final long[] dim = new long[] { width, height };
+		final ArrayImg<T, ?> result = new ArrayImgFactory< T >().create(dim, fillType );
+		
+		for ( final T r : result ) {
+			r.setReal( fillType.getRealDouble() );
+		}
+		
+		final RandomAccess<T> access  = input.randomAccess();
+		
+		for ( int y = 0; y < height; ++y ) {
+			access.setPosition( y, 1 );
+			final Cursor<T> target = Views.flatIterable( Views.hyperSlice( result, 1, y ) ).cursor();
+			while( target.hasNext() ) {
+				target.fwd();
+				final int pos = target.getIntPosition( 0 ) - range;
+				if ( y + pos < 0 || y + pos >= height )
+					continue;
+				access.setPosition( y + pos, 0 );
+				target.get().setReal( access.get().getRealDouble() );
+			}
+			
+		}
+		
+		return result;
+	}
+	
+	
 	public static < R extends InvertibleRealTransform, T extends RealType< T > & NativeType<T> > 
 	RandomAccessibleInterval<T> toStrip( 
 			final RandomAccessibleInterval< T > input, 
@@ -35,6 +81,7 @@ public class MatrixToStrip  {
 		type.setReal( Double.NaN );
 		return toStrip(input, transform, range, type);
 	}
+	
 	
 	public static < R extends InvertibleRealTransform, T extends RealType< T > & NativeType<T> > 
 	RandomAccessibleInterval<T> toStrip( 
