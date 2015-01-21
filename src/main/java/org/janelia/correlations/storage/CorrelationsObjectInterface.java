@@ -1,4 +1,4 @@
-package org.janelia.correlations;
+package org.janelia.correlations.storage;
 
 import java.io.Serializable;
 import java.util.Set;

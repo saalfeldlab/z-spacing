@@ -1,4 +1,4 @@
-package org.janelia.correlations;
+package org.janelia.correlations.storage;
 
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -14,7 +14,9 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
-import org.janelia.correlations.CorrelationsObjectInterface.Meta;
+import org.janelia.correlations.CrossCorrelationFactory;
+import org.janelia.correlations.CrossCorrelationFactoryInterface;
+import org.janelia.correlations.storage.CorrelationsObjectInterface.Meta;
 import org.janelia.utility.ConstantRealRandomAccesssible;
 import org.janelia.utility.sampler.DenseXYSampler;
 import org.janelia.utility.sampler.XYSampler;

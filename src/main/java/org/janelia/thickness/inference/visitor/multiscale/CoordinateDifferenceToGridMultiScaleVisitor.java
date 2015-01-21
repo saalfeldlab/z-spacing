@@ -9,7 +9,7 @@ import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.Views;
 
-import org.janelia.correlations.CorrelationsObjectInterface;
+import org.janelia.correlations.storage.CorrelationsObjectInterface;
 import org.janelia.thickness.inference.Options;
 import org.janelia.utility.io.IO;
 

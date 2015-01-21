@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.janelia.correlations;
+package org.janelia.correlations.storage;
 
 import java.util.List;
 import java.util.Map.Entry;
@@ -21,6 +21,7 @@ import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
+import org.janelia.correlations.FloatingPointIntegralCrossCorrelation;
 import org.janelia.utility.tuple.ConstantPair;
 import org.janelia.utility.tuple.SerializableConstantPair;
 

@@ -35,9 +35,9 @@ import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
 import org.janelia.correlations.AbstractIntegralCrossCorrelation.NotEnoughSpaceException;
-import org.janelia.correlations.CorrelationsObjectInterface.Meta;
+import org.janelia.correlations.storage.ListCorrelationsObject;
+import org.janelia.correlations.storage.CorrelationsObjectInterface.Meta;
 import org.janelia.correlations.FloatingPointIntegralCrossCorrelation;
-import org.janelia.correlations.ListCorrelationsObject;
 import org.janelia.models.ScaleModel;
 import org.janelia.thickness.cluster.Categorizer;
 import org.janelia.thickness.cluster.RangedCategorizer;

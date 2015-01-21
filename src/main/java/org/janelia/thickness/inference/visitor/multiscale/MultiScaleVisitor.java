@@ -3,7 +3,7 @@ package org.janelia.thickness.inference.visitor.multiscale;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.numeric.real.DoubleType;
 
-import org.janelia.correlations.CorrelationsObjectInterface;
+import org.janelia.correlations.storage.CorrelationsObjectInterface;
 import org.janelia.thickness.inference.Options;
 
 public interface MultiScaleVisitor {

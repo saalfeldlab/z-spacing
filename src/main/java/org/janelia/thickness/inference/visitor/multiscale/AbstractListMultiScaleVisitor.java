@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.numeric.real.DoubleType;
 
-import org.janelia.correlations.CorrelationsObjectInterface;
+import org.janelia.correlations.storage.CorrelationsObjectInterface;
 import org.janelia.thickness.inference.Options;
 
 /**

@@ -1,4 +1,4 @@
-package org.janelia.correlations;
+package org.janelia.correlations.storage;
 
 import java.util.TreeMap;
 
@@ -6,7 +6,7 @@ import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.numeric.RealType;
 
-import org.janelia.correlations.CorrelationsObjectInterface.Meta;
+import org.janelia.correlations.storage.CorrelationsObjectInterface.Meta;
 
 public class CorrelationsObjects {
 	

@@ -15,7 +15,10 @@ import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
-import org.janelia.correlations.CorrelationsObjectInterface.Meta;
+import org.janelia.correlations.storage.CorrelationsObjectFactory;
+import org.janelia.correlations.storage.CorrelationsObjectInterface;
+import org.janelia.correlations.storage.SparseCorrelationsObjectFactory;
+import org.janelia.correlations.storage.CorrelationsObjectInterface.Meta;
 import org.janelia.utility.sampler.SparseXYSampler;
 import org.janelia.utility.sampler.XYSampler;
 import org.janelia.utility.tuple.ConstantPair;

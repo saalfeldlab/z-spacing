@@ -5,7 +5,7 @@ import java.io.FileNotFoundException;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.numeric.real.DoubleType;
 
-import org.janelia.correlations.CorrelationsObjectInterface;
+import org.janelia.correlations.storage.CorrelationsObjectInterface;
 import org.janelia.thickness.inference.Options;
 import org.janelia.utility.io.IO;
 

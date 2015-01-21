@@ -31,8 +31,8 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
-import org.janelia.correlations.CorrelationsObjectInterface;
-import org.janelia.correlations.CorrelationsObjectInterface.Meta;
+import org.janelia.correlations.storage.CorrelationsObjectInterface;
+import org.janelia.correlations.storage.CorrelationsObjectInterface.Meta;
 import org.janelia.thickness.EstimateQualityOfSlice;
 import org.janelia.thickness.LocalizedCorrelationFit;
 import org.janelia.thickness.ShiftCoordinates;
