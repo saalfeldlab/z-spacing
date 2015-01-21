@@ -172,7 +172,6 @@ public class InferFromMatrix< M extends Model<M> > {
                 ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
         	
        
-        	final int numCorrelations  = 2*options.comparisonRange + 1;
         	final long numZCoordinates = matrix.dimension( 0 );
         	final RandomAccessibleInterval<DoubleType> transformedCorrelations = MatrixToStrip.toStrip( matrix, transform, options.comparisonRange );
         	final ArrayImg<DoubleType, DoubleArray> multipliersTransformed  = ArrayImgs.doubles( multipliers, numZCoordinates );
