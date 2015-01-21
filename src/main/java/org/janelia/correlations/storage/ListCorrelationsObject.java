@@ -30,7 +30,6 @@ import org.janelia.utility.tuple.SerializableConstantPair;
 public class ListCorrelationsObject< T extends RealType< T > > extends
 		AbstractCorrelationsObject {
 	
-	private static final long serialVersionUID = -2389566119848065176L;
 	private final TreeMap< Long, List< FloatingPointIntegralCrossCorrelation< T, T, FloatType > > > correlationsMap;
 
 	/**

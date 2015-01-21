@@ -20,7 +20,6 @@ import org.janelia.utility.tuple.SerializableConstantPair;
 public class DummyCorrelationsObject implements CorrelationsObjectInterface {
 		
 	
-	private static final long serialVersionUID = 215592469910432642L;
 	private final long zMin;
 	private final long zMax;
 	private final TreeMap< Long, Meta > metaMap;

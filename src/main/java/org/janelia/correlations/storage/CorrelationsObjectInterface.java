@@ -19,7 +19,7 @@ import org.janelia.utility.tuple.SerializableConstantPair;
  *
  */
 // get Serializable out of interface, only needed in SparseCorrelations
-public interface CorrelationsObjectInterface extends Serializable {
+public interface CorrelationsObjectInterface {
 	
 	public static class Meta implements Serializable {
 		/**

@@ -5,6 +5,11 @@ package org.janelia.correlations.storage;
 
 import ij.ImageJ;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -25,7 +30,7 @@ import org.janelia.utility.tuple.SerializableConstantPair;
  * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>
  *
  */
-public class SparseCorrelationsObject extends AbstractCorrelationsObject implements CorrelationsObjectInterface {
+public class SparseCorrelationsObject extends AbstractCorrelationsObject implements Serializable {
 	
 	private static final long serialVersionUID = -1307125505327467911L;
 	private final TreeMap< SerializableConstantPair< Long, Long >, TreeMap< Long, double[] > > correlations;
@@ -188,6 +193,29 @@ public class SparseCorrelationsObject extends AbstractCorrelationsObject impleme
 	public long getyMax() {
 		return yMax;
 	}
-
+	
+	// for serialization
+	private void writeObject( final ObjectOutputStream out ) throws IOException {
+		out.defaultWriteObject();
+		out.writeObject( metaMap );
+		out.writeLong( this.zMin );
+		out.writeLong( this.zMax );
+	}
+		
+	// for serialization
+	private void readObject( final ObjectInputStream in ) throws IOException,
+	ClassNotFoundException {
+		in.defaultReadObject();
+		@SuppressWarnings("unchecked")
+		final TreeMap< Long, Meta> metaMap = (TreeMap< Long, Meta>) in.readObject();
+		this.metaMap.clear();
+		for ( final Entry<Long, Meta> entry : metaMap.entrySet() ) {
+			final Long k = entry.getKey();
+			final Meta v = entry.getValue();
+			this.metaMap.put( k, v );
+		}
+		this.zMin = in.readLong();
+		this.zMax = in.readLong();
+	}
 
 }
