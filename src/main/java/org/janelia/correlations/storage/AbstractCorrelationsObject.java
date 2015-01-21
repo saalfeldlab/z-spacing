@@ -3,10 +3,10 @@ package org.janelia.correlations.storage;
 import java.util.Set;
 import java.util.TreeMap;
 
-import net.imglib2.Cursor;
-import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.array.ArrayCursor;
+import net.imglib2.img.array.ArrayImg;
+import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.type.numeric.real.DoubleType;
-import net.imglib2.view.Views;
 
 import org.janelia.utility.tuple.SerializableConstantPair;
 
@@ -84,23 +84,26 @@ public abstract class AbstractCorrelationsObject implements
 				if ( this.equalsXYCoordinates( aco ) ) {
 					final Set<SerializableConstantPair<Long, Long>> XYCoordinates = this.getXYCoordinates();
 					for ( final SerializableConstantPair<Long, Long> xy : XYCoordinates ) {
-						for ( final Long z : metaMap.keySet() ) {
-							final RandomAccessibleInterval<DoubleType> c1 = this.extractDoubleCorrelationsAt( xy.getA(), xy.getB(), z ).getA();
-							final RandomAccessibleInterval<DoubleType> c2 = aco.extractDoubleCorrelationsAt( xy.getA(), xy.getB(), z ).getA();
-							
-							if ( c1.dimension( 0 ) != c2.dimension( 0 ) )
+						
+						final ArrayImg<DoubleType, DoubleArray> m1 = this.toMatrix( xy.getA(), xy.getB() );
+						final ArrayImg<DoubleType, DoubleArray> m2 = aco.toMatrix( xy.getA(),  xy.getB() );
+						
+						if ( m1.numDimensions() != m2.numDimensions() )
+							return false;
+						
+						if ( m1.dimension( 0 ) != m2.dimension( 0 ) || m1.dimension( 1 ) != m2.dimension( 1 ) )
+							return false;
+						
+						final ArrayCursor<DoubleType> m1c = m1.cursor();
+						final ArrayCursor<DoubleType> m2c = m2.cursor();
+						
+						while( m1c.hasNext() ) {
+							final double val1 = m1c.next().get();
+							final double val2 = m2c.next().get();
+							if ( Double.isNaN( val1 ) && Double.isNaN( val2 ) )
+								continue;
+							if ( ! ( Math.abs( val1 - val2 ) < tolerance ) )
 								return false;
-							
-							final Cursor<DoubleType> cc1 = Views.flatIterable( c1 ).cursor();
-							final Cursor<DoubleType> cc2 = Views.flatIterable( c2 ).cursor();
-							
-							while ( cc1.hasNext() ) {
-								cc1.fwd();
-								cc2.fwd();
-								if ( ! ( Math.abs( cc1.get().get() - cc2.get().get() ) < tolerance ) )
-									return false;
-							}
-							
 						}
 					}
 				}
