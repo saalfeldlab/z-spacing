@@ -1,4 +1,4 @@
-package org.janelia.correlations;
+package org.janelia.correlations.storage;
 
 import net.imglib2.img.array.ArrayCursor;
 import net.imglib2.img.array.ArrayImg;
@@ -8,9 +8,6 @@ import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 
-import org.janelia.correlations.storage.CorrelationsObject;
-import org.janelia.correlations.storage.CorrelationsObjectInterface;
-import org.janelia.correlations.storage.SparseCorrelationsObject;
 import org.janelia.correlations.storage.CorrelationsObjectInterface.Meta;
 import org.janelia.utility.io.Serialization;
 import org.junit.Assert;
