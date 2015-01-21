@@ -220,12 +220,12 @@ public class MultiScaleEstimation< T extends RealType< T > > {
 
 					@Override
 					public Void call() throws Exception {
-						final InferFromCorrelationsObject<TranslationModel1D, ScaleModel> inference = new InferFromCorrelationsObject<TranslationModel1D, ScaleModel>( co, 
+						final InferFromMatrix<TranslationModel1D, ScaleModel> inference = new InferFromMatrix<TranslationModel1D, ScaleModel>( 
 								new TranslationModel1D(), 
 								new NLinearInterpolatorFactory<DoubleType>(), 
 								new ScaleModel(), 
 								new OpinionMediatorModel<TranslationModel1D>( new TranslationModel1D() ) );
-						inference.estimateZCoordinates( x, y, arr, new LazyVisitor(), categorizer, currentOptions );
+						inference.estimateZCoordinates( co.toMatrix( x, y ), arr, new LazyVisitor(), categorizer, currentOptions );
 						return null;
 					}
 				});

@@ -8,8 +8,12 @@ import java.util.ArrayList;
 import java.util.IllegalFormatException;
 
 import net.imglib2.RandomAccessible;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
+import net.imglib2.converter.RealDoubleConverter;
+import net.imglib2.converter.read.ConvertedIterableInterval;
+import net.imglib2.converter.read.ConvertedRandomAccessibleInterval;
 import net.imglib2.img.ImagePlusAdapter;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
@@ -18,6 +22,7 @@ import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.realtransform.InverseRealTransform;
 import net.imglib2.realtransform.RealTransformRealRandomAccessible;
 import net.imglib2.realtransform.RealViews;
+import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
@@ -65,18 +70,26 @@ public class CorrelationArrayTrackerVisitor extends AbstractMultiVisitor {
 
 
 	@Override
-	void actSelf( final int iteration, final ArrayImg<DoubleType, DoubleArray> matrix, final double[] lut,
+	< T extends RealType< T > > void actSelf( final int iteration, final RandomAccessibleInterval< T > matrix, final double[] lut,
 			final AbstractLUTRealTransform transform,
 			final double[] multipliers,
 			final double[] weights,
 			final double[] estimatedFit,
 			final int[] positions ) {
+		
+		ConvertedRandomAccessibleInterval< T, DoubleType > convertedMatrix = new ConvertedRandomAccessibleInterval<T, DoubleType>(
+				matrix, 
+				new RealDoubleConverter<T>(),
+				new DoubleType() );
 
 		final PlanarRandomAccess<FloatType> targetAccess = ImagePlusAdapter.wrapFloat( targetImg ).randomAccess();
-		final RealRandomAccessible<DoubleType> sourceInterpolated = Views.interpolate( Views.extendValue( matrix, new DoubleType( Double.NaN ) ), this.interpolatorFactory);
-		final RealTransformRealRandomAccessible<DoubleType, InverseRealTransform> sourceInterpolatedTransformedScaled = RealViews.transformReal(sourceInterpolated, transform);
-		final RealRandomAccess<DoubleType> sourceAccess1 = sourceInterpolatedTransformedScaled.realRandomAccess();
-		final RealRandomAccess<DoubleType> sourceAccess2 = sourceInterpolatedTransformedScaled.realRandomAccess();
+		final RealRandomAccessible< DoubleType > sourceInterpolated = Views.interpolate( Views.extendValue( 
+				convertedMatrix, 
+				new DoubleType( Double.NaN ) ), 
+				this.interpolatorFactory);
+		final RealTransformRealRandomAccessible< DoubleType, InverseRealTransform > sourceInterpolatedTransformedScaled = RealViews.transformReal(sourceInterpolated, transform);
+		final RealRandomAccess< DoubleType > sourceAccess1 = sourceInterpolatedTransformedScaled.realRandomAccess();
+		final RealRandomAccess< DoubleType > sourceAccess2 = sourceInterpolatedTransformedScaled.realRandomAccess();
 		
 		
 		for (int n = 0; n < nData; ++n ) {

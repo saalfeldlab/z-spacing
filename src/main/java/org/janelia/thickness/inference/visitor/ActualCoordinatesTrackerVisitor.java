@@ -10,8 +10,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.TreeMap;
 
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
+import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
 
 import org.janelia.thickness.lut.AbstractLUTRealTransform;
@@ -39,7 +41,7 @@ public class ActualCoordinatesTrackerVisitor extends AbstractMultiVisitor {
 	 * @see org.janelia.thickness.inference.visitor.AbstractMultiVisitor#actSelf(int, net.imglib2.img.array.ArrayImg, double[], org.janelia.thickness.LUTRealTransform, net.imglib2.img.array.ArrayImg, net.imglib2.img.array.ArrayImg, org.janelia.thickness.FitWithGradient)
 	 */
 	@Override
-	void actSelf(final int iteration, final ArrayImg<DoubleType, DoubleArray> matrix,
+	< T extends RealType< T > > void actSelf(final int iteration, final RandomAccessibleInterval< T > matrix,
 			final double[] lut, final AbstractLUTRealTransform transform,
 			final double[] multipliers,
 			final double[] weights,

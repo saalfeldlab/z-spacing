@@ -16,6 +16,7 @@ import net.imglib2.img.imageplus.ImagePlusImg;
 import net.imglib2.img.imageplus.ImagePlusImgs;
 import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.realtransform.RealViews;
+import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.IntervalView;
@@ -63,7 +64,9 @@ public class ApplyTransformToImageVisitor extends AbstractMultiVisitor {
 
 
 	@Override
-	void actSelf( final int iteration, final ArrayImg<DoubleType, DoubleArray> matrix, final double[] lut,
+	< T extends RealType< T > > void actSelf( final int iteration, 
+			final RandomAccessibleInterval< T > matrix, 
+			final double[] lut,
 			final AbstractLUTRealTransform transform,
 			final double[] multipliers,
 			final double[] weights,

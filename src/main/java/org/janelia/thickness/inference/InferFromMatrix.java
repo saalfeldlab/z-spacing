@@ -25,6 +25,7 @@ import net.imglib2.img.list.ListImg;
 import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.outofbounds.OutOfBounds;
+import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.IntervalView;
@@ -42,55 +43,45 @@ import org.janelia.thickness.lut.AbstractLUTRealTransform;
 import org.janelia.thickness.lut.LUTRealTransform;
 import org.janelia.thickness.lut.SingleDimensionLUTRealTransformField;
 import org.janelia.thickness.mediator.OpinionMediator;
+import org.janelia.utility.CopyFromIntervalToInterval;
 import org.janelia.utility.arrays.ArraySortedIndices;
 import org.janelia.utility.realtransform.MatrixToStrip;
 import org.janelia.utility.tuple.ConstantPair;
 
-public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L> > {
+public class InferFromMatrix< M extends Model<M>, L extends Model<L> > {
 
-        private final CorrelationsObjectInterface correlationsObject;
         private final M correlationFitModel;
         private final InterpolatorFactory< DoubleType, RandomAccessible< DoubleType>> fitInterpolatorFactory;
         private final L measurementsMultiplierModel;
         private final OpinionMediator shiftMediator;
-        private final long zMin;
-        private final long zMax;
 
 
-        public InferFromCorrelationsObject(
-                final CorrelationsObjectInterface correlationsObject,
+        public InferFromMatrix(
                 final M correlationFitModel,
                 final InterpolatorFactory< DoubleType, RandomAccessible< DoubleType>> fitInterpolatorFactory,
                 final L measurementsMultiplierModel,
                 final OpinionMediator shiftMediator ) {
                 super();
 
-                this.correlationsObject = correlationsObject;
                 this.correlationFitModel = correlationFitModel;
                 this.fitInterpolatorFactory = fitInterpolatorFactory;
                 this.measurementsMultiplierModel = measurementsMultiplierModel;
                 this.shiftMediator = shiftMediator;
 
-                final Iterator<Long> iterator = this.correlationsObject.getMetaMap().keySet().iterator();
-                zMin = iterator.next();
-                long zMaxTmp = zMin;
-
-                while ( iterator.hasNext() )
-                        zMaxTmp = iterator.next();
-                zMax = zMaxTmp + 1;
                
         }
 
 
-        public ArrayImg< DoubleType, DoubleArray > estimateZCoordinates( final long x,
-                                                                          final long y,
-                                                                          final double[] startingCoordinates,
-                                                                          final Options options) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
-                return estimateZCoordinates( x, y, startingCoordinates, new Visitor() {
+        public < T extends RealType< T > > ArrayImg< DoubleType, DoubleArray > estimateZCoordinates(  
+        		RandomAccessibleInterval< T > matrix,
+        		final double[] startingCoordinates,
+        		final Options options
+        		) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+                return estimateZCoordinates( matrix, startingCoordinates, new Visitor() {
 
                         @Override
-                        public void act(final int iteration,
-                                        final ArrayImg<DoubleType, DoubleArray> matrix, final double[] lut,
+                        public < T extends RealType< T > > void act(final int iteration,
+                        		final RandomAccessibleInterval< T > input, final double[] lut,
                                         final AbstractLUTRealTransform transform,
                                         final double[] multipliers,
                                         final double[] weights,
@@ -101,26 +92,25 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
                         options );
         }
         
-        public ArrayImg< DoubleType, DoubleArray > estimateZCoordinates(
-                final long x,
-                final long y,
+        public < T extends RealType< T > > ArrayImg< DoubleType, DoubleArray > estimateZCoordinates(
+                RandomAccessibleInterval< T > input,
                 final double[] startingCoordinates,
                 final Visitor visitor,
                 final Options options) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
         	final RangedCategorizer categorizer = new RangedCategorizer( startingCoordinates.length );
-        	return estimateZCoordinates(x, y, startingCoordinates, visitor, categorizer, options);
+        	return estimateZCoordinates( input, startingCoordinates, visitor, categorizer, options );
         }
 
 
-        public ArrayImg< DoubleType, DoubleArray > estimateZCoordinates(
-                final long x,
-                final long y,
+        public < T extends RealType< T > > ArrayImg< DoubleType, DoubleArray > estimateZCoordinates(
+                RandomAccessibleInterval< T > input,
                 final double[] startingCoordinates,
                 final Visitor visitor,
                 final Categorizer categorizer,
                 final Options options) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
-
-                final ArrayImg<DoubleType, DoubleArray> matrix = this.correlationsToMatrix( x, y );
+        	
+        	    ArrayImg<DoubleType, DoubleArray> matrix = ArrayImgs.doubles( input.dimension( 0 ), input.dimension( 1 ) );
+        	    CopyFromIntervalToInterval.copyToRealType( input, matrix );
 
                 final double[] weightArr = new double[ ( int )matrix.dimension( 1 ) ];
                 final ArrayImg<DoubleType, DoubleArray> weights = ArrayImgs.doubles( weightArr, new long[]{ weightArr.length } );
@@ -169,7 +159,7 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 
                 for ( int n = 0; n < options.nIterations; ++n ) {
                         
-                        this.iterationStep(matrix, weightArr, transform, lut, coordinateArr, coordinates, mediatedShifts, options, visitor, n, lcf, localFits, multipliers, orderedIndices, originalCoordinates, categorizer );
+                        this.iterationStep( matrix, weightArr, transform, lut, coordinateArr, coordinates, mediatedShifts, options, visitor, n, lcf, localFits, multipliers, orderedIndices, originalCoordinates, categorizer );
                         IJ.showProgress( n, options.nIterations );
 //                        IJ.log( Arrays.toString( orderedIndices ) );
                 }
@@ -343,53 +333,48 @@ public class InferFromCorrelationsObject< M extends Model<M>, L extends Model<L>
 			visitor.act( n + 1, matrix, lut, transform, multipliers, weights, localFits.firstElement(), orderedIndices );
         }
         
-        public ArrayImg< DoubleType, DoubleArray > correlationsToMatrix( final long x, final long y ) {
-
-                final int nSlices = this.correlationsObject.getMetaMap().size();
-                final ArrayImg<DoubleType, DoubleArray> matrix = ArrayImgs.doubles( nSlices, nSlices );
-                for ( final DoubleType m : matrix ) {
-                        m.set( Double.NaN );
-                }
-
-                for ( long zRef = this.zMin; zRef < this.zMax; ++zRef ) {
-                        final long relativeZ = zRef - this.zMin;
-                        final RandomAccessibleInterval<DoubleType> correlations = this.correlationsObject.extractDoubleCorrelationsAt( x, y, zRef ).getA();
-                        final IntervalView<DoubleType> row = Views.hyperSlice( matrix, 1, relativeZ);
-
-                        final RandomAccess<DoubleType> correlationsAccess = correlations.randomAccess();
-                        final RandomAccess<DoubleType> rowAccess          = row.randomAccess();
-
-                        final Meta meta = this.correlationsObject.getMetaMap().get( zRef );
-
-                        rowAccess.setPosition( Math.max( meta.zCoordinateMin - this.zMin, 0 ), 0 );
-
-                        for ( long zComp = meta.zCoordinateMin; zComp < meta.zCoordinateMax; ++zComp ) {
-                                if ( zComp < this.zMin || zComp >= this.zMax ) {
-                                        correlationsAccess.fwd( 0 );
-                                        continue;
-                                }
-                                rowAccess.get().set( correlationsAccess.get() );
-                                rowAccess.fwd( 0 );
-                                correlationsAccess.fwd( 0 );
-
-                        }
-
-                }
-
-
-                return matrix;
-        }
+//        public ArrayImg< DoubleType, DoubleArray > correlationsToMatrix( final long x, final long y ) {
+//
+//                final int nSlices = this.correlationsObject.getMetaMap().size();
+//                final ArrayImg<DoubleType, DoubleArray> matrix = ArrayImgs.doubles( nSlices, nSlices );
+//                for ( final DoubleType m : matrix ) {
+//                        m.set( Double.NaN );
+//                }
+//
+//                for ( long zRef = zMin; zRef < zMax; ++zRef ) {
+//                        final long relativeZ = zRef - zMin;
+//                        final RandomAccessibleInterval<DoubleType> correlations = this.correlationsObject.extractDoubleCorrelationsAt( x, y, zRef ).getA();
+//                        final IntervalView<DoubleType> row = Views.hyperSlice( matrix, 1, relativeZ);
+//
+//                        final RandomAccess<DoubleType> correlationsAccess = correlations.randomAccess();
+//                        final RandomAccess<DoubleType> rowAccess          = row.randomAccess();
+//
+//                        final Meta meta = this.correlationsObject.getMetaMap().get( zRef );
+//
+//                        rowAccess.setPosition( Math.max( meta.zCoordinateMin - this.zMin, 0 ), 0 );
+//
+//                        for ( long zComp = meta.zCoordinateMin; zComp < meta.zCoordinateMax; ++zComp ) {
+//                                if ( zComp < this.zMin || zComp >= this.zMax ) {
+//                                        correlationsAccess.fwd( 0 );
+//                                        continue;
+//                                }
+//                                rowAccess.get().set( correlationsAccess.get() );
+//                                rowAccess.fwd( 0 );
+//                                correlationsAccess.fwd( 0 );
+//
+//                        }
+//
+//                }
+//
+//
+//                return matrix;
+//        }
 
         public static ArrayImg<FloatType, FloatArray> convertToFloat( final ArrayImg<DoubleType, DoubleArray> input ) {
                 final long[] dims = new long[ input.numDimensions() ];
                 input.dimensions( dims );
                 final ArrayImg<FloatType, FloatArray> output = ArrayImgs.floats( dims );
-                final ArrayCursor<DoubleType> i = input.cursor();
-                final ArrayCursor<FloatType> o  = output.cursor();
-
-                while( i.hasNext() ) {
-                        o.next().set( i.next().getRealFloat() );
-                }
+                CopyFromIntervalToInterval.copyToRealType(input, output);
                 return output;
         }
 
