@@ -8,14 +8,21 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.lang.reflect.Field;
 
 /**
  * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>
  *
  */
-public class Options {
+public class Options implements Serializable {
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 3591334824905556420L;
+
+
 	public static Options generateDefaultOptions() {
 	        final Options result = new Options();
 	        result.multiplierGenerationRegularizerWeight = 0.01;
