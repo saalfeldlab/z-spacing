@@ -21,7 +21,12 @@ public abstract class AbstractCorrelationsObject implements
 	public float tolerance = 1e-5f;
 	
 	
-
+	public AbstractCorrelationsObject() {
+		this( new TreeMap< Long,Meta >() );
+	}
+	
+	
+	
 	/**
 	 * @param metaMap
 	 */
