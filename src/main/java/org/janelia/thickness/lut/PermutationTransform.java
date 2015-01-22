@@ -3,8 +3,6 @@
  */
 package org.janelia.thickness.lut;
 
-import java.util.Arrays;
-
 import net.imglib2.Localizable;
 import net.imglib2.Positionable;
 import net.imglib2.transform.InvertibleTransform;
@@ -34,8 +32,6 @@ public class PermutationTransform implements InvertibleTransform
         this.numTargetDimensions = numTargetDimensions;
 
         this.lut = lut.clone();
-
-        System.out.println( Arrays.toString( lut ) );
 
 		inverseLut = new int[ lut.length ];
 		for ( int i = 0; i < lut.length; ++i )
@@ -84,10 +80,7 @@ public class PermutationTransform implements InvertibleTransform
 		assert source.length >= numTargetDimensions && target.length >= numTargetDimensions : "Dimensions do not match.";
 
 		for ( int d = 0; d < numTargetDimensions; ++d )
-		{
-			System.out.println( source[ d ] + " > " + lut[ ( int )source[ d ] ] );
 			target[ d ] = lut[ ( int )source[ d ] ];
-		}
 	}
 
 	@Override

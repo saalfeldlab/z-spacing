@@ -17,7 +17,6 @@
 package org.janelia.thickness.lut;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Random;
 
@@ -76,7 +75,6 @@ public class PermutationTransformTest
 		final PermutationTransform t = new PermutationTransform( lut, 2, 2 );
 		final TransformView< LongType > bijectivePermutation = new TransformView< LongType >( img, t );
 		final TransformView< LongType > inverseBijectivePermutation = new TransformView< LongType >( bijectivePermutation, t.inverse() );
-		System.out.println( Arrays.toString( lut ) );
 
 		final RandomAccess< LongType > a = img.randomAccess();
 		final RandomAccess< LongType > b = new IterableRandomAccessibleInterval< LongType >( Views.interval( inverseBijectivePermutation, img ) ).randomAccess();
@@ -90,11 +88,7 @@ public class PermutationTransformTest
 		}
 
 		int i = 0;
-//		for ( final LongType l : new IterableRandomAccessibleInterval< LongType >( Views.interval( inverseBijectivePermutation, img ) ) )
 		for ( final LongType l : Views.flatIterable( Views.interval( inverseBijectivePermutation, img ) ) )
-		{
-
 				Assert.assertEquals( values[ i++ ], l.get() );
-		}
 	}
 }
