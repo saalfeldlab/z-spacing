@@ -140,9 +140,11 @@ public class AbstractPerumtationTransformTest {
 			resLong = inverse.applyChecked( i );
 			Assert.assertEquals( inv[ i ], resInt );
 			Assert.assertEquals( inv[ i ], resLong );
-			
-			
 		}
+		
+		Assert.assertEquals( -Long.MAX_VALUE, transform.applyChecked( -1 ) );
+		Assert.assertEquals(  Long.MAX_VALUE, transform.applyChecked( size + 1 ) );
+		
 	}
 
 }
