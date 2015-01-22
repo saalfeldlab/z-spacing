@@ -8,9 +8,7 @@ import mpicbg.models.Model;
 import mpicbg.models.NotEnoughDataPointsException;
 import mpicbg.models.Point;
 import mpicbg.models.PointMatch;
-import net.imglib2.img.array.ArrayCursor;
 import net.imglib2.img.array.ArrayImg;
-import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.type.numeric.real.DoubleType;
 
@@ -29,7 +27,7 @@ public class OpinionMediatorModel< M extends Model<M> > implements OpinionMediat
 	public ArrayImg<DoubleType, DoubleArray> mediate(
 			final TreeMap<Long, ArrayList<ConstantPair<Double, Double>>> shifts) {
 		
-		final ArrayImg<DoubleType, DoubleArray> result = ArrayImgs.doubles( new double[ shifts.size() ], shifts.size() );
+		final double[] result = new double[ shifts.size() ];
 		
 		
 		
@@ -39,19 +37,15 @@ public class OpinionMediatorModel< M extends Model<M> > implements OpinionMediat
 	@Override
 	public ArrayImg<DoubleType, DoubleArray> mediate(
 			final TreeMap<Long, ArrayList<ConstantPair<Double, Double>>> shifts,
-			final ArrayImg<DoubleType, DoubleArray> result) {
+			final double[]result) {
 		
 		{
-			final ArrayCursor<DoubleType> cursor = result.cursor();
-			for ( int i = 0; i < result.dimension( 0 ); ++i ) {
-				cursor.fwd();
+			for ( int i = 0; i < result.length; ++i ) {
 				final ArrayList<ConstantPair<Double, Double>> localShifts = shifts.get( (long) i );
 				final ArrayList<PointMatch> pointMatches = new ArrayList< PointMatch >();
 				
-				if ( localShifts == null || localShifts.size() == 0 ) {
-					cursor.get().set( 0.0 );
-				}
-				
+				if ( localShifts == null || localShifts.size() == 0 )
+					result[ i ] = 0.0;
 				else {
 					for ( final ConstantPair<Double, Double> l : localShifts ) {
 						if ( Double.isInfinite( l.getA() ) || Double.isNaN( l.getA() ) ) {
@@ -63,7 +57,7 @@ public class OpinionMediatorModel< M extends Model<M> > implements OpinionMediat
 //					final M mc = model.copy();
 					try {
 						model.fit( pointMatches );
-						cursor.get().set( model.apply( new float[] { 0.0f } )[ 0 ] );
+						result[ i ] = model.apply( new float[] { 0.0f } )[ 0 ];
 					} catch (final NotEnoughDataPointsException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();

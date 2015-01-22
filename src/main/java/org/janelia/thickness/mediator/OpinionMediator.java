@@ -13,7 +13,7 @@ public interface OpinionMediator {
 	
 	public ArrayImg< DoubleType, DoubleArray > mediate( TreeMap< Long, ArrayList< ConstantPair<Double, Double> > > shifts );
 	
-	public ArrayImg< DoubleType, DoubleArray > mediate( TreeMap< Long, ArrayList< ConstantPair<Double, Double> > > shifts, ArrayImg< DoubleType, DoubleArray > result );
+	public ArrayImg< DoubleType, DoubleArray > mediate( TreeMap< Long, ArrayList< ConstantPair<Double, Double> > > shifts, double[] result );
 	
 	public OpinionMediator copy();
 
