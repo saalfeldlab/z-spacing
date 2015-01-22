@@ -15,8 +15,6 @@ import net.imglib2.RealRandomAccessible;
 import net.imglib2.converter.RealDoubleConverter;
 import net.imglib2.converter.read.ConvertedRandomAccessibleInterval;
 import net.imglib2.img.ImagePlusAdapter;
-import net.imglib2.img.array.ArrayImg;
-import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.img.planar.PlanarCursor;
 import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.realtransform.AffineGet;
@@ -28,7 +26,7 @@ import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
-import org.janelia.thickness.lut.AbstractLUTRealTransform;
+import org.janelia.thickness.lut.LUTRealTransform;
 
 public class CorrelationMatrixTrackerVisitor extends AbstractMultiVisitor {
 	
@@ -81,16 +79,23 @@ public class CorrelationMatrixTrackerVisitor extends AbstractMultiVisitor {
 
 
 	@Override
-	< T extends RealType< T > > void actSelf( final int iteration, 
-			final RandomAccessibleInterval< T > matrix, final double[] lut,
-			final AbstractLUTRealTransform transform,
+	< T extends RealType< T > > void actSelf( 
+			final int iteration, 
+			final RandomAccessibleInterval< T > matrix, 
+			final double[] lut,
+			final int[] permutation,
+			final int[] inversePermutation,
 			final double[] multipliers,
 			final double[] weights,
-			final double[] estimatedFit,
-			final int[] positions ) {
+			final double[] estimatedFit
+			) {
 
-		
-		ConvertedRandomAccessibleInterval<T, DoubleType> convertedMatrix = new ConvertedRandomAccessibleInterval<T, DoubleType>( matrix, new RealDoubleConverter< T >(), new DoubleType() );
+
+		final double[] lutTransformed = lut.clone();
+		for (int i = 0; i < lut.length; i++)
+			lutTransformed[ permutation[i] ] = lut[i];
+		final LUTRealTransform transform = new LUTRealTransform( lutTransformed, 2, 2 );
+		final ConvertedRandomAccessibleInterval<T, DoubleType> convertedMatrix = new ConvertedRandomAccessibleInterval<T, DoubleType>( matrix, new RealDoubleConverter< T >(), new DoubleType() );
 		final PlanarCursor<FloatType> targetCursor = ImagePlusAdapter.wrapFloat( targetImg ).cursor();
 		final RealRandomAccessible<DoubleType> sourceInterpolated = Views.interpolate( Views.extendValue( convertedMatrix, new DoubleType( Double.NaN ) ), this.interpolatorFactory);
 		final AffineRealRandomAccessible<DoubleType, AffineGet> sourceInterpolatedTransformedScaled = RealViews.affineReal( RealViews.transformReal(sourceInterpolated, transform), scale);

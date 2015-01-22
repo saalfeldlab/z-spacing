@@ -12,11 +12,8 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.converter.RealDoubleConverter;
-import net.imglib2.converter.read.ConvertedIterableInterval;
 import net.imglib2.converter.read.ConvertedRandomAccessibleInterval;
 import net.imglib2.img.ImagePlusAdapter;
-import net.imglib2.img.array.ArrayImg;
-import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.img.planar.PlanarRandomAccess;
 import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.realtransform.InverseRealTransform;
@@ -27,7 +24,7 @@ import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
-import org.janelia.thickness.lut.AbstractLUTRealTransform;
+import org.janelia.thickness.lut.LUTRealTransform;
 
 public class CorrelationArrayTrackerVisitor extends AbstractMultiVisitor {
 	
@@ -70,14 +67,18 @@ public class CorrelationArrayTrackerVisitor extends AbstractMultiVisitor {
 
 
 	@Override
-	< T extends RealType< T > > void actSelf( final int iteration, final RandomAccessibleInterval< T > matrix, final double[] lut,
-			final AbstractLUTRealTransform transform,
+	< T extends RealType< T > > void actSelf( 
+			final int iteration, 
+			final RandomAccessibleInterval< T > matrix, 
+			final double[] lut,
+			final int[] permutation,
+			final int[] inversePermutation,
 			final double[] multipliers,
 			final double[] weights,
-			final double[] estimatedFit,
-			final int[] positions ) {
+			final double[] estimatedFit
+			) {
 		
-		ConvertedRandomAccessibleInterval< T, DoubleType > convertedMatrix = new ConvertedRandomAccessibleInterval<T, DoubleType>(
+		final ConvertedRandomAccessibleInterval< T, DoubleType > convertedMatrix = new ConvertedRandomAccessibleInterval<T, DoubleType>(
 				matrix, 
 				new RealDoubleConverter<T>(),
 				new DoubleType() );
@@ -87,7 +88,8 @@ public class CorrelationArrayTrackerVisitor extends AbstractMultiVisitor {
 				convertedMatrix, 
 				new DoubleType( Double.NaN ) ), 
 				this.interpolatorFactory);
-		final RealTransformRealRandomAccessible< DoubleType, InverseRealTransform > sourceInterpolatedTransformedScaled = RealViews.transformReal(sourceInterpolated, transform);
+		final LUTRealTransform transform = new LUTRealTransform( lut, 2, 2 );
+		final RealTransformRealRandomAccessible< DoubleType, InverseRealTransform > sourceInterpolatedTransformedScaled = RealViews.transformReal( sourceInterpolated, transform );
 		final RealRandomAccess< DoubleType > sourceAccess1 = sourceInterpolatedTransformedScaled.realRandomAccess();
 		final RealRandomAccess< DoubleType > sourceAccess2 = sourceInterpolatedTransformedScaled.realRandomAccess();
 		

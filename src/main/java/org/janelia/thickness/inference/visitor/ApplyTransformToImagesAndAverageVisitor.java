@@ -15,7 +15,6 @@ import net.imglib2.img.ImagePlusAdapter;
 import net.imglib2.img.array.ArrayCursor;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
-import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.img.imageplus.ImagePlusImg;
 import net.imglib2.img.imageplus.ImagePlusImgs;
@@ -23,13 +22,13 @@ import net.imglib2.img.planar.PlanarCursor;
 import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.IntervalView;
+import net.imglib2.view.TransformView;
 import net.imglib2.view.Views;
 
-import org.janelia.thickness.lut.AbstractLUTRealTransform;
 import org.janelia.thickness.lut.SingleDimensionLUTRealTransform;
+import org.janelia.thickness.lut.SingleDimensionPermutationTransform;
 
 public class ApplyTransformToImagesAndAverageVisitor extends AbstractMultiVisitor {
 	
@@ -161,33 +160,27 @@ public class ApplyTransformToImagesAndAverageVisitor extends AbstractMultiVisito
 
 
 	@Override
-	< T extends RealType< T > > void actSelf( final int iteration, 
+	< T extends RealType< T > > void actSelf(
+			final int iteration, 
 			final RandomAccessibleInterval< T > matrix, 
 			final double[] lut,
-			final AbstractLUTRealTransform transform,
+			final int[] permutation,
+			final int[] inversePermutation,
 			final double[] multipliers,
 			final double[] weights,
-			final double[] estimatedFit,
-			final int[] positions ) {
+			final double[] estimatedFit
+			) {
 		
 		if ( this.avgImg == null || this.targetImg == null )
 			return;
 		
-		final ArrayImg<FloatType, ?> tmpImg = this.avgImg.copy();
-		if ( positions != null ) {
-			for ( int i = 0; i < positions.length; ++i ) {
-				if ( i == positions[i] )
-					continue;
-				final Cursor<FloatType> s = Views.flatIterable( Views.hyperSlice( this.avgImg, 1, positions[i] ) ).cursor();
-				final Cursor<FloatType> t = Views.flatIterable( Views.hyperSlice( tmpImg,  1,  i ) ).cursor();
-				while ( s.hasNext() )
-					t.next().set( s.next() );
-			}
-		}
+		final SingleDimensionPermutationTransform transformOne = new SingleDimensionPermutationTransform( permutation, 2, 2, 1 );
+		final IntervalView<FloatType> permutedImg              = Views.interval( new TransformView< FloatType >( avgImg, transformOne), avgImg );
+
 		
 		final double[] scaledLut = new double[ lut.length ];
-		for (int i = 0; i < scaledLut.length; i++) {
-			scaledLut[i] = lut[i] * scale;
+		for ( int i = 0; i < scaledLut.length; ++i ) {
+			scaledLut[i] = lut[ inversePermutation[ i ] ] * scale;
 		}
 		final SingleDimensionLUTRealTransform lutTransform = new SingleDimensionLUTRealTransform( scaledLut, 2, 2, 1 );
 		
@@ -197,7 +190,7 @@ public class ApplyTransformToImagesAndAverageVisitor extends AbstractMultiVisito
 		
 
 		final PlanarCursor<FloatType> targetCursor = ImagePlusAdapter.wrapFloat( targetImg ).cursor();
-		final RealRandomAccessible<FloatType> interpolated = Views.interpolate( Views.extendValue( tmpImg, new FloatType( Float.NaN ) ), this.interpolatorFactory );
+		final RealRandomAccessible<FloatType> interpolated = Views.interpolate( Views.extendValue( permutedImg, new FloatType( Float.NaN ) ), this.interpolatorFactory );
 		final IntervalView<FloatType> transformed = Views.interval( RealViews.transform( interpolated, lutTransform), this.targetImgWrapped );
 		final Cursor<FloatType> sourceCursor = Views.flatIterable( transformed ).cursor();
 		

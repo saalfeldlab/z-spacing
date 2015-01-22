@@ -10,12 +10,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.array.ArrayImg;
-import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.real.DoubleType;
-
-import org.janelia.thickness.lut.AbstractLUTRealTransform;
 
 /**
  * @author hanslovskyp
@@ -42,13 +37,16 @@ public class CorrelationFitTrackerVisitor extends AbstractMultiVisitor {
 	 * @see org.janelia.thickness.inference.visitor.AbstractMultiVisitor#actSelf(int, net.imglib2.img.array.ArrayImg, double[], org.janelia.thickness.LUTRealTransform, net.imglib2.img.array.ArrayImg, net.imglib2.img.array.ArrayImg, org.janelia.thickness.FitWithGradient)
 	 */
 	@Override
-	< T extends RealType< T > > void actSelf( final int iteration, 
-			final RandomAccessibleInterval< T > matrix, final double[] lut,
-			final AbstractLUTRealTransform transform,
+	< T extends RealType< T > > void actSelf( 
+			final int iteration, 
+			final RandomAccessibleInterval< T > matrix, 
+			final double[] lut,
+			final int[] permutation,
+			final int[] inversePermutation,
 			final double[] multipliers,
 			final double[] weights,
-			final double[] estimatedFit,
-			final int[] positions ) {
+			final double[] estimatedFit
+			) {
 		
 		final File file = new File( String.format( this.basePath, iteration ) );
 		try {

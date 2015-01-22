@@ -10,19 +10,15 @@ import java.util.IllegalFormatException;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
-import net.imglib2.img.array.ArrayImg;
-import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.img.imageplus.ImagePlusImg;
 import net.imglib2.img.imageplus.ImagePlusImgs;
 import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
-import org.janelia.thickness.lut.AbstractLUTRealTransform;
 import org.janelia.thickness.lut.SingleDimensionLUTRealTransform;
 import org.janelia.utility.CopyFromIntervalToInterval;
 
@@ -64,14 +60,16 @@ public class ApplyTransformToImageVisitor extends AbstractMultiVisitor {
 
 
 	@Override
-	< T extends RealType< T > > void actSelf( final int iteration, 
+	< T extends RealType< T > > void actSelf( 
+			final int iteration, 
 			final RandomAccessibleInterval< T > matrix, 
 			final double[] lut,
-			final AbstractLUTRealTransform transform,
+			final int[] permutation,
+			final int[] inversePermutation,
 			final double[] multipliers,
 			final double[] weights,
-			final double[] estimatedFit,
-			final int[] positions ) {
+			final double[] estimatedFit
+			) {
 		
 		final double[] scaledLut = new double[ lut.length ];
 		for (int i = 0; i < scaledLut.length; i++) {
@@ -80,6 +78,7 @@ public class ApplyTransformToImageVisitor extends AbstractMultiVisitor {
 		final SingleDimensionLUTRealTransform lutTransform = new SingleDimensionLUTRealTransform( scaledLut, 2, 2, 1 );
 
 		final RealRandomAccessible<FloatType> interpolated = Views.interpolate( Views.extendValue( this.image, new FloatType( Float.NaN ) ), this.interpolatorFactory );
+		// TODO permute lut and image first!
 		final IntervalView<FloatType> transformed = Views.interval( RealViews.transform( interpolated, lutTransform), this.targetImgWrapped );
 		Views.flatIterable( transformed ).cursor();
 		
