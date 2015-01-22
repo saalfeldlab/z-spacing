@@ -1,7 +1,5 @@
 package org.janelia.thickness.inference;
 
-import ij.IJ;
-
 import java.util.ArrayList;
 import java.util.TreeMap;
 
@@ -9,21 +7,17 @@ import mpicbg.models.AffineModel1D;
 import mpicbg.models.IllDefinedDataPointsException;
 import mpicbg.models.Model;
 import mpicbg.models.NotEnoughDataPointsException;
+import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.RealRandomAccess;
-import net.imglib2.RealRandomAccessible;
-import net.imglib2.img.array.ArrayCursor;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
-import net.imglib2.img.array.ArrayRandomAccess;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
-import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.img.list.ListImg;
-import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.outofbounds.OutOfBounds;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
-import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.view.IntervalView;
+import net.imglib2.view.TransformView;
 import net.imglib2.view.Views;
 
 import org.janelia.thickness.EstimateQualityOfSlice;
@@ -32,327 +26,288 @@ import org.janelia.thickness.ShiftCoordinates;
 import org.janelia.thickness.cluster.Categorizer;
 import org.janelia.thickness.cluster.RangedCategorizer;
 import org.janelia.thickness.inference.visitor.Visitor;
-import org.janelia.thickness.lut.AbstractLUTRealTransform;
 import org.janelia.thickness.lut.LUTRealTransform;
-import org.janelia.thickness.lut.SingleDimensionLUTRealTransformField;
+import org.janelia.thickness.lut.PermutationTransform;
 import org.janelia.thickness.mediator.OpinionMediator;
-import org.janelia.utility.CopyFromIntervalToInterval;
 import org.janelia.utility.arrays.ArraySortedIndices;
-import org.janelia.utility.realtransform.MatrixToStrip;
 import org.janelia.utility.tuple.ConstantPair;
 
 public class InferFromMatrix< M extends Model<M> > {
 
-        private final M correlationFitModel;
-        private final OpinionMediator shiftMediator;
+	private final M correlationFitModel;
+    private final OpinionMediator shiftMediator;
 
 
-        public InferFromMatrix(
-                final M correlationFitModel,
-                final OpinionMediator shiftMediator ) {
-                super();
+    public InferFromMatrix(
+            final M correlationFitModel,
+            final OpinionMediator shiftMediator ) {
+            super();
 
-                this.correlationFitModel = correlationFitModel;
-                this.shiftMediator = shiftMediator;
+            this.correlationFitModel = correlationFitModel;
+            this.shiftMediator = shiftMediator;
 
-               
-        }
+           
+    }
 
 
-        public < T extends RealType< T > > ArrayImg< DoubleType, DoubleArray > estimateZCoordinates(  
-        		final RandomAccessibleInterval< T > matrix,
-        		final double[] startingCoordinates,
-        		final Options options
-        		) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
-                return estimateZCoordinates( matrix, startingCoordinates, new Visitor() {
+    public < T extends RealType< T > > double[] estimateZCoordinates(  
+    		final RandomAccessibleInterval< T > matrix,
+    		final double[] startingCoordinates,
+    		final Options options
+    		) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+            return estimateZCoordinates( 
+        		matrix, 
+        		startingCoordinates, 
+        		new Visitor() {
 
-                        @Override
-                        public < U extends RealType< U > > void act(final int iteration,
-                        		final RandomAccessibleInterval< U > input, final double[] lut,
-                                        final AbstractLUTRealTransform transform,
-                                        final double[] multipliers,
-                                        final double[] weights,
-                                        final double[] estimatedFit,
-                            			final int[] positions ) {
-                                // don't do anything
-                        }},
-                        options );
-        }
+        			@Override
+					public <T extends RealType<T>> void act(final int iteration,
+							final RandomAccessibleInterval<T> matrix, final double[] lut,
+							final int[] permutation, final int[] inversePermutation,
+							final double[] multipliers, final double[] weights,
+							final double[] estimatedFit) {
+						// don't do anything
+					}
+		        	
+		        },
+		        options );
+    }
+    
+    public < T extends RealType< T > > double[] estimateZCoordinates(
+            final RandomAccessibleInterval< T > input,
+            final double[] startingCoordinates,
+            final Visitor visitor,
+            final Options options) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+    	final RangedCategorizer categorizer = new RangedCategorizer( startingCoordinates.length );
+    	return estimateZCoordinates( input, startingCoordinates, visitor, categorizer, options );
+    }
+
+
+    public < T extends RealType< T > > double[] estimateZCoordinates(
+            final RandomAccessibleInterval< T > inputMatrix,
+            final double[] startingCoordinates,
+            final Visitor visitor,
+            final Categorizer categorizer,
+            final Options options) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+    	
+    	final double[] lut         = startingCoordinates.clone();
+    	final int n                = (int) inputMatrix.dimension( 0 );
+    	final int[] permutationLut = new int[ n ];
+    	final int[] inverse        = permutationLut.clone();
+    	final int nMatrixDim       = inputMatrix.numDimensions();
+    	final double[] weights     = new double[ n ];
+    	for (int i = 0; i < weights.length; i++) {
+			weights[ i ] = 1.0;
+		}
+    	final double multipliers[] = weights.clone();
+    	
+    	for ( int iteration = 0; iteration < options.nIterations; ++iteration ) {
+    		
+    		final double[] permutedLut = lut.clone();
+    		ArraySortedIndices.sort( permutedLut, permutationLut, inverse );
+    		final PermutationTransform permutation       = new PermutationTransform( permutationLut, nMatrixDim, nMatrixDim );
+    		final IntervalView<T> matrix                 = Views.interval( new TransformView< T >( inputMatrix, permutation ), inputMatrix );
+//    		final IntervalView<DoubleType> currentLutImg = Views.interval( new TransformView< DoubleType >( ArrayImgs.doubles( lut, n ), permutation ), new FinalInterval( n ) ); // use this?
+    		
+    		final double[] shifts = this.getMediatedShifts(
+    				matrix, 
+    				permutedLut, 
+    				multipliers, 
+    				weights, 
+    				iteration, 
+    				categorizer, 
+    				options);
+    		
+    		this.applyShifts( 
+    				lut, // rewrite interface to use view on permuted lut?
+    				shifts, 
+    				multipliers, 
+    				permutation, 
+    				options);
+    		
+    		final boolean preventReorder = !options.withReorder;
+    		if ( preventReorder )
+    			preventReorder( lut, permutation, options ); // rewrite interface to use view on permuted lut?
+    		
+    		if ( options.withRegularization )
+    			regularize( lut, inverse, options );
+    		
+   		
+        		visitor.act( iteration + 1, matrix, lut, permutationLut, inverse, multipliers, weights, null );
+    		
+    	}
+    	
+    	return lut;
+    }
+        	
+
+    public < T extends RealType< T > > double[] getMediatedShifts ( 
+    		final RandomAccessibleInterval< T > matrix,
+    		final double[] lut,
+    		final double[] multipliers,
+            final double[] weights,
+            final int iteration,
+            final Categorizer categorizer,
+            final Options options
+            ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+    	
+    	final int nMatrixDimensions      = matrix.numDimensions();
+    	final LUTRealTransform transform = new LUTRealTransform( lut, nMatrixDimensions, nMatrixDimensions );
+    	
+   
+		final ArrayList<double[]> fitList = new ArrayList< double[] >();
+		for ( int i = 0; i < lut.length; ++i ) {
+			fitList.add( new double[ options.comparisonRange ] );
+		}
+		
+		final ListImg< double[] > localFits = new ListImg<double[]>( fitList, fitList.size() );
+    	
+		LocalizedCorrelationFit.estimateFromMatrix( matrix, lut, weights, multipliers, transform, options.comparisonRange, correlationFitModel, categorizer, localFits ); // this has window range
+		
+		EstimateQualityOfSlice.estimateQuadraticFromMatrix( matrix, 
+				weights, 
+				multipliers, 
+				lut, 
+				localFits, 
+				options.multiplierGenerationRegularizerWeight, 
+				options.comparisonRange, 
+				options.multiplierEstimationIterations );
+		
+		
+		for ( int i = 0; i < multipliers.length; ++i ) {
+			final double diff = 1.0 - multipliers[ i ];
+			weights[ i ] = Math.exp( -0.5*diff*diff / ( options.multiplierWeightsSigma ) );
+		}
+		
+		final TreeMap< Long, ArrayList< ConstantPair< Double, Double > > > shifts =
+		            ShiftCoordinates.collectShiftsFromMatrix(
+		                    lut,
+		                    matrix,
+		                    weights,
+		                    multipliers,
+		                    localFits );
+		
+		final double[] mediatedShifts = new double[ lut.length ];
+		this.shiftMediator.mediate( shifts, mediatedShifts );
+		
+		return mediatedShifts;
+    }
         
-        public < T extends RealType< T > > ArrayImg< DoubleType, DoubleArray > estimateZCoordinates(
-                final RandomAccessibleInterval< T > input,
-                final double[] startingCoordinates,
-                final Visitor visitor,
-                final Options options) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
-        	final RangedCategorizer categorizer = new RangedCategorizer( startingCoordinates.length );
-        	return estimateZCoordinates( input, startingCoordinates, visitor, categorizer, options );
-        }
-
-
-        public < T extends RealType< T > > ArrayImg< DoubleType, DoubleArray > estimateZCoordinates(
-                final RandomAccessibleInterval< T > input,
-                final double[] startingCoordinates,
-                final Visitor visitor,
-                final Categorizer categorizer,
-                final Options options) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
-        	
-        	    final ArrayImg<DoubleType, DoubleArray> matrix = ArrayImgs.doubles( input.dimension( 0 ), input.dimension( 1 ) );
-        	    CopyFromIntervalToInterval.copyToRealType( input, matrix );
-
-                final double[] weightArr = new double[ ( int )matrix.dimension( 1 ) ];
-                final ArrayImg<DoubleType, DoubleArray> weights = ArrayImgs.doubles( weightArr, new long[]{ weightArr.length } );
-
-                for ( final DoubleType w : weights) {
-                        w.set( 1.0 );
-                }
-
-                final double[] originalCoordinates = startingCoordinates.clone();
-                final double[] lut = startingCoordinates;
-                final double[] coordinateArr = lut;
-
-
-                final ArrayImg<DoubleType, DoubleArray> coordinates = ArrayImgs.doubles( coordinateArr, coordinateArr.length );
-
-
-                final LUTRealTransform transform = new LUTRealTransform(lut, matrix.numDimensions(), matrix.numDimensions() );
-
-                final ArrayImg<DoubleType, DoubleArray> mediatedShifts = ArrayImgs.doubles( lut.length );
-
-
-
-                visitor.act( 0, matrix, lut, transform, weightArr, weightArr, new double[ lut.length ], null );
-                
-                final double[] weightTable = new double[ lut.length ];
-                for (int i = 0; i < weightTable.length; i++) {
-					weightTable[ i ] = Math.exp( - 0.5*i*i / 40000 );
-				}
-                
-
-				final LocalizedCorrelationFit lcf = new LocalizedCorrelationFit( );
-				final ArrayList<double[]> fitList = new ArrayList< double[] >();
-				for ( int i = 0; i < lut.length; ++i ) {
-					fitList.add( new double[ options.comparisonRange ] );
-				}
-				
-				final ListImg< double[] > localFits = new ListImg<double[]>( fitList, fitList.size() );
-				
-				final double[] multipliers = new double[ weightArr.length ];
-				for ( int i = 0; i < multipliers.length; ++i )
-					multipliers[i] = 1.0;
-				
-				final int[] orderedIndices = new int[ weightArr.length ];
-				for (int i = 0; i < orderedIndices.length; ++i )
-					orderedIndices[ i ] = i;
-
-                for ( int n = 0; n < options.nIterations; ++n ) {
-                        
-                        this.iterationStep( matrix, weightArr, transform, lut, coordinateArr, coordinates, mediatedShifts, options, visitor, n, lcf, localFits, multipliers, orderedIndices, originalCoordinates, categorizer );
-                        IJ.showProgress( n, options.nIterations );
-//                        IJ.log( Arrays.toString( orderedIndices ) );
-                }
-                return coordinates;
-        }
-
-        private void iterationStep( final ArrayImg<DoubleType, DoubleArray> matrix,
-                final double[] weights,
-                final AbstractLUTRealTransform transform,
-                final double[] lut,
-                final double[] coordinateArr,
-                final ArrayImg< DoubleType, DoubleArray > coordinates,
-                final ArrayImg< DoubleType, DoubleArray > mediatedShifts,
-                final Options options,
-                final Visitor visitor,
-                final int n,
-                final LocalizedCorrelationFit lcf,
-                final ListImg< double[] > localFits,
-                final double[] multipliers,
-                final int[] orderedIndices,
-                final double[] originalCoordinates,
-                final Categorizer categorizer
-                ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
-        	
-       
-        	final long numZCoordinates = matrix.dimension( 0 );
-        	final RandomAccessibleInterval<DoubleType> transformedCorrelations = MatrixToStrip.toStrip( matrix, transform, options.comparisonRange );
-        	final ArrayImg<DoubleType, DoubleArray> multipliersTransformed  = ArrayImgs.doubles( multipliers, numZCoordinates );
-        	
-//        	ImageJFunctions.show( transformedCorrelations );
-
-			lcf.estimateFromMatrix( matrix, coordinateArr, weights, multipliers, transform, options.comparisonRange, correlationFitModel, categorizer, localFits ); // this has window range
-			lcf.estimateFromStrip( transformedCorrelations, multipliersTransformed, weights, options.comparisonRange, correlationFitModel, categorizer, localFits );
-			
-			final double inverseCoordinateUpdateRegularizerWeight = 1 - options.coordinateUpdateRegularizerWeight;
-			
-			if ( n < 0 ) {
-				for (int i = 0; i < multipliers.length; i++) {
-					multipliers[i] = 1.0;
-				}
-			} else {
-			EstimateQualityOfSlice.estimateQuadraticFromMatrix( matrix, 
-					weights, 
-					multipliers, 
-					lut, 
-					localFits, 
-					options.multiplierGenerationRegularizerWeight, 
-					options.comparisonRange, 
-					options.multiplierEstimationIterations );
-			}
-			
-			
-			for ( int i = 0; i < multipliers.length; ++i ) {
-				final double diff = 1.0 - multipliers[ i ];
-				weights[ i ] = Math.exp( -0.5*diff*diff / ( options.multiplierWeightsSigma ) );
-			}
-			
-			final TreeMap< Long, ArrayList< ConstantPair< Double, Double > > > shifts =
-			            ShiftCoordinates.collectShiftsFromMatrix(
-			                    coordinateArr,
-			                    matrix,
-			                    weights,
-			                    multipliers,
-			                    localFits );
-			
-			this.shiftMediator.mediate( shifts, mediatedShifts );
-			
-			final ArrayCursor<DoubleType> mediatedCursor = mediatedShifts.cursor();
-			
-			final double[] smoothedShifts = new double[ (int) mediatedShifts.dimension( 0 ) ];
-			final double[] gaussKernel    = new double[ options.shiftsSmoothingRange + 1 ];
-			gaussKernel[0] = 1.0;
-			double normalizingConstant = gaussKernel[0];
-			for ( int i = 1; i < gaussKernel.length; ++i ) {
-				gaussKernel[ i ] = Math.exp( -0.5 * i * i / ( options.shiftsSmoothingSigma * options.shiftsSmoothingSigma ) );
-				normalizingConstant += 2* gaussKernel[ i ];
-			}
-			
-			for (int i = 0; i < gaussKernel.length; i++) {
-				gaussKernel[ i ] /= normalizingConstant;
-			}
-			
-			final OutOfBounds<DoubleType> mediatedRA    = Views.extendMirrorSingle( mediatedShifts ).randomAccess();
-			final OutOfBounds<DoubleType> weightsRA     = Views.extendMirrorSingle( ArrayImgs.doubles( multipliers, multipliers.length ) ).randomAccess();
-			for (int i = 0; i < smoothedShifts.length; i++) {
-				smoothedShifts[ i ] = 0.0;
-				double weightSum = 0.0;
-				for ( int k = -options.shiftsSmoothingRange; k <= options.shiftsSmoothingRange; ++k ) {
-					mediatedRA.setPosition( i + k, 0 );
-					weightsRA.setPosition( mediatedRA );
-					final double w = gaussKernel[ Math.abs( k ) ] * weightsRA.get().get();
-					final double val = mediatedRA.get().get() * w;
-					smoothedShifts[ i ] += val;
-					weightSum += w;
-				}
-				smoothedShifts[ i ] /= weightSum;
-			}
-			
-			
-			double accumulatedCorrections = 0.0;
-			for ( int ijk = 0; mediatedCursor.hasNext(); ++ijk ) {
-			
-			    mediatedCursor.fwd();
-			    lut[ijk] += accumulatedCorrections + options.shiftProportion * smoothedShifts[ ijk ];
-			    lut[ijk] = options.coordinateUpdateRegularizerWeight * originalCoordinates[ijk] + inverseCoordinateUpdateRegularizerWeight * lut[ijk];
-			    final double previous = lut[ijk];
-			    if ( ijk > 0 && lut[ijk] < lut[ijk-1] + options.minimumSectionThickness ) {
-			    	
-			    	lut[ijk]  = lut[ijk-1] +  options.minimumSectionThickness;
-			    	accumulatedCorrections += lut[ijk] - previous;
-			    }
-
-			}
-			
-			
-			if ( options.withReorder ) {
-				final TreeMap<Double, Integer> tm = ArraySortedIndices.sortedKeysAndValues( lut );
-				final int[] indices   = ArraySortedIndices.getSortedIndicesFromMap( tm );
-				final double[] lutTmp = ArraySortedIndices.getSortedArrayFromMap( tm );
-				final int[] orderedIndicesTmp = orderedIndices.clone();
-				for (int i = 0; i < lutTmp.length; i++) {
-					lut[i] = lutTmp[i];
-					// check in indices, where the value at i should go and write into the array at indices[i]
-					orderedIndices[i] = orderedIndicesTmp[indices[i]];
-				}
-				
-				// reorder matrix
-				final ArrayImg<DoubleType, ? > tmpMatrix = matrix.copy(); // ArrayImgs.doubles( matrix.dimension( 0 ), matrix.dimension( 1 ) );
-				final ArrayCursor<DoubleType> mC         = matrix.cursor();
-				final ArrayRandomAccess<DoubleType> ra   = tmpMatrix.randomAccess();
-				
-				
-				// run over dummy matrix (tmp) and check in indices, where the value at mC should go. set coordinates of ra accordingly and write into it
-				while( mC.hasNext() ) {
-					mC.fwd();
-					ra.setPosition( indices[ mC.getIntPosition( 0 )], 0 );
-					ra.setPosition( indices[ mC.getIntPosition( 1 )], 1 );
-					mC.get().set( ra.get() );
-				}
-			}
-			
-			if ( options.withRegularization ) {
-				final float[] floatLut = new float[ 2 ]; final float[] arange = new float[ 2 ];
-				final float[] floatWeights = new float[ 2 ];
-				for (int i = 0; i < arange.length; i++) {
-					arange[i] = i;
-					floatWeights[i] = 1.0f;
-				}
-				floatLut[ 0 ] = (float) lut[ 0 ];
-				arange[ 0 ]   = 0f;
-				floatWeights[ 0 ] = 1.0f;
-				floatLut[ 1 ] = (float) lut[ lut.length - 1 ];
-				arange[ 1 ] = lut.length - 1;
-				floatWeights[ 1 ] = 1.0f;
-				
-				final AffineModel1D coordinatesFitModel = new AffineModel1D();
-				
-				
-				coordinatesFitModel.fit( new float[][]{floatLut}, new float[][]{arange}, floatWeights );
-				
-				final double[] affineArray = new double[ 2 ];
-				coordinatesFitModel.toArray( affineArray );
-				
-				for (int i = 0; i < lut.length; i++) {
-					lut[i] = affineArray[0] * lut[i] + affineArray[1];
-				}
-			}
-			
-			
-			visitor.act( n + 1, matrix, lut, transform, multipliers, weights, localFits.firstElement(), orderedIndices );
-        }
         
-
-        public static ArrayImg<FloatType, FloatArray> convertToFloat( final ArrayImg<DoubleType, DoubleArray> input ) {
-                final long[] dims = new long[ input.numDimensions() ];
-                input.dimensions( dims );
-                final ArrayImg<FloatType, FloatArray> output = ArrayImgs.floats( dims );
-                CopyFromIntervalToInterval.copyToRealType(input, output);
-                return output;
-        }
-
-
-
-        public static SingleDimensionLUTRealTransformField convertToTransformField2D( final ArrayImg< DoubleType, DoubleArray > input,
-                                                                                       final int stepX,
-                                                                                       final int stepY,
-                                                                                       final long width,
-                                                                                       final long height) {
-
-                final long d = input.dimension( 2 );
-                final double inverseStepX = 1.0/stepX;
-                final double inverseStepY = 1.0/stepY;
-
-                final ArrayImg<DoubleType, DoubleArray> tfs = ArrayImgs.doubles( new long[] { width, height, d } );
-                final ArrayCursor<DoubleType> cursor = tfs.cursor();
-                final RealRandomAccessible<DoubleType> interpolated = Views.interpolate( Views.extendBorder( input), new NLinearInterpolatorFactory<DoubleType>() );
-                final RealRandomAccess<DoubleType> iAccess = interpolated.realRandomAccess();
-                while ( cursor.hasNext() ) {
-                	cursor.fwd();
-                	iAccess.setPosition( cursor.getDoublePosition(0) * inverseStepX, 0 );
-                	iAccess.setPosition( cursor.getDoublePosition(1) * inverseStepY, 1 );
-                	iAccess.setPosition( cursor.getDoublePosition(2), 2 );
-                	cursor.get().set( iAccess.get() );
-                }
-
-                return new SingleDimensionLUTRealTransformField( 3, 3, tfs );
-        }
-
+    public void applyShifts( 
+    		final double[] coordinates, 
+    		final double[] shifts, 
+    		final double[] multipliers,
+    		final PermutationTransform permutation, 
+    		final Options options ) 
+    {
+        	
+    	final ArrayImg<DoubleType, DoubleArray> coordinateImage = ArrayImgs.doubles( coordinates, coordinates.length );
+    	final IntervalView<DoubleType> transformed              = Views.interval( new TransformView< DoubleType >( coordinateImage, permutation ), coordinateImage );
+    	final double inverseCoordinateUpdateRegularizerWeight   = 1 - options.coordinateUpdateRegularizerWeight;
+    	
+    
+		
+		final double[] smoothedShifts = new double[ shifts.length ];
+		final double[] gaussKernel    = new double[ options.shiftsSmoothingRange + 1 ];
+		gaussKernel[0] = 1.0;
+		double normalizingConstant = gaussKernel[0];
+		for ( int i = 1; i < gaussKernel.length; ++i ) {
+			gaussKernel[ i ] = Math.exp( -0.5 * i * i / ( options.shiftsSmoothingSigma * options.shiftsSmoothingSigma ) );
+			normalizingConstant += 2* gaussKernel[ i ];
+		}
+		
+		for (int i = 0; i < gaussKernel.length; i++) {
+			gaussKernel[ i ] /= normalizingConstant;
+		}
+		
+		final OutOfBounds<DoubleType> mediatedRA = Views.extendMirrorSingle( ArrayImgs.doubles( shifts, shifts.length ) ).randomAccess();
+		final OutOfBounds<DoubleType> weightsRA  = Views.extendMirrorSingle( ArrayImgs.doubles( multipliers, multipliers.length ) ).randomAccess();
+		for (int i = 0; i < smoothedShifts.length; i++) {
+			smoothedShifts[ i ] = 0.0;
+			double weightSum = 0.0;
+			for ( int k = -options.shiftsSmoothingRange; k <= options.shiftsSmoothingRange; ++k ) {
+				mediatedRA.setPosition( i + k, 0 );
+				weightsRA.setPosition( mediatedRA );
+				final double w = gaussKernel[ Math.abs( k ) ] * weightsRA.get().get();
+				final double val = mediatedRA.get().get() * w;
+				smoothedShifts[ i ] += val;
+				weightSum += w;
+			}
+			smoothedShifts[ i ] /= weightSum;
+		}
+	    
+		final double accumulatedCorrections = 0.0;
+		final Cursor<DoubleType> c = transformed.cursor();
+		for ( int ijk = 0; c.hasNext(); ++ijk ) {
+			final DoubleType valObject = c.next();
+			double val = valObject.get();
+			final double prev = val;
+		    val += accumulatedCorrections + options.shiftProportion * smoothedShifts[ ijk ];
+		    val = options.coordinateUpdateRegularizerWeight * prev + inverseCoordinateUpdateRegularizerWeight * val;
+		    valObject.set( val );
+		}
+    }
+    
+    
+    public void preventReorder( 
+    		final double[] coordinates, 
+    		final PermutationTransform permutation,
+    		final Options options ) {
+    	final ArrayImg<DoubleType, DoubleArray> coordinateImage = ArrayImgs.doubles( coordinates, coordinates.length );
+    	final IntervalView<DoubleType> permuted = Views.interval( new TransformView< DoubleType >( coordinateImage, permutation ), coordinateImage );
+    	final Cursor<DoubleType> c = permuted.cursor();
+    	double previous = c.next().getRealDouble();
+    	while( c.hasNext() ) {
+    		final DoubleType currentObject = c.next();
+    		double currentVal        = currentObject.get();
+    		if ( previous > currentVal )
+    			currentVal = previous + options.minimumSectionThickness;
+    		previous = currentVal;
+    		currentObject.set( currentVal );
+    	}
+    }
+			
+			
+    public void regularize( 
+		final double[] coordinates,
+		final int[] inversePermutationLut,
+		final Options options ) 
+    {
+		final float[] floatLut = new float[ 2 ]; final float[] arange = new float[ 2 ];
+		final float[] floatWeights = new float[ 2 ];
+		for (int i = 0; i < arange.length; i++) {
+			arange[i] = i;
+			floatWeights[i] = 1.0f;
+		}
+		final int maxIndex = inversePermutationLut.length - 1;
+		floatLut[ 0 ]       = (float) coordinates[ inversePermutationLut[ 0 ] ];
+		arange[ 0 ]         = 0f;
+		floatWeights[ 0 ]   = 1.0f;
+		floatLut[ 1 ]       = (float) coordinates[ inversePermutationLut[ maxIndex ] ];
+		arange[ 1 ]         = maxIndex;
+		floatWeights[ 1 ] = 1.0f;
+		
+		final AffineModel1D coordinatesFitModel = new AffineModel1D();
+		
+		
+		try {
+			coordinatesFitModel.fit( new float[][]{floatLut}, new float[][]{arange}, floatWeights );
+			final double[] affineArray = new double[ 2 ];
+			coordinatesFitModel.toArray( affineArray );
+			
+			for ( int i = 0; i < coordinates.length; ++i ) {
+				coordinates[i] = affineArray[0] * coordinates[i] + affineArray[1];
+			}
+		} catch (final NotEnoughDataPointsException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (final IllDefinedDataPointsException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+	
 }
+

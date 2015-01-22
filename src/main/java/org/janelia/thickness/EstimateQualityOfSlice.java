@@ -20,6 +20,7 @@ import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.img.list.ListCursor;
 import net.imglib2.img.list.ListImg;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
+import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.Views;
 
@@ -219,8 +220,8 @@ public class EstimateQualityOfSlice {
 	}
 	
 	
-	public static void estimateQuadraticFromMatrix(
-			final ArrayImg< DoubleType, DoubleArray > correlations,
+	public static < T extends RealType< T > > void estimateQuadraticFromMatrix(
+			final RandomAccessibleInterval< T > correlations,
 			final double[] weights,
 			final double[] multipliers,
 			final double[] coordinates,
@@ -231,7 +232,7 @@ public class EstimateQualityOfSlice {
 		
 		final double inverseRegularizerWeight = 1 - regularizerWeight;
 		
-		final ArrayRandomAccess<DoubleType> corrAccess = correlations.randomAccess();
+		final RandomAccess< T > corrAccess = correlations.randomAccess();
 		
 		for ( int iter = 0; iter < nIterations; ++iter ) {
 			
@@ -257,7 +258,7 @@ public class EstimateQualityOfSlice {
 					ra.setPosition( Math.abs( coordinates[ i ] - coordinates[ n ] ), 0 );
 					// fits are negative because LUTRealtransform requires increasing function
 					final double fitVal  = -ra.get().get();
-					final double measure = corrAccess.get().get();
+					final double measure = corrAccess.get().getRealDouble();
 					if ( Double.isNaN( fitVal ) || Double.isNaN( measure ) )
 						continue;
 					final double prod = oldMultipliers[ i ] * measure;

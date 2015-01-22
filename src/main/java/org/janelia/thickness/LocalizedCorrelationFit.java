@@ -23,6 +23,7 @@ import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.realtransform.InverseRealTransform;
 import net.imglib2.realtransform.RealTransformRealRandomAccessible;
 import net.imglib2.realtransform.RealViews;
+import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.Views;
 
@@ -39,7 +40,7 @@ public class LocalizedCorrelationFit {
 	
 	private static final float[] ONE_DIMENSION_ZERO_POSITION = new float[]{ 0.0f };
 	
-	public <M extends Model< M > > void estimateFromMatrix( final RandomAccessibleInterval< DoubleType > correlations,
+	public static < T extends RealType< T >, M extends Model< M > > void estimateFromMatrix( final RandomAccessibleInterval< T > correlations,
 			final double[] coordinates,
 			final double[] weights,
 			final double[] multipliers,
@@ -51,10 +52,10 @@ public class LocalizedCorrelationFit {
 		
 		final RangedCategorizer categorizer = new RangedCategorizer( windowRange );
 		categorizer.generateLabels( windowRange );
-		this.estimateFromMatrix(correlations, coordinates, weights, multipliers, transform, range, correlationFitModel, categorizer, localFits);
+		estimateFromMatrix(correlations, coordinates, weights, multipliers, transform, range, correlationFitModel, categorizer, localFits);
 	}
 	
-	public <M extends Model< M > > void estimateFromMatrix( final RandomAccessibleInterval< DoubleType > correlations,
+	public static < T extends RealType< T >, M extends Model< M > > void estimateFromMatrix( final RandomAccessibleInterval< T > correlations,
 			final double[] coordinates,
 			final double[] weights,
 			final double[] multipliers,
@@ -83,19 +84,21 @@ public class LocalizedCorrelationFit {
 			samples.add( al );
 		}
 		
-		final RealRandomAccessible<DoubleType> source = Views.interpolate( Views.extendValue( correlations, new DoubleType( Double.NaN ) ), new NLinearInterpolatorFactory<DoubleType>());
+		final T dummy = correlations.randomAccess().get();
+		dummy.setReal( Double.NaN );
+		final RealRandomAccessible< T > source = Views.interpolate( Views.extendValue( correlations, dummy ), new NLinearInterpolatorFactory< T >() );
 		
-		final RealTransformRealRandomAccessible<DoubleType, InverseRealTransform> source2 = RealViews.transformReal(source, transform);
+		final RealTransformRealRandomAccessible< T, InverseRealTransform> source2 = RealViews.transformReal(source, transform);
 		final LUTRealTransform tf1d = new LUTRealTransform( coordinates, 1, 1);
 		final RealTransformRealRandomAccessible<DoubleType, InverseRealTransform> multipliersInterpolatedTransformed = 
 				RealViews.transformReal( Views.interpolate( Views.extendValue( ArrayImgs.doubles( multipliers, multipliers.length ), new DoubleType( Double.NaN ) ), new NLinearInterpolatorFactory<DoubleType>()), 
 				tf1d );
 
-		final RealRandomAccess< DoubleType > access  = source2.realRandomAccess();
-		final RealRandomAccess< DoubleType > access2 = source2.realRandomAccess();
+		final RealRandomAccess< T > access  = source2.realRandomAccess();
+		final RealRandomAccess< T > access2 = source2.realRandomAccess();
 		
-		final RealRandomAccess< DoubleType> m1 = multipliersInterpolatedTransformed.realRandomAccess();
-		final RealRandomAccess< DoubleType> m2 = multipliersInterpolatedTransformed.realRandomAccess();
+		final RealRandomAccess< DoubleType > m1 = multipliersInterpolatedTransformed.realRandomAccess();
+		final RealRandomAccess< DoubleType > m2 = multipliersInterpolatedTransformed.realRandomAccess();
 		
 		
 		
@@ -122,8 +125,8 @@ public class LocalizedCorrelationFit {
 //				if ( i > 0 && coordinates[i] - k > coordinates[ i - 1 ] )
 //					continue;
 				
-				final double a1 = access.get().get();
-				final double a2 = access2.get().get();
+				final double a1 = access.get().getRealDouble();
+				final double a2 = access2.get().getRealDouble();
 				
 				if ( ! Double.isNaN( a1 ) )
 				{
@@ -189,7 +192,7 @@ public class LocalizedCorrelationFit {
 			final M correlationFitModel,
 			final ListImg< double[] > localFits) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 		final int windowRange = coordinates.length;
-		this.estimateFromMatrix( correlations, coordinates, weights, multipliers, transform, range, windowRange, correlationFitModel, localFits );
+		estimateFromMatrix( correlations, coordinates, weights, multipliers, transform, range, windowRange, correlationFitModel, localFits );
 	}
 	
 	

@@ -9,6 +9,7 @@ import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.list.ListCursor;
 import net.imglib2.img.list.ListImg;
+import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
 
 import org.janelia.thickness.lut.LUTRealTransform;
@@ -73,14 +74,14 @@ public class ShiftCoordinates {
 		return weightedShifts;
 	}
 	
-	public static TreeMap< Long, ArrayList< ConstantPair<Double, Double> > > collectShiftsFromMatrix(
+	public static < T extends RealType< T > > TreeMap< Long, ArrayList< ConstantPair<Double, Double> > > collectShiftsFromMatrix(
 			final double[] coordinates, 
-			final RandomAccessibleInterval< DoubleType > correlations, 
+			final RandomAccessibleInterval< T > correlations, 
 			final double[] weights,
 			final double[] multipliers,
 			final ListImg< double[] > localFits ) {
 		
-		final RandomAccess<DoubleType> corrAccess = correlations.randomAccess();
+		final RandomAccess< T > corrAccess = correlations.randomAccess();
 		
 		final TreeMap<Long, ArrayList<ConstantPair<Double, Double> > > weightedShifts = new TreeMap< Long, ArrayList< ConstantPair<Double, Double> > >();
 		
@@ -112,7 +113,7 @@ public class ShiftCoordinates {
 				final double m = ( k == i ) ? 1.0 : multipliers[ i ] * multipliers[ k ];
 				
 				/* TODO inverts because LUTRealTransform can only increasing */
-				reference[ 0 ] = -corrAccess.get().get() * m;
+				reference[ 0 ] = -corrAccess.get().getRealDouble() * m;
 				
 				lut.applyInverse( reference, reference );
 				
