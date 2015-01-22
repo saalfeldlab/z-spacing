@@ -25,7 +25,6 @@ import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.LongArray;
 import net.imglib2.type.numeric.integer.LongType;
-import net.imglib2.view.IterableRandomAccessibleInterval;
 import net.imglib2.view.TransformView;
 import net.imglib2.view.Views;
 
@@ -76,15 +75,15 @@ public class PermutationTransformTest
 		final TransformView< LongType > bijectivePermutation = new TransformView< LongType >( img, t );
 		final TransformView< LongType > inverseBijectivePermutation = new TransformView< LongType >( bijectivePermutation, t.inverse() );
 
-		final RandomAccess< LongType > a = img.randomAccess();
-		final RandomAccess< LongType > b = new IterableRandomAccessibleInterval< LongType >( Views.interval( inverseBijectivePermutation, img ) ).randomAccess();
+		final RandomAccess< LongType > reference = img.randomAccess();
+		final RandomAccess< LongType > result    = Views.interval( inverseBijectivePermutation, img ).randomAccess();
 
 		for ( int i = 0; i < 1000; ++i )
 		{
 			final long[] x = new long[]{ rnd.nextInt( width ), rnd.nextInt( width ) };
-			a.setPosition( x );
-			b.setPosition( x );
-			Assert.assertEquals( a.get().get(), b.get().get() );
+			reference.setPosition( x );
+			result.setPosition( x );
+			Assert.assertEquals( reference.get().get(), result.get().get() );
 		}
 
 		int i = 0;
