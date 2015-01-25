@@ -10,6 +10,7 @@ import java.util.Random;
 import org.janelia.correlations.AbstractIntegralCrossCorrelation.CrossCorrelationType;
 import org.janelia.correlations.AbstractIntegralCrossCorrelation.NotEnoughSpaceException;
 import org.janelia.correlations.FloatingPointIntegralCrossCorrelation;
+import org.janelia.correlations.IntegralCrossCorrelation;
 import org.janelia.utility.ConstantRealRandomAccesssible;
 
 import net.imglib2.FinalInterval;
@@ -269,6 +270,19 @@ implements RandomAccessibleInterval<RandomAccessibleInterval<T> > {
 
 	public void setRadius(long[] radius) {
 		this.radius = radius;
+		ListRandomAccess<RandomAccessibleInterval<T>> ra = this.correlations.randomAccess();
+		for ( int z1 = 0; z1 < zRange; ++z1 ) {
+			ra.setPosition( z1, 0 );
+			for (int  z2 = 0;  z2 < zRange;  z2++) {
+				ra.setPosition( z2, 1 );
+				RandomAccessibleInterval<T> cc = ra.get();
+				if ( cc instanceof FloatingPointIntegralCrossCorrelation )
+					((FloatingPointIntegralCrossCorrelation) cc).setRadius( this.radius );
+				else
+					continue;
+			}
+			
+		}
 	}
 
 	public long getRange() {
@@ -427,6 +441,11 @@ implements RandomAccessibleInterval<RandomAccessibleInterval<T> > {
 		new ImageJ();
 		ImageJFunctions.show( imageStack );
 		ImageJFunctions.show( mat );
+		
+		long[] r2 = new long[] { 20, 20 };
+		dcwr.setRadius( r2 );
+		RandomAccessibleInterval<DoubleType> mat2 = ra.get();
+		ImageJFunctions.show( mat2 );
 		
 	}
 	
