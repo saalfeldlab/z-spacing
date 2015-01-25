@@ -10,7 +10,6 @@ import java.util.Random;
 import org.janelia.correlations.AbstractIntegralCrossCorrelation.CrossCorrelationType;
 import org.janelia.correlations.AbstractIntegralCrossCorrelation.NotEnoughSpaceException;
 import org.janelia.correlations.FloatingPointIntegralCrossCorrelation;
-import org.janelia.correlations.IntegralCrossCorrelation;
 import org.janelia.utility.ConstantRealRandomAccesssible;
 
 import net.imglib2.FinalInterval;
