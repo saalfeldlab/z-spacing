@@ -268,6 +268,7 @@ implements RandomAccessibleInterval<RandomAccessibleInterval<T> > {
 		return radius;
 	}
 
+	@SuppressWarnings("unchecked")
 	public void setRadius(long[] radius) {
 		this.radius = radius;
 		ListRandomAccess<RandomAccessibleInterval<T>> ra = this.correlations.randomAccess();
@@ -277,7 +278,7 @@ implements RandomAccessibleInterval<RandomAccessibleInterval<T> > {
 				ra.setPosition( z2, 1 );
 				RandomAccessibleInterval<T> cc = ra.get();
 				if ( cc instanceof FloatingPointIntegralCrossCorrelation )
-					((FloatingPointIntegralCrossCorrelation) cc).setRadius( this.radius );
+					((FloatingPointIntegralCrossCorrelation<?, ?, T>) cc).setRadius( this.radius );
 				else
 					continue;
 			}
