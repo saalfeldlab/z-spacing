@@ -7,6 +7,7 @@ import ij.ImageJ;
 
 import java.util.Random;
 
+import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayCursor;
@@ -20,7 +21,11 @@ import net.imglib2.outofbounds.OutOfBounds;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
+import net.imglib2.view.TransformView;
 import net.imglib2.view.Views;
+
+import org.janelia.utility.io.transform.MatrixToStrip;
+import org.janelia.utility.io.transform.StripToMatrix;
 
 /**
  * Convenience functions for cross correlations.
@@ -86,6 +91,17 @@ public class CrossCorrelations {
 	}
 	
 	
+	public static< T extends RealType< T > > RandomAccessibleInterval< T > toMatrixFromStrip(
+			final RandomAccessibleInterval< T > input,
+			final int range ) {
+		final StripToMatrix t = new StripToMatrix( range );
+		final T dummy         = input.randomAccess().get().copy();
+		final long zDim       = input.dimension( 1 );
+		dummy.setReal( Double.NaN );
+		return Views.interval( new TransformView<T>( Views.extendValue( input, dummy ), t ), new FinalInterval( new long[] { zDim, zDim } ));
+	}
+	
+	
 	public static< T extends RealType< T >, U extends RealType< U > & NativeType< U > > ArrayImg< U, ? > toStrip( 
 			final RandomAccessibleInterval< T > input,
 			final long[] xy,
@@ -135,6 +151,18 @@ public class CrossCorrelations {
 	}
 	
 	
+	public static< T extends RealType< T > > RandomAccessibleInterval< T > toStripFromMatrix(
+			final RandomAccessibleInterval< T > input,
+			final int range ) {
+		final MatrixToStrip t = new MatrixToStrip( range );
+		final T dummy         = input.randomAccess().get().copy();
+		final long zDim       = input.dimension( 1 );
+		final int fullWidth   = t.getTargetWidth();
+		dummy.setReal( Double.NaN );
+		return Views.interval( new TransformView<T>( Views.extendValue( input, dummy ), t ), new FinalInterval( new long[] { fullWidth, zDim } ));
+	}
+	
+	
 	public static void main(final String[] args) {
 		final ArrayImg<DoubleType, DoubleArray> input = ArrayImgs.doubles( 50, 50, 50 );
 		final long range = 5;
@@ -151,7 +179,12 @@ public class CrossCorrelations {
 		
 		final ArrayImg<DoubleType, ?> str = CrossCorrelations.toStrip( input, xy, range, radius, factory, type);
 		ImageJFunctions.show( str );
-				
+	    
+		final RandomAccessibleInterval<DoubleType> mat2 = toMatrixFromStrip( str, (int)range );
+		ImageJFunctions.show( mat2, "transformed mat" );
+		
+		final RandomAccessibleInterval<DoubleType> str2 = toStripFromMatrix( mat, (int)range );
+		ImageJFunctions.show( str2, "transformed str" );
 	}
 
 }
