@@ -48,6 +48,9 @@ public class CorrelationFitTrackerVisitor extends AbstractMultiVisitor {
 			final double[] estimatedFit
 			) {
 		
+		if ( estimatedFit == null )
+			return;
+		
 		final File file = new File( String.format( this.basePath, iteration ) );
 		try {
 			
