@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.numeric.real.DoubleType;
 
-import org.janelia.correlations.storage.CorrelationsObjectInterface;
 import org.janelia.thickness.inference.Options;
 
 /**
@@ -40,11 +39,10 @@ public abstract class AbstractListMultiScaleVisitor implements
 			final RandomAccessibleInterval<DoubleType> previousLutField,
 			final long[] radii,
             final int[] steps,
-            final CorrelationsObjectInterface co,
 			final Options options ) {
 		for ( final MultiScaleVisitor v : visitors )
-			v.act( index, lutField, previousLutField, radii, steps, co, options );
-		actSelf( index, lutField, previousLutField, radii, steps, co, options );
+			v.act( index, lutField, previousLutField, radii, steps, options );
+		actSelf( index, lutField, previousLutField, radii, steps, options );
 	}
 	
 	
@@ -54,7 +52,6 @@ public abstract class AbstractListMultiScaleVisitor implements
 			final RandomAccessibleInterval<DoubleType> previousLutField,
 			final long[] radii,
             final int[] steps,
-            final CorrelationsObjectInterface co,
 			final Options options );
 	
 }

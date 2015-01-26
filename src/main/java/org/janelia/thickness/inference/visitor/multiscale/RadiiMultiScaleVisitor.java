@@ -6,7 +6,6 @@ import java.util.Arrays;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.numeric.real.DoubleType;
 
-import org.janelia.correlations.storage.CorrelationsObjectInterface;
 import org.janelia.thickness.inference.Options;
 import org.janelia.utility.io.IO;
 
@@ -31,7 +30,6 @@ public class RadiiMultiScaleVisitor implements MultiScaleVisitor {
 			final RandomAccessibleInterval<DoubleType> previousLutField,
 			final long[] radii, 
 			final int[] steps, 
-			final CorrelationsObjectInterface co,
 			final Options options) {
 		
 		final String data     = Arrays.toString( radii );

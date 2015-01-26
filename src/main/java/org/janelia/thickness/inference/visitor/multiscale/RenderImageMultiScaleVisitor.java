@@ -14,7 +14,6 @@ import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
-import org.janelia.correlations.storage.CorrelationsObjectInterface;
 import org.janelia.thickness.inference.Options;
 import org.janelia.thickness.lut.SingleDimensionLUTGrid;
 import org.janelia.utility.io.IO;
@@ -58,7 +57,6 @@ public class RenderImageMultiScaleVisitor< T extends RealType<T> & NativeType<T>
 			final RandomAccessibleInterval<DoubleType> previousLutField,
 			final long[] radii, 
 			final int[] steps, 
-			final CorrelationsObjectInterface co,
 			final Options options) {
 		assert lutField.numDimensions() == image.numDimensions();
 		assert lutField.numDimensions() == 3;

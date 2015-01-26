@@ -9,7 +9,6 @@ import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.Views;
 
-import org.janelia.correlations.storage.CorrelationsObjectInterface;
 import org.janelia.thickness.inference.Options;
 import org.janelia.utility.io.IO;
 
@@ -33,7 +32,6 @@ public class CoordinateDifferenceToGridMultiScaleVisitor implements
 			final RandomAccessibleInterval<DoubleType> previousLutField,
 			final long[] radii, 
 			final int[] steps, 
-			final CorrelationsObjectInterface co,
 			final Options options) {
 		
 		final ArrayImg<DoubleType, DoubleArray> diff = ArrayImgs.doubles( lutField.dimension( 0 ), lutField.dimension( 1 ), lutField.dimension( 2 ) );

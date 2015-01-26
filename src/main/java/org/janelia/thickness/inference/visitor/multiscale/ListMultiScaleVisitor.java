@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.numeric.real.DoubleType;
 
-import org.janelia.correlations.storage.CorrelationsObjectInterface;
 import org.janelia.thickness.inference.Options;
 
 /**
@@ -28,7 +27,6 @@ public class ListMultiScaleVisitor extends AbstractListMultiScaleVisitor {
 			final RandomAccessibleInterval<DoubleType> previousLutField,
 			final long[] radii,
             final int[] steps,
-            final CorrelationsObjectInterface co,
 			final Options options ) {
 		// do not do anything, just act on all visitors
 	}
