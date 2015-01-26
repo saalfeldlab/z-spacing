@@ -61,8 +61,8 @@ public class InferFromMatrix< M extends Model<M> > {
         		new Visitor() {
 
         			@Override
-					public <T extends RealType<T>> void act(final int iteration,
-							final RandomAccessibleInterval<T> matrix, final double[] lut,
+					public < U extends RealType< U > > void act(final int iteration,
+							final RandomAccessibleInterval<U> matrix, final double[] lut,
 							final int[] permutation, final int[] inversePermutation,
 							final double[] multipliers, final double[] weights,
 							final double[] estimatedFit) {
