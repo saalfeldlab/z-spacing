@@ -24,8 +24,8 @@ import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.TransformView;
 import net.imglib2.view.Views;
 
-import org.janelia.utility.io.transform.MatrixToStrip;
-import org.janelia.utility.io.transform.StripToMatrix;
+import org.janelia.utility.transform.MatrixToStrip;
+import org.janelia.utility.transform.StripToMatrix;
 
 /**
  * Convenience functions for cross correlations.

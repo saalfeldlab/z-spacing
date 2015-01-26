@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.janelia.utility.io.transform;
+package org.janelia.utility.transform;
 
 import java.util.Arrays;
 
