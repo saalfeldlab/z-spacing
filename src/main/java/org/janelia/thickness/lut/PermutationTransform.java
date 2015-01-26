@@ -105,4 +105,8 @@ public class PermutationTransform extends AbstractPerumtationTransform
 	{
 		return new PermutationTransform( inverseLut, numTargetDimensions, numSourceDimensions );
 	}
+	
+	public PermutationTransform copyToDimension( final int numSourceDimensions, final int numTargetDimensions ) {
+		return new PermutationTransform(inverseLut, numSourceDimensions, numTargetDimensions);
+	}
 }
