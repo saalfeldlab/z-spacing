@@ -57,6 +57,14 @@ public abstract class AbstractPerumtationTransform implements
         else if ( y >= lut.length ) return Long.MAX_VALUE;
 		else return applyInverse( y );
 	}
+	
+	public int[] getLutCopy() {
+		return lut.clone();
+	}
+	
+	public int[] getInverseLutCopy() {
+		return inverseLut.clone();
+	}
 
 	
 }
