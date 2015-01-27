@@ -122,7 +122,7 @@ public class InferFromMatrix< M extends Model<M> > {
     				lut, // rewrite interface to use view on permuted lut?
     				shifts, 
     				multipliers, 
-    				permutation, 
+    				permutation.copyToDimension( 1, 1 ), 
     				options);
     		
     		final boolean preventReorder = !options.withReorder;
