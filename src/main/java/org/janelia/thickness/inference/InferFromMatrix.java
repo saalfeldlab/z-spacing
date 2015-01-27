@@ -133,7 +133,7 @@ public class InferFromMatrix< M extends Model<M> > {
     			regularize( lut, inverse, options );
     		
    		
-        		visitor.act( iteration + 1, matrix, lut, permutationLut, inverse, multipliers, weights, null );
+        	visitor.act( iteration + 1, matrix, lut, permutationLut, inverse, multipliers, weights, null );
     		
     	}
     	
@@ -201,7 +201,6 @@ public class InferFromMatrix< M extends Model<M> > {
     		final PermutationTransform permutation, 
     		final Options options ) 
     {
-        	
     	final ArrayImg<DoubleType, DoubleArray> coordinateImage = ArrayImgs.doubles( coordinates, coordinates.length );
     	final IntervalView<DoubleType> transformed              = Views.interval( new TransformView< DoubleType >( coordinateImage, permutation ), coordinateImage );
     	final double inverseCoordinateUpdateRegularizerWeight   = 1 - options.coordinateUpdateRegularizerWeight;
