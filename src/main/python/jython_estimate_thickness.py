@@ -3,6 +3,9 @@ from __future__ import with_statement # need this for with statement
 from ij import ImagePlus
 from ij import ImageStack
 from ij import IJ
+
+from ij.io import FileSaver
+
 from ij.plugin import FolderOpener
 from ij.process import ImageConverter
 
@@ -13,33 +16,21 @@ from java.lang import System
 from java.util import ArrayList
 from java.util import TreeMap
 
-from mpicbg.ij.integral import BlockPMCC
 from mpicbg.models import TranslationModel1D
 from mpicbg.ij.util import Filter
 
-from net.imglib2.img.array import ArrayImgs
 from net.imglib2.img.display.imagej import ImageJFunctions
 from net.imglib2.img import ImagePlusAdapter
-from net.imglib2.img.display.imagej import ImgLib2Display
 from net.imglib2.interpolation.randomaccess import NLinearInterpolatorFactory
 from net.imglib2.interpolation.randomaccess import NearestNeighborInterpolatorFactory
 from net.imglib2.interpolation.randomaccess import FloorInterpolatorFactory
 from net.imglib2.view import Views
-from net.imglib2.realtransform import RealViews
 from net.imglib2.img.imageplus import ImagePlusImgs
 from net.imglib2.type.numeric.real import DoubleType
 
-from org.janelia.models import ScaleModel
-from org.janelia.utility import ConstantPair
-from org.janelia.utility import CopyFromIntervalToInterval
-from org.janelia.utility import SerializableConstantPair
-from org.janelia.utility.io import Serialization
-from org.janelia.utility.sampler import SparseXYSampler
-from org.janelia.correlations import CorrelationsObject
-from org.janelia.correlations import CorrelationsObjectFactory
-from org.janelia.correlations import SparseCorrelationsObject
-from org.janelia.correlations import SparseCorrelationsObjectFactory
-from org.janelia.thickness.inference import InferFromCorrelationsObject
+from org.janelia.correlations import CrossCorrelations
+
+from org.janelia.thickness.inference import InferFromMatrix
 from org.janelia.thickness.inference import Options
 from org.janelia.thickness.inference.visitor import ActualCoordinatesTrackerVisitor
 from org.janelia.thickness.inference.visitor import ApplyTransformToImagesAndAverageVisitor
@@ -48,9 +39,7 @@ from org.janelia.thickness.inference.visitor import CorrelationArrayTrackerVisit
 from org.janelia.thickness.inference.visitor import CorrelationFitTrackerVisitor
 from org.janelia.thickness.inference.visitor import CorrelationMatrixTrackerVisitor
 from org.janelia.thickness.inference.visitor import MultipliersTrackerVisitor
-from org.janelia.thickness.inference.visitor import PositionTrackerVisitor
 from org.janelia.thickness.inference.visitor import WeightsTrackerVisitor
-from org.janelia.thickness.lut import SingleDimensionLUTRealTransform
 from org.janelia.thickness.mediator import OpinionMediatorModel
 
 
@@ -80,35 +69,20 @@ if __name__ == "__main__":
     t0 = time.time()
     print t0 - t0
 
-    correlationRanges = range( 10, 1001, 222221 )
-    nImages = 62
-    # root = '/data/hanslovskyp/playground/pov-ray/constant_thickness=5/850-1149/scale/0.05/250x250+125+125'
-    # root = '/data/hanslovskyp/export_from_nobackup/sub_stack_01/data/substacks/01/'
-    # root = '/ssd/hanslovskyp/crack_from_john/substacks/03/'
-    # root = '/ssd/hanslovskyp/forPhilipp/substacks/03/'
-    # root = '/data/hanslovskyp/boergens/substacks/01/'
-    # root = '/data/hanslovskyp/forPhilipp/substacks/03/'
-    # root = '/ssd/hanslovskyp/tweak_CutOn4-15-2013_ImagedOn1-27-2014/substacks/01/'
-    # root = '/data/hanslovskyp/playground/pov-ray/variable_thickness_subset2/2200-2799/scale/0.04/200x200+100+100/'
-    # root = '/data/hanslovskyp/playground/pov-ray/constant_thickness=5/850-1149/scale/0.05/250x250+125+125/'
-    # root = '/ssd/hanslovskyp/tweak_CutOn4-15-2013_ImagedOn1-27-2014/substacks/01/'
-    # root = '/ssd/hanslovskyp/tweak_CutOn4-15-2013_ImagedOn1-27-2014/substacks/01/distorted/02/'
-    # root = '/data/hanslovskyp/jain-nobackup/234_data_downscaled/crop-150x150+75+175/'
-    # root = '/data/hanslovskyp/crack_from_john/substacks/03/'
-    # root = '/data/hanslovskyp/davi_toy_set/'
-    # root = '/data/hanslovskyp/davi_toy_set/substacks/remove/01/'
-    # root = '/data/hanslovskyp/davi_toy_set/substacks/replace_by_average/01/'
+    # correlationRanges = range( 10, 1001, 222221 )
+    correlationRange = 10
+    nImages = 63
     root = '/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/'
     IJ.run("Image Sequence...", "open=%s/data number=%d sort" % ( root.rstrip(), nImages ) );
-    # imgSource = FolderOpener().open( '%s/data' % root.rstrip('/') )
     imgSource = IJ.getImage()
+    nImages = imgSource.getStack().getSize();
     # imgSource.show()
     conv = ImageConverter( imgSource )
     conv.convertToGray32()
     stackSource = imgSource.getStack()
     nThreads = 1
     scale = 5.0
-    # stackMin, stackMax = ( None, 300 )
+    stackMin, stackMax = ( None, None )
     # xyScale = 0.25 # fibsem (crack from john) ~> 0.25
     # xyScale = 0.1 # fibsem (crop from john) ~> 0.1? # boergens
     xyScale = 0.1
@@ -129,7 +103,10 @@ if __name__ == "__main__":
     options.multiplierRegularizerDecaySpeed = 50
     options.multiplierWeightsSigma = 0.04 # weights[ i ] = exp( -0.5*(multiplier[i] - 1.0)^2 / multiplierWeightSigma^2 )
     options.multiplierGenerationRegularizerWeight = 0.1
+    options.coordinateUpdateRegularizerWeight = 0.01
+    options.neighborRegularizerWeight = 0.05
     options.multiplierEstimationIterations = 10
+    options.withReorder = True
     thickness_estimation_repo_dir = '/groups/saalfeld/home/hanslovskyp/workspace/em-thickness-estimation'
 
     if not doXYScale:
@@ -153,155 +130,140 @@ if __name__ == "__main__":
     else:
         img = imgSource
 
-    # img.show()
-    print img.getWidth(), img.getHeight(), img.getStack().getSize()
-    for c in correlationRanges:    
-        correlationRange = c
-        homeScale = root.rstrip('/') + '/xyScale=%f' % xyScale
-        home = homeScale.rstrip('/') + '/range=%d_%s'.rstrip('/')
-        home = home % ( correlationRange, str(datetime.datetime.now() ) )
-        make_sure_path_exists( home.rstrip('/') + '/' )
-
-        options.comparisonRange = c
-
-        serializationString = '%s/correlations_range=%d.sr' % ( homeScale.rstrip(), correlationRange )
-
-        gitCommitInfoFile = '%s/commitHash' % home.rstrip('/')
-        with open( gitCommitInfoFile, 'w' ) as f:
-            f.write( '%s\n' % utility.gitcommit.getCommit( thickness_estimation_repo_dir ) )
-
-        gitDiffFile = '%s/gitDiff' % home.rstrip('/')
-        with open( gitDiffFile, 'w' ) as f:
-            f.write( '%s\n' % utility.gitcommit.getDiff( thickness_estimation_repo_dir ) )
-
-
-        optionsFile = '%s/options' % home.rstrip('/')
-        with open( optionsFile, 'w' ) as f:
-            f.write( '%s\n' % options.toString() )
-        
-
-        this_file_name = os.path.realpath( inspect.getfile( lambda : None ) ) # inspect.getfile requires method, class, ... as input and returns the file in which input was defined
-        shutil.copyfile( this_file_name, '%s/%s' % ( home.rstrip('/'), this_file_name.split('/')[-1] ) )
-        
-        startingCoordinates = []
-
-        start = 1
-        stop  = img.getStack().getSize()
-        if False and stackMin != None:
-            start = stackMin
-        if False and stackMax != None:
-            stop  = stackMax
-        startingCoordinates = range( start - 1, stop )
-
-        co = SparseCorrelationsObject()
-        t0Prime = time.time()
-        if deserializeCorrelations:
-            co = Serialization.deserializeGeneric( serializationString, co )
-        else:
-            
-        
-            samples = ArrayList()
-            samples.add( SerializableConstantPair.toPair( Long(0), Long(0) ) )
-            sampler = SparseXYSampler( samples )
-            cf      = SparseCorrelationsObjectFactory( ImagePlusAdapter.wrap( img ), sampler )
-            co      = cf.create( correlationRange, [img.getWidth(), img.getHeight()] )
-            Serialization.serializeGeneric( co, serializationString )
-        
-        t3 = time.time()
-        print t3 - t0Prime
-
-        print co, TranslationModel1D(), NLinearInterpolatorFactory(), ScaleModel(), OpinionMediatorModel( TranslationModel1D() )
-
-        inference = InferFromCorrelationsObject( co,
-                                                 TranslationModel1D(),
-                                                 NLinearInterpolatorFactory(),
-                                                 ScaleModel(),
-                                                 OpinionMediatorModel( TranslationModel1D() )
-                                                 )
-                                                 
-             
-             
-        bp = home + "/matrix_floor/matrixFloor_%02d.tif"
-        make_sure_path_exists( bp )
-        floorTracker = CorrelationMatrixTrackerVisitor( bp, # base path
-                                                         0, # min
-                                                         matrixSize, # max
-                                                         matrixScale, # scale
-                                                         FloorInterpolatorFactory() ) # interpolation
-             
-        bp = home + "/matrix_nlinear/matrixNLinear_%02d.tif"
-        make_sure_path_exists( bp )
-        matrixTracker = CorrelationMatrixTrackerVisitor( bp, # base path
-                                                         0, # min
-                                                         matrixSize, # max
-                                                         matrixScale, # scale
-                                                         NLinearInterpolatorFactory() ) # interpolation
-             
-        bp = home + "/array/array_%02d.tif"
-        make_sure_path_exists( bp )
-        arrayTracker = CorrelationArrayTrackerVisitor( bp, # base path
-                                                       FloorInterpolatorFactory(), # interpolation
-                                                       imgSource.getStack().getSize(), # number of data points
-                                                       correlationRange ) # range for pairwise correlations
-
-                                                       
-             
-        bp = home + "/render/render_%02d.tif"
-        make_sure_path_exists( bp )
-        hyperSlices = ArrayList()
-             
-        renderTracker = ApplyTransformToImagesAndAverageVisitor( bp, # base path
-                                                                 FloorInterpolatorFactory(), # interpolation
-                                                                 scale,
-                                                                 0,
-                                                                 0,
-                                                                 imgSource.getWidth(),
-                                                                 nImages)
-        for i in xrange(-2, 3, 1):
-            renderTracker.addImage( Views.hyperSlice( ImagePlusImgs.from( imgSource ), 1,  30 + i ) )                                                 
-
-        renderTracker.average()
-             
-        bp = home + "/fit_tracker/fitTracker_%d.csv"
-        make_sure_path_exists( bp )
-        separator = ','
-        fitTracker = CorrelationFitTrackerVisitor( bp, # base path
-                                                   correlationRange, # range
-                                                   separator ) # csv separator
-
-
-        bp = home + "/position_tracker/positionTracker_%d.csv"
-        make_sure_path_exists( bp )
-        separator = ','
-        positionTracker = PositionTrackerVisitor( bp, # base path
-                                                  separator ) # csv separator
-             
-        bp = home + "/fit_coordinates/fitCoordinates_%d.csv"
-        make_sure_path_exists( bp )
-        coordinateTracker = ActualCoordinatesTrackerVisitor( bp,
-                                                             separator )
-                                                             
-        bp = home + "/multipliers/multipliers_%d.csv"
-        make_sure_path_exists( bp )
-        multiplierTracker = MultipliersTrackerVisitor( bp,
-                                                       separator )
-             
-        bp = home + "/weights/weights_%d.csv"
-        make_sure_path_exists( bp )
-        weightsTracker = WeightsTrackerVisitor( bp,
-                                                separator )                                                                                                          
-             
-        matrixTracker.addVisitor( arrayTracker )
-        matrixTracker.addVisitor( renderTracker )
-        matrixTracker.addVisitor( fitTracker )
-        matrixTracker.addVisitor( coordinateTracker )
-        matrixTracker.addVisitor( multiplierTracker )
-        matrixTracker.addVisitor( weightsTracker )
-        matrixTracker.addVisitor( positionTracker )                                         
-        matrixTracker.addVisitor( floorTracker )
-             
-        # if you want to specify values for options, do:
-        # options.multiplierGenerationRegularizerWeight = <value>
-        # or equivalent
-        result = inference.estimateZCoordinates( 0, 0, startingCoordinates, matrixTracker, options )
+    homeScale = root.rstrip('/') + '/xyScale=%f' % xyScale                                      
+    home = homeScale.rstrip('/') + '/range=%d_%s'.rstrip('/')                                   
+    home = home % ( correlationRange, str(datetime.datetime.now() ) )                           
+    make_sure_path_exists( home.rstrip('/') + '/' )                                             
+                                                                                                
+    options.comparisonRange = correlationRange
+                                                                                                
+    serializationString = '%s/correlations_range=%d.tif' % ( homeScale.rstrip(), correlationRange )
+                                                                                                
+    gitCommitInfoFile = '%s/commitHash' % home.rstrip('/')                                      
+    with open( gitCommitInfoFile, 'w' ) as f:                                                   
+        f.write( '%s\n' % utility.gitcommit.getCommit( thickness_estimation_repo_dir ) )        
+                                                                                                
+    gitDiffFile = '%s/gitDiff' % home.rstrip('/')                                               
+    with open( gitDiffFile, 'w' ) as f:                                                         
+        f.write( '%s\n' % utility.gitcommit.getDiff( thickness_estimation_repo_dir ) )          
+                                                                                                
+                                                                                                
+    optionsFile = '%s/options' % home.rstrip('/')                                               
+    with open( optionsFile, 'w' ) as f:                                                         
+        f.write( '%s\n' % options.toString() )                                                  
+                                                                                                
+                                                                                                
+    this_file_name = os.path.realpath( inspect.getfile( lambda : None ) ) # inspect.getfile requires method, class, ... as input and returns the file in which input was defined
+    shutil.copyfile( this_file_name, '%s/%s' % ( home.rstrip('/'), this_file_name.split('/')[-1] ) )
+                                                                                                
+    startingCoordinates = []                                                                    
+                                                                                                
+    start = 1                                                                                   
+    stop  = img.getStack().getSize()                                                            
+    if stackMin != None:                                                              
+        start = stackMin                                                                        
+    if stackMax != None:                                                              
+        stop  = stackMax                                                                        
+    startingCoordinates = range( start - 1, stop )                                              
+                                                                                                
+    t0Prime = time.time()                                                                       
+    if deserializeCorrelations:
+        matrix = ImagePlusAdatper.wrapFloat( ImagePlus( serialiationString ) )                                                 
+    else:
+        matrix = CrossCorrelations.toMatrix(
+            ImagePlusAdapter.wrap( img ), # wrap input to RandomAccessibleInterval
+            [ Long(0), Long(0) ], # coordinates (take any, as we correlate complete image)
+            correlationRange, # range for pairwise similarities
+            [ img.getWidth(), img.getHeight() ], # radii of correlation window (complete image)
+            DoubleType() # dummy object necessary for call to generic function
+             )
+        FileSaver( ImageJFunctions.wrap( matrix, "wrapped matrix for writing" ) ).saveAsTiff( serializationString )
+                                                                                                
+    t3 = time.time()                                                                            
+    print t3 - t0Prime                                                                          
+                                                                                                
+    inference = InferFromMatrix( 
+                                 TranslationModel1D(),
+                                 OpinionMediatorModel( TranslationModel1D() )
+                                )
+                                                                                                
+                                                                                                
+    bp = home + "/matrix_floor/matrixFloor_%02d.tif"                                            
+    make_sure_path_exists( bp )                                                                 
+    floorTracker = CorrelationMatrixTrackerVisitor( bp, # base path                             
+                                                     0, # min                                   
+                                                     matrixSize, # max                          
+                                                     matrixScale, # scale                       
+                                                     FloorInterpolatorFactory() ) # interpolation
+                                                                                                
+    bp = home + "/matrix_nlinear/matrixNLinear_%02d.tif"                                        
+    make_sure_path_exists( bp )                                                                 
+    matrixTracker = CorrelationMatrixTrackerVisitor( bp, # base path                            
+                                                     0, # min                                   
+                                                     matrixSize, # max                          
+                                                     matrixScale, # scale                       
+                                                     NLinearInterpolatorFactory() ) # interpolation
+                                                                                                
+    bp = home + "/array/array_%02d.tif"                                                         
+    make_sure_path_exists( bp )                                                                 
+    arrayTracker = CorrelationArrayTrackerVisitor( bp, # base path                              
+                                                   FloorInterpolatorFactory(), # interpolation  
+                                                   imgSource.getStack().getSize(), # number of data points
+                                                   correlationRange ) # range for pairwise correlations
+                                                                                                
+                                                                                                
+                                                                                                
+    bp = home + "/render/render_%02d.tif"                                                       
+    make_sure_path_exists( bp )                                                                 
+    hyperSlices = ArrayList()                                                                   
+                                                                                                
+    renderTracker = ApplyTransformToImagesAndAverageVisitor( bp, # base path                    
+                                                             FloorInterpolatorFactory(), # interpolation
+                                                             scale,                             
+                                                             0,                                 
+                                                             0,                                 
+                                                             imgSource.getWidth(),              
+                                                             nImages)                           
+    for i in xrange(-2, 3, 1):                                                                  
+        renderTracker.addImage( Views.hyperSlice( ImagePlusImgs.from( imgSource ), 1,  30 + i ) )                                                 
+                                                                                                
+    renderTracker.average()                                                                     
+                                                                                                
+    bp = home + "/fit_tracker/fitTracker_%d.csv"                                                
+    make_sure_path_exists( bp )                                                                 
+    separator = ','                                                                             
+    fitTracker = CorrelationFitTrackerVisitor( bp, # base path                                  
+                                               correlationRange, # range                        
+                                               separator ) # csv separator                      
+                                                                                                
+                                                                                                
+    bp = home + "/fit_coordinates/fitCoordinates_%d.csv"                                        
+    make_sure_path_exists( bp )                                                                 
+    coordinateTracker = ActualCoordinatesTrackerVisitor( bp,                                    
+                                                         separator )                            
+                                                                                                
+    bp = home + "/multipliers/multipliers_%d.csv"                                               
+    make_sure_path_exists( bp )                                                                 
+    multiplierTracker = MultipliersTrackerVisitor( bp,                                          
+                                                   separator )                                  
+                                                                                                
+    bp = home + "/weights/weights_%d.csv"                                                       
+    make_sure_path_exists( bp )
+                                                     
+    weightsTracker = WeightsTrackerVisitor( bp,                                         
+                                            separator )
+                                                                                                
+    matrixTracker.addVisitor( arrayTracker )
+    matrixTracker.addVisitor( renderTracker )
+    matrixTracker.addVisitor( fitTracker )
+    matrixTracker.addVisitor( coordinateTracker )
+    matrixTracker.addVisitor( multiplierTracker )
+    matrixTracker.addVisitor( weightsTracker )
+    matrixTracker.addVisitor( floorTracker )
+                                                                                                
+    # if you want to specify values for options, do:                                            
+    # options.multiplierGenerationRegularizerWeight = <value>                                   
+    # or equivalent
+    IJ.log( str( len( startingCoordinates ) ) + " MIZZZZGE" )                                                  
+    result = inference.estimateZCoordinates( matrix, startingCoordinates, matrixTracker, options )
  
