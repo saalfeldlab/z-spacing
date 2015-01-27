@@ -14,7 +14,7 @@ public class LazyVisitor implements Visitor {
 			final int[] inversePermutation,
 			final double[] multipliers,
 			final double[] weights,
-			final double[] estimatedFit
+			final RandomAccessibleInterval< double[] > estimatedFit
 			) {
 		// do not do anything
 	}

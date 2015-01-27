@@ -53,7 +53,7 @@ public class ActualCoordinatesTrackerVisitor extends AbstractMultiVisitor {
 			final int[] inversePermutation,
 			final double[] multipliers,
 			final double[] weights,
-			final double[] estimatedFit
+			final RandomAccessibleInterval< double[] > estimatedFit
 			) {
 		
 		final ArrayImg<DoubleType, DoubleArray> coordinateImage = ArrayImgs.doubles( lut, lut.length );

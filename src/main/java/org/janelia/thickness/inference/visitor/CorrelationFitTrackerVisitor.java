@@ -11,6 +11,7 @@ import java.util.ArrayList;
 
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.view.Views;
 
 /**
  * @author hanslovskyp
@@ -45,10 +46,10 @@ public class CorrelationFitTrackerVisitor extends AbstractMultiVisitor {
 			final int[] inversePermutation,
 			final double[] multipliers,
 			final double[] weights,
-			final double[] estimatedFit
+			final RandomAccessibleInterval< double[] > estimatedFits
 			) {
 		
-		if ( estimatedFit == null )
+		if ( estimatedFits == null )
 			return;
 		
 		final File file = new File( String.format( this.basePath, iteration ) );
@@ -58,8 +59,11 @@ public class CorrelationFitTrackerVisitor extends AbstractMultiVisitor {
 			final FileWriter fw = new FileWriter( file.getAbsoluteFile() );
 			final BufferedWriter bw = new BufferedWriter( fw );
 			
-			for ( final double v : estimatedFit )
-				bw.write( String.format( "%f\n", v ) );
+			for ( final double[] estimatedFit : Views.flatIterable( estimatedFits) ) {
+				for ( final double v : estimatedFit )
+					bw.write( String.format( "%f%s", v, separator ) );
+				bw.write(  "\n" );
+			}
 			
 			bw.close();
 		} catch (final IOException e) {

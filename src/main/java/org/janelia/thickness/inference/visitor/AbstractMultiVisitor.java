@@ -39,7 +39,7 @@ public abstract class AbstractMultiVisitor implements Visitor {
 			int[] inversePermutation,
 			double[] multipliers,
 			double[] weights,
-			double[] estimatedFit
+			RandomAccessibleInterval< double[] > estimatedFit
 			);
 	
 	@Override
@@ -51,7 +51,7 @@ public abstract class AbstractMultiVisitor implements Visitor {
 			final int[] inversePermutation,
 			final double[] multipliers,
 			final double[] weights,
-			final double[] estimatedFit
+			final RandomAccessibleInterval< double[] > estimatedFit
 			) {
 		for ( final Visitor v : visitors ) {
 			v.act(iteration, matrix, lut, permutation, inversePermutation, multipliers, weights, estimatedFit );

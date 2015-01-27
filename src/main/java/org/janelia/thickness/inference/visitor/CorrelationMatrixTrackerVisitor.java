@@ -87,7 +87,7 @@ public class CorrelationMatrixTrackerVisitor extends AbstractMultiVisitor {
 			final int[] inversePermutation,
 			final double[] multipliers,
 			final double[] weights,
-			final double[] estimatedFit
+			final RandomAccessibleInterval< double[] > estimatedFit
 			) {
 
 

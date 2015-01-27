@@ -65,7 +65,7 @@ public class InferFromMatrix< M extends Model<M> > {
 							final RandomAccessibleInterval<U> matrix, final double[] lut,
 							final int[] permutation, final int[] inversePermutation,
 							final double[] multipliers, final double[] weights,
-							final double[] estimatedFit) {
+							final RandomAccessibleInterval< double[] > estimatedFit) {
 						// don't do anything
 					}
 		        	

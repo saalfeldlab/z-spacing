@@ -68,7 +68,7 @@ public class ApplyTransformToImageVisitor extends AbstractMultiVisitor {
 			final int[] inversePermutation,
 			final double[] multipliers,
 			final double[] weights,
-			final double[] estimatedFit
+			final RandomAccessibleInterval< double[] > estimatedFit
 			) {
 		
 		final double[] scaledLut = new double[ lut.length ];

@@ -13,6 +13,6 @@ public interface Visitor {
 			int[] inversePermutation,
 			double[] multipliers,
 			double[] weights,
-			double[] estimatedFit
+			RandomAccessibleInterval< double[] > estimatedFit
 			);
 }
