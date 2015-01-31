@@ -5,7 +5,11 @@ package org.janelia.correlations;
 
 import ij.ImageJ;
 
+import java.util.ArrayList;
 import java.util.Random;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccess;
@@ -41,8 +45,8 @@ public class CrossCorrelations {
 			final long range,
 			final long[] radius,
 			final U type ) {
-		final CrossCorrelationFactory<T, T, U> factory = new CrossCorrelationFactory< T, T, U >( type );
-		return toMatrix( input, xy, range, radius, factory, type);
+		final int nThreads = 1;
+		return toMatrix( input, xy, range, radius, nThreads, type);
 	}
 	
 	
@@ -51,6 +55,30 @@ public class CrossCorrelations {
 			final long[] xy,
 			final long range,
 			final long[] radius,
+			final int nThreads,
+			final U type ) {
+		final CrossCorrelationFactory<T, T, U> factory = new CrossCorrelationFactory< T, T, U >( type );
+		return toMatrix( input, xy, range, radius, nThreads, factory, type);
+	}
+	
+	public static< T extends RealType< T >, U extends RealType< U > & NativeType< U > > ArrayImg< U, ? > toMatrix( 
+			final RandomAccessibleInterval< T > input,
+			final long[] xy,
+			final long range,
+			final long[] radius,
+			final CrossCorrelationFactory<T, T, U> factory,
+			final U type ) {
+		final int nThreads = 1;
+		return toMatrix( input, xy, range, radius, nThreads, factory, type);
+	}
+	
+	
+	public static< T extends RealType< T >, U extends RealType< U > & NativeType< U > > ArrayImg< U, ? > toMatrix( 
+			final RandomAccessibleInterval< T > input,
+			final long[] xy,
+			final long range,
+			final long[] radius,
+			final int nThreads,
 			final CrossCorrelationFactoryInterface< T, T, U > factory,
 			final U type ) {
 		final long zDim  = input.dimension( 2 );
@@ -60,10 +88,14 @@ public class CrossCorrelations {
 		nanDummy.setReal( Double.NaN );
 		final ArrayImg< U, ? > matrix = new ArrayImgFactory< U >().create( dim, nanDummy );
 		for ( final U m : matrix )
-			m.setReal( Double.NaN );
+			m.setReal( 0.0 ); //Double.NaN );
 		
 		final ArrayRandomAccess<U> m1 = matrix.randomAccess();
 		final ArrayRandomAccess<U> m2 = matrix.randomAccess();
+		
+		final ExecutorService es = Executors.newFixedThreadPool( nThreads );
+		
+		final ArrayList< Callable< Void > > callables = new ArrayList< Callable< Void > >();
 		
 		for ( long z1 = 0; z1 < zDim; ++z1 ) {
 			m1.setPosition( z1, 0 );
@@ -76,15 +108,41 @@ public class CrossCorrelations {
 					continue;
 				m1.setPosition( z2, 1 );
 				m2.setPosition( z2, 0 );
-				final RandomAccess<U> cc = factory.create( 
-						Views.hyperSlice( input, 2, z1 ), 
-						Views.hyperSlice( input, 2, z2 ),
-						radius ).randomAccess();
-				cc.setPosition( xy );
-				final double val = cc.get().getRealDouble();
-				m1.get().setReal( val );
-				m2.get().setReal( val );
+//				strangely this works only with creating new ra, but not with just keeping the result of ra.get()
+//				final U u1 = m1.get();
+//				final U u2 = m2.get();
+				final ArrayRandomAccess<U> m1f = matrix.randomAccess();
+				final ArrayRandomAccess<U> m2f = matrix.randomAccess();
+				m1f.setPosition( m1 );
+				m2f.setPosition( m2 );
+				
+				final long z1f = z1;
+				final long z2f = z2;
+				callables.add( new Callable< Void>() {
+
+					@Override
+					public Void call() throws Exception {
+						final RandomAccess<U> cc = factory.create( 
+							Views.hyperSlice( input, 2, z1f ), 
+							Views.hyperSlice( input, 2, z2f ),
+							radius ).randomAccess();
+						cc.setPosition( xy );
+						final double val = cc.get().getRealDouble();
+						m1f.get().setReal( val );
+						m2f.get().setReal( val );
+						return null;
+					}
+				
+
+				});
 			}
+		}
+		
+		try {
+			es.invokeAll( callables );
+		} catch (final InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		
 		return matrix;
@@ -138,7 +196,6 @@ public class CrossCorrelations {
 				var.set( cc.get() );
 			}
 			else if ( dZ < 0 ) {
-				System.out.println( z1 + " " + z2 + " " + ( range - dZ ) + " " + (z2 + dZ ) );
 				s2.setPosition( z2, 1 );
 				s2.setPosition( range - dZ, 0 );
 				var.set( s2.get() );
@@ -173,12 +230,14 @@ public class CrossCorrelations {
 		final DoubleType type = new DoubleType();
 		for ( final DoubleType i : input )
 			i.set( rng.nextDouble() );
-		final ArrayImg<DoubleType, ?> mat = CrossCorrelations.toMatrix( input, xy, range, radius, factory, type );
+		final ArrayImg<DoubleType, ?> mat = CrossCorrelations.toMatrix( input, xy, range, radius, Runtime.getRuntime().availableProcessors(), factory, type );
 		new ImageJ();
-		ImageJFunctions.show( mat );
+		ImageJFunctions.show( mat, "mat" );
+		final ArrayRandomAccess<DoubleType> ra = mat.randomAccess();
+		ra.setPosition( new long[] { 49, 49 } );
 		
 		final ArrayImg<DoubleType, ?> str = CrossCorrelations.toStrip( input, xy, range, radius, factory, type);
-		ImageJFunctions.show( str );
+		ImageJFunctions.show( str, "str'" );
 	    
 		final RandomAccessibleInterval<DoubleType> mat2 = toMatrixFromStrip( str, (int)range );
 		ImageJFunctions.show( mat2, "transformed mat" );
