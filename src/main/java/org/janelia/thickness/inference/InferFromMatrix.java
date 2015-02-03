@@ -101,6 +101,17 @@ public class InferFromMatrix< M extends Model<M> > {
 		}
     	final double multipliers[] = weights.clone();
     	
+    	final ArrayList<double[]> fitList = new ArrayList< double[] >();
+		for ( int i = 0; i < lut.length; ++i ) {
+			fitList.add( new double[ options.comparisonRange ] );
+		}
+		
+		final ListImg< double[] > localFits = new ListImg<double[]>( fitList, fitList.size() );
+		
+		
+    	
+    	
+    	
     	for ( int iteration = 0; iteration < options.nIterations; ++iteration ) {
     		
     		final double[] permutedLut = lut.clone();
@@ -109,6 +120,9 @@ public class InferFromMatrix< M extends Model<M> > {
     		final IntervalView<T> matrix                 = Views.interval( new TransformView< T >( inputMatrix, permutation ), inputMatrix );
 //    		final IntervalView<DoubleType> currentLutImg = Views.interval( new TransformView< DoubleType >( ArrayImgs.doubles( lut, n ), permutation ), new FinalInterval( n ) ); // use this?
     		
+    		if ( iteration == 0 )
+    			visitor.act( iteration, matrix, lut, permutationLut, inverse, multipliers, weights, null );
+    		
     		final double[] shifts = this.getMediatedShifts(
     				matrix, 
     				permutedLut, 
@@ -116,6 +130,7 @@ public class InferFromMatrix< M extends Model<M> > {
     				weights, 
     				iteration, 
     				categorizer, 
+    				localFits,
     				options);
     		
     		this.applyShifts( 
@@ -132,8 +147,7 @@ public class InferFromMatrix< M extends Model<M> > {
     		if ( options.withRegularization )
     			regularize( lut, inverse, options );
     		
-   		
-        	visitor.act( iteration + 1, matrix, lut, permutationLut, inverse, multipliers, weights, null );
+        	visitor.act( iteration + 1, matrix, lut, permutationLut, inverse, multipliers, weights, localFits );
     		
     	}
     	
@@ -148,6 +162,7 @@ public class InferFromMatrix< M extends Model<M> > {
             final double[] weights,
             final int iteration,
             final Categorizer categorizer,
+            final ListImg< double[] > localFits,
             final Options options
             ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
     	
@@ -155,14 +170,16 @@ public class InferFromMatrix< M extends Model<M> > {
     	final LUTRealTransform transform = new LUTRealTransform( lut, nMatrixDimensions, nMatrixDimensions );
     	
    
-		final ArrayList<double[]> fitList = new ArrayList< double[] >();
-		for ( int i = 0; i < lut.length; ++i ) {
-			fitList.add( new double[ options.comparisonRange ] );
-		}
+//		final ArrayList<double[]> fitList = new ArrayList< double[] >();
+//		for ( int i = 0; i < lut.length; ++i ) {
+//			fitList.add( new double[ options.comparisonRange ] );
+//		}
 		
-		final ListImg< double[] > localFits = new ListImg<double[]>( fitList, fitList.size() );
+//		final ListImg< double[] > localFits = new ListImg<double[]>( fitList, fitList.size() );
     	
-		LocalizedCorrelationFit.estimateFromMatrix( matrix, lut, weights, multipliers, transform, options.comparisonRange, correlationFitModel, categorizer, localFits ); // this has window range
+//		LocalizedCorrelationFit.estimateFromMatrix( matrix, lut, weights, multipliers, transform, options.comparisonRange, correlationFitModel, categorizer, localFits ); // this has window range
+    	
+    	LocalizedCorrelationFit.estimateFromMatrix( matrix, lut, weights, multipliers, transform, options.comparisonRange, correlationFitModel, localFits );
 		
 		EstimateQualityOfSlice.estimateQuadraticFromMatrix( matrix, 
 				weights, 
@@ -213,7 +230,7 @@ public class InferFromMatrix< M extends Model<M> > {
 		double normalizingConstant = gaussKernel[0];
 		for ( int i = 1; i < gaussKernel.length; ++i ) {
 			gaussKernel[ i ] = Math.exp( -0.5 * i * i / ( options.shiftsSmoothingSigma * options.shiftsSmoothingSigma ) );
-			normalizingConstant += 2* gaussKernel[ i ];
+			normalizingConstant += 2 * gaussKernel[ i ];
 		}
 		
 		for (int i = 0; i < gaussKernel.length; i++) {
@@ -235,17 +252,21 @@ public class InferFromMatrix< M extends Model<M> > {
 			}
 			smoothedShifts[ i ] /= weightSum;
 		}
+		
+		
 	    
 		final double accumulatedCorrections = 0.0;
 		final Cursor<DoubleType> c = transformed.cursor();
+		final double[] LUTT = new double[ (int) transformed.dimension( 0 ) ];
 		for ( int ijk = 0; c.hasNext(); ++ijk ) {
 			final DoubleType valObject = c.next();
 			double val = valObject.get();
-			final double prev = val;
 		    val += accumulatedCorrections + options.shiftProportion * smoothedShifts[ ijk ];
-		    val = options.coordinateUpdateRegularizerWeight * prev + inverseCoordinateUpdateRegularizerWeight * val;
+//		    val = options.coordinateUpdateRegularizerWeight * ijk + inverseCoordinateUpdateRegularizerWeight * val;
 		    valObject.set( val );
+		    LUTT[ijk] = val;
 		}
+		
     }
     
     
