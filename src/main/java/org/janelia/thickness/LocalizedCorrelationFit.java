@@ -1,7 +1,5 @@
 package org.janelia.thickness;
 
-import ij.IJ;
-
 import java.util.ArrayList;
 
 import mpicbg.models.IllDefinedDataPointsException;
@@ -69,10 +67,7 @@ public class LocalizedCorrelationFit {
 		assert localFits.dimension( 1 )  == coordinates.length;
 //		assert localFits.firstElement().length == range;
 		
-		IJ.log( "" + categorizer.getClass().getName() );
 		final double[][] assignments = categorizer.getLabels( coordinates );
-//		for ( final double[] a : assignments )
-//			IJ.log( Arrays.toString( a ) );
 		final int numberOfModels = assignments[0].length;
 		
 		final ArrayList< ArrayList< ArrayList< PointMatch > > > samples = new ArrayList< ArrayList< ArrayList< PointMatch > > >();
@@ -229,8 +224,6 @@ public class LocalizedCorrelationFit {
 		final int numHalfPoints = numPoints / 2;
 		
 		final double[][] assignments = categorizer.getLabels( transformedCorrelations );
-//		for ( final double[] a : assignments )
-//			IJ.log( Arrays.toString( a ) );
 		final int numberOfModels = assignments[0].length;
 		
 		final ArrayList< ArrayList< ArrayList< PointMatch > > > samples = new ArrayList< ArrayList< ArrayList< PointMatch > > >();
