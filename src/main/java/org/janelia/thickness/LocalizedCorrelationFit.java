@@ -84,7 +84,7 @@ public class LocalizedCorrelationFit {
 			samples.add( al );
 		}
 		
-		final T dummy = correlations.randomAccess().get();
+		final T dummy = correlations.randomAccess().get().copy();
 		dummy.setReal( Double.NaN );
 		final RealRandomAccessible< T > source = Views.interpolate( Views.extendValue( correlations, dummy ), new NLinearInterpolatorFactory< T >() );
 		
