@@ -264,6 +264,5 @@ if __name__ == "__main__":
     # if you want to specify values for options, do:                                            
     # options.multiplierGenerationRegularizerWeight = <value>                                   
     # or equivalent
-    IJ.log( str( len( startingCoordinates ) ) + " MIZZZZGE" )                                                  
     result = inference.estimateZCoordinates( matrix, startingCoordinates, matrixTracker, options )
  
