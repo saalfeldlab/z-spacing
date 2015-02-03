@@ -1,9 +1,6 @@
 package org.janelia.utility.transform;
 
 import ij.ImageJ;
-
-import java.util.Arrays;
-
 import net.imglib2.FinalInterval;
 import net.imglib2.Localizable;
 import net.imglib2.Positionable;
@@ -66,7 +63,6 @@ public class MatrixToStrip implements InvertibleTransform {
 		final long x      = source[ 0 ] + y - range;
 		target[ 0 ] = x;
 		target[ 1 ] = y;
-		System.out.println( Arrays.toString( source ) + " ~> " + Arrays.toString( target ) );
 	}
 
 	@Override
