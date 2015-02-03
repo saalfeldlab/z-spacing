@@ -183,7 +183,7 @@ public class LocalizedCorrelationFit {
 	}
 	
 	
-	public <M extends Model< M > > void estimateFromMatrix( final RandomAccessibleInterval< DoubleType > correlations,
+	public static < T extends RealType< T >, M extends Model< M > > void estimateFromMatrix( final RandomAccessibleInterval< T > correlations,
 			final double[] coordinates,
 			final double[] weights,
 			final double[] multipliers,
