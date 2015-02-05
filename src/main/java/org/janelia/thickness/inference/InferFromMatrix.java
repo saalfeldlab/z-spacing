@@ -7,11 +7,8 @@ import mpicbg.models.AffineModel1D;
 import mpicbg.models.IllDefinedDataPointsException;
 import mpicbg.models.Model;
 import mpicbg.models.NotEnoughDataPointsException;
-import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
-import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.img.list.ListImg;
 import net.imglib2.outofbounds.OutOfBounds;
 import net.imglib2.type.numeric.RealType;
@@ -108,15 +105,16 @@ public class InferFromMatrix< M extends Model<M> > {
 		
 		final ListImg< double[] > localFits = new ListImg<double[]>( fitList, fitList.size() );
 		
-		
+		double[] permutedLut         = lut.clone(); // sorted lut
+		final double[] multipliersPrevious = multipliers.clone();
+		final double[] weightsPrevious     = weights.clone();
+		ArraySortedIndices.sort( permutedLut, permutationLut, inverse );
     	
     	
     	
     	for ( int iteration = 0; iteration < options.nIterations; ++iteration ) {
     		
-    		final double[] permutedLut = lut.clone();
-    		ArraySortedIndices.sort( permutedLut, permutationLut, inverse );
-    		final PermutationTransform permutation       = new PermutationTransform( permutationLut, nMatrixDim, nMatrixDim );
+    		final PermutationTransform permutation       = new PermutationTransform( inverse, nMatrixDim, nMatrixDim ); // need to create Transform into source?
     		final IntervalView<T> matrix                 = Views.interval( new TransformView< T >( inputMatrix, permutation ), inputMatrix );
 //    		final IntervalView<DoubleType> currentLutImg = Views.interval( new TransformView< DoubleType >( ArrayImgs.doubles( lut, n ), permutation ), new FinalInterval( n ) ); // use this?
     		
@@ -134,18 +132,25 @@ public class InferFromMatrix< M extends Model<M> > {
     				options);
     		
     		this.applyShifts( 
-    				lut, // rewrite interface to use view on permuted lut?
+    				permutedLut, // rewrite interface to use view on permuted lut? probably not
     				shifts, 
     				multipliers, 
     				permutation.copyToDimension( 1, 1 ), 
     				options);
     		
-    		final boolean preventReorder = !options.withReorder;
-    		if ( preventReorder )
-    			preventReorder( lut, permutation, options ); // rewrite interface to use view on permuted lut?
+    		if ( !options.withReorder )
+    			preventReorder( permutedLut, options ); // 
     		
     		if ( options.withRegularization )
-    			regularize( lut, inverse, options );
+    			regularize( permutedLut, options );
+
+    		updateArray( permutedLut, lut, inverse );
+    		updateArray( multipliers, multipliersPrevious, inverse );
+    		updateArray( weights, weightsPrevious, inverse );
+    		permutedLut = lut.clone();
+    		ArraySortedIndices.sort( permutedLut, permutationLut, inverse );
+    		updateArray( multipliersPrevious, multipliers, permutationLut );
+    		updateArray( weightsPrevious, weights, permutationLut );
     		
         	visitor.act( iteration + 1, matrix, lut, permutationLut, inverse, multipliers, weights, localFits );
     		
@@ -218,12 +223,6 @@ public class InferFromMatrix< M extends Model<M> > {
     		final PermutationTransform permutation, 
     		final Options options ) 
     {
-    	final ArrayImg<DoubleType, DoubleArray> coordinateImage = ArrayImgs.doubles( coordinates, coordinates.length );
-    	final IntervalView<DoubleType> transformed              = Views.interval( new TransformView< DoubleType >( coordinateImage, permutation ), coordinateImage );
-    	final double inverseCoordinateUpdateRegularizerWeight   = 1 - options.coordinateUpdateRegularizerWeight;
-    	
-    
-		
 		final double[] smoothedShifts = new double[ shifts.length ];
 		final double[] gaussKernel    = new double[ options.shiftsSmoothingRange + 1 ];
 		gaussKernel[0] = 1.0;
@@ -253,18 +252,13 @@ public class InferFromMatrix< M extends Model<M> > {
 			smoothedShifts[ i ] /= weightSum;
 		}
 		
-		
 	    
 		final double accumulatedCorrections = 0.0;
-		final Cursor<DoubleType> c = transformed.cursor();
-		final double[] LUTT = new double[ (int) transformed.dimension( 0 ) ];
-		for ( int ijk = 0; c.hasNext(); ++ijk ) {
-			final DoubleType valObject = c.next();
-			double val = valObject.get();
+		for ( int ijk = 0; ijk < coordinates.length; ++ijk ) {
+			double val = coordinates[ ijk ];
 		    val += accumulatedCorrections + options.shiftProportion * smoothedShifts[ ijk ];
 //		    val = options.coordinateUpdateRegularizerWeight * ijk + inverseCoordinateUpdateRegularizerWeight * val;
-		    valObject.set( val );
-		    LUTT[ijk] = val;
+		    coordinates[ ijk ] = val;
 		}
 		
     }
@@ -272,26 +266,17 @@ public class InferFromMatrix< M extends Model<M> > {
     
     public void preventReorder( 
     		final double[] coordinates, 
-    		final PermutationTransform permutation,
     		final Options options ) {
-    	final ArrayImg<DoubleType, DoubleArray> coordinateImage = ArrayImgs.doubles( coordinates, coordinates.length );
-    	final IntervalView<DoubleType> permuted = Views.interval( new TransformView< DoubleType >( coordinateImage, permutation ), coordinateImage );
-    	final Cursor<DoubleType> c = permuted.cursor();
-    	double previous = c.next().getRealDouble();
-    	while( c.hasNext() ) {
-    		final DoubleType currentObject = c.next();
-    		double currentVal        = currentObject.get();
-    		if ( previous > currentVal )
-    			currentVal = previous + options.minimumSectionThickness;
-    		previous = currentVal;
-    		currentObject.set( currentVal );
-    	}
+    	for (int i = 1; i < coordinates.length; i++) {
+    		final double previous = coordinates[ i - 1];
+			if ( previous > coordinates[ i ] )
+				coordinates[ i ] = previous + options.minimumSectionThickness;
+		}
     }
 			
 			
     public void regularize( 
 		final double[] coordinates,
-		final int[] inversePermutationLut,
 		final Options options ) 
     {
 		final float[] floatLut = new float[ 2 ]; final float[] arange = new float[ 2 ];
@@ -300,11 +285,11 @@ public class InferFromMatrix< M extends Model<M> > {
 			arange[i] = i;
 			floatWeights[i] = 1.0f;
 		}
-		final int maxIndex = inversePermutationLut.length - 1;
-		floatLut[ 0 ]       = (float) coordinates[ inversePermutationLut[ 0 ] ];
+		final int maxIndex = coordinates.length - 1;
+		floatLut[ 0 ]       = (float) coordinates[ 0 ];
 		arange[ 0 ]         = 0f;
 		floatWeights[ 0 ]   = 1.0f;
-		floatLut[ 1 ]       = (float) coordinates[ inversePermutationLut[ maxIndex ] ];
+		floatLut[ 1 ]       = (float) coordinates[ maxIndex ];
 		arange[ 1 ]         = maxIndex;
 		floatWeights[ 1 ] = 1.0f;
 		
