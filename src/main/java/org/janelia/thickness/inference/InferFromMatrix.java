@@ -328,6 +328,13 @@ public class InferFromMatrix< M extends Model<M> > {
 		}
 		
 	}
+    
+    
+    public void updateArray( final double[] source, final double[] target, final int[] permutation ) {
+    	for (int i = 0; i < target.length; i++) {
+			target[ permutation[ i ] ] = source[ i ];
+		}
+    }
 	
 }
 
