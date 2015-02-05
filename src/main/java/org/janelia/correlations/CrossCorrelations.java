@@ -88,7 +88,7 @@ public class CrossCorrelations {
 		nanDummy.setReal( Double.NaN );
 		final ArrayImg< U, ? > matrix = new ArrayImgFactory< U >().create( dim, nanDummy );
 		for ( final U m : matrix )
-			m.setReal( 0.0 ); //Double.NaN );
+			m.setReal( Double.NaN );
 		
 		final ArrayRandomAccess<U> m1 = matrix.randomAccess();
 		final ArrayRandomAccess<U> m2 = matrix.randomAccess();
