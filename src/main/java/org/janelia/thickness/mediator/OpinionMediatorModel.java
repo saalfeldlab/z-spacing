@@ -9,6 +9,7 @@ import mpicbg.models.NotEnoughDataPointsException;
 import mpicbg.models.Point;
 import mpicbg.models.PointMatch;
 import net.imglib2.img.array.ArrayImg;
+import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.type.numeric.real.DoubleType;
 
@@ -30,12 +31,12 @@ public class OpinionMediatorModel< M extends Model<M> > implements OpinionMediat
 		final double[] result = new double[ shifts.size() ];
 		
 		
-		
-		return mediate( shifts, result );
+		mediate( shifts, result );
+		return ArrayImgs.doubles( result, result.length );
 	}
 
 	@Override
-	public ArrayImg<DoubleType, DoubleArray> mediate(
+	public void mediate(
 			final TreeMap<Long, ArrayList<ConstantPair<Double, Double>>> shifts,
 			final double[]result) {
 		
@@ -58,6 +59,8 @@ public class OpinionMediatorModel< M extends Model<M> > implements OpinionMediat
 					try {
 						model.fit( pointMatches );
 						result[ i ] = model.apply( new float[] { 0.0f } )[ 0 ];
+//						if ( Double.isNaN( result[ i ] ) )
+//							result[ i ] = 0.0;
 					} catch (final NotEnoughDataPointsException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -70,7 +73,6 @@ public class OpinionMediatorModel< M extends Model<M> > implements OpinionMediat
 			}
 		}
 		
-		return null;
 	}
 	
 	@Override
