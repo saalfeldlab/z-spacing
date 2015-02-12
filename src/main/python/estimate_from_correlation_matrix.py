@@ -20,7 +20,6 @@ from mpicbg.ij.util import Filter
 from net.imglib2.img.array import ArrayImgs
 from net.imglib2.img.display.imagej import ImageJFunctions
 from net.imglib2.img import ImagePlusAdapter
-from net.imglib2.img.display.imagej import ImgLib2Display
 from net.imglib2.interpolation.randomaccess import NLinearInterpolatorFactory
 from net.imglib2.interpolation.randomaccess import NearestNeighborInterpolatorFactory
 from net.imglib2.interpolation.randomaccess import FloorInterpolatorFactory
@@ -30,16 +29,12 @@ from net.imglib2.img.imageplus import ImagePlusImgs
 from net.imglib2.type.numeric.real import DoubleType
 
 from org.janelia.models import ScaleModel
-from org.janelia.utility import ConstantPair
+from org.janelia.utility.tuple import ConstantPair
 from org.janelia.utility import CopyFromIntervalToInterval
-from org.janelia.utility import SerializableConstantPair
-from org.janelia.utility import Serialization
+from org.janelia.utility.tuple import SerializableConstantPair
+from org.janelia.utility.io import Serialization
 from org.janelia.utility.sampler import SparseXYSampler
-from org.janelia.correlations import CorrelationsObject
-from org.janelia.correlations import CorrelationsObjectFactory
-from org.janelia.correlations import SparseCorrelationsObject
-from org.janelia.correlations import SparseCorrelationsObjectFactory
-from org.janelia.thickness.inference import InferFromCorrelationsObject
+from org.janelia.thickness.inference import InferFromMatrix
 from org.janelia.thickness.inference import Options
 from org.janelia.thickness.inference.visitor import ActualCoordinatesTrackerVisitor
 from org.janelia.thickness.inference.visitor import ApplyTransformToImagesAndAverageVisitor
@@ -48,10 +43,12 @@ from org.janelia.thickness.inference.visitor import CorrelationArrayTrackerVisit
 from org.janelia.thickness.inference.visitor import CorrelationFitTrackerVisitor
 from org.janelia.thickness.inference.visitor import CorrelationMatrixTrackerVisitor
 from org.janelia.thickness.inference.visitor import MultipliersTrackerVisitor
-from org.janelia.thickness.inference.visitor import PositionTrackerVisitor
 from org.janelia.thickness.inference.visitor import WeightsTrackerVisitor
 from org.janelia.thickness.lut import SingleDimensionLUTRealTransform
 from org.janelia.thickness.mediator import OpinionMediatorModel
+from org.janelia.thickness.mediator import OpinionMediatorWeightedAverage
+
+from ij.process import FloatStatistics
 
 
 import datetime
@@ -64,7 +61,7 @@ import time
 import shutil
 import sys
 
-import utility
+# import utility
 
 def make_sure_path_exists(path):
     try:
@@ -80,19 +77,30 @@ if __name__ == "__main__":
     t0 = time.time()
     print t0 - t0
 
-    r = 5
+    r = 105
     correlationRanges = range( r, r + 1 )
     # root = '/data/hanslovskyp/forKhaled'
     # root = '/data/hanslovskyp/khaled_2014_10_22/'
-    root = '/data/hanslovskyp/khaled_2014_10_24/'
+    # root = '/data/hanslovskyp/khaled_2014_10_24/'
     # sourceFile = '/data/hanslovskyp/forKhaled/corr_matrix.tif' # output dir
     # sourceFile = '/data/hanslovskyp/khaled_2014_10_22/cross_corr_mx.tif'
-    sourceFile = '/data/hanslovskyp/khaled_2014_10_24/cross_corr_mx_x16.tif'
+    # sourceFile = '/data/hanslovskyp/khaled_2014_10_24/cross_corr_mx_x16.tif'
+    # root       = '/groups/saalfeld/home/hanslovskyp/local/tmp/some_matrix/'
+    # sourceFile = '/groups/saalfeld/home/hanslovskyp/local/tmp/some_matrix/mat.tif'
+    root       = '/data/hanslovskyp/boergens/4/'
+    sourceFile = '/data/hanslovskyp/boergens/4/ncc-matrix.tif'
+    root       = '/data/hanslovskyp/boergens/2/'
+    sourceFile = '/data/hanslovskyp/boergens/2/inlier ratio matrix.tif'
+    root       = '/data/hanslovskyp/shan/scale/range=300/'
+    sourceFile = '/data/hanslovskyp/shan/scale/range=300/inlier ratio matrix.tif'
+    root       = '/tier2/saalfeld/hanslovskyp/spark-tests/'
+    sourceFile = '/tier2/saalfeld/hanslovskyp/spark-tests/spark-matrix-11999.tif'
     
     imgSource = ImagePlus( sourceFile )
     ImageConverter( imgSource ).convertToGray32()
     nImages = imgSource.getHeight()
-    normalizeBy = float( 2**16 - 1 )
+    stat    = FloatStatistics( imgSource.getProcessor() )
+    normalizeBy = stat.max
     imgSource.getProcessor().multiply( 1.0 / normalizeBy )
     nThreads = 1
     matrixSize = nImages
@@ -107,7 +115,7 @@ if __name__ == "__main__":
     options.shiftsSmoothingSigma = 4
     options.shiftsSmoothingRange = 0
     options.withRegularization = True
-    options.minimumSectionThickness = Double.NaN # 0.1
+    options.minimumSectionThickness = Double.NaN # 0.01
     options.multiplierRegularizerDecaySpeed = 50
     options.multiplierWeightsSigma = 0.04 # weights[ i ] = exp( -0.5*(multiplier[i] - 1.0)^2 / multiplierWeightSigma^2 )
     options.multiplierGenerationRegularizerWeight = 0.1
@@ -128,12 +136,12 @@ if __name__ == "__main__":
 
 
         gitCommitInfoFile = '%s/commitHash' % home.rstrip('/')
-        with open( gitCommitInfoFile, 'w' ) as f:
-            f.write( '%s\n' % utility.gitcommit.getCommit( thickness_estimation_repo_dir ) )
+        #with open( gitCommitInfoFile, 'w' ) as f:
+        #    f.write( '%s\n' % utility.gitcommit.getCommit( thickness_estimation_repo_dir ) )
 
         gitDiffFile = '%s/gitDiff' % home.rstrip('/')
-        with open( gitDiffFile, 'w' ) as f:
-            f.write( '%s\n' % utility.gitcommit.getDiff( thickness_estimation_repo_dir ) )
+        #with open( gitDiffFile, 'w' ) as f:
+        #    f.write( '%s\n' % utility.gitcommit.getDiff( thickness_estimation_repo_dir ) )
 
 
         optionsFile = '%s/options' % home.rstrip('/')
@@ -153,18 +161,11 @@ if __name__ == "__main__":
             stop  = stackMax
         startingCoordinates = range( start - 1, stop )
 
-        co = SparseCorrelationsObjectFactory.fromMatrix( ImagePlusAdapter.wrap( imgSource ), 0, 0, c )
+        inference = InferFromMatrix(
+            TranslationModel1D(),
+            OpinionMediatorWeightedAverage()#OpinionMediatorModel( TranslationModel1D() )
+            )
 
-
-        inference = InferFromCorrelationsObject( co,
-                                                 TranslationModel1D(),
-                                                 NLinearInterpolatorFactory(),
-                                                 ScaleModel(),
-                                                 OpinionMediatorModel( TranslationModel1D() )
-                                                 )
-                                                 
-             
-             
         bp = home + "/matrix_nlinear/matrixNLinear_%02d.tif"
         make_sure_path_exists( bp )
         matrixTracker = CorrelationMatrixTrackerVisitor( bp, # base path
@@ -204,20 +205,14 @@ if __name__ == "__main__":
         weightsTracker = WeightsTrackerVisitor( bp,
                                                 separator )
 
-        bp = home + "/positions/positions_%d.csv"
-        make_sure_path_exists( bp )
-        positionTracker = PositionTrackerVisitor( bp,
-                                                  separator )
+        coordinateTracker.addVisitor( fitTracker )
+        # coordinateTracker.addVisitor( matrixTracker )
+        coordinateTracker.addVisitor( multiplierTracker )
+        coordinateTracker.addVisitor( weightsTracker )      
+        # coordinateTracker.addVisitor( floorTracker )
              
-        matrixTracker.addVisitor( fitTracker )
-        matrixTracker.addVisitor( coordinateTracker )
-        matrixTracker.addVisitor( multiplierTracker )
-        matrixTracker.addVisitor( weightsTracker )      
-        matrixTracker.addVisitor( floorTracker )
-        matrixTracker.addVisitor( positionTracker )
-             
-
-        result = inference.estimateZCoordinates( 0, 0, startingCoordinates, matrixTracker, options )
+        matrix = ImageJFunctions.wrapFloat( imgSource )
+        result = inference.estimateZCoordinates( matrix, startingCoordinates, coordinateTracker, options )
              
 
  
