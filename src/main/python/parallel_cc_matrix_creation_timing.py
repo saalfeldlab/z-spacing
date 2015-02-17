@@ -36,7 +36,7 @@ imp       = IJ.getImage();
 data      = ImageJFunctions.wrap( imp )
 xy        = [ 0, 0 ]
 r         = min( 50, imp.getStack().getSize() )
-radius    = [ 10, 10 ]
+radius    = [ imp.getWidth(), imp.getHeight() ]
 t         = DoubleType()
 nThreads1 = 1
 nThreads2 = Runtime.getRuntime().availableProcessors()
@@ -44,11 +44,17 @@ nThreads2 = Runtime.getRuntime().availableProcessors()
 dt1, t11, t01, matrix1 = timeCreation( data, xy, r, radius, nThreads1, t )
 dt2, t12, t02, matrix2 = timeCreation( data, xy, r, radius, nThreads2, t )
 
-IJ.log( "runtime1 = %fs (%d threads)" % ( dt1, nThreads1 ) )
-IJ.log( "runtime2 = %fs (%d threads)" % ( dt2, nThreads2 ) )
+r1String = "runtime1 = %fs (%d threads)" % ( dt1, nThreads1 )
+r2String = "runtime2 = %fs (%d threads)" % ( dt2, nThreads2 )
+IJ.log( r1String )
+IJ.log( r2String )
+print r1String
+print r2String
 
 equal = compare( matrix1, matrix2 )
-IJ.log( "Resulting matrices are the same? " + str(equal) )
+equalString = "Resulting matrices are the same? " + str(equal)
+IJ.log( equalString )
+print equalString
 
 # ImageJFunctions.show( matrix1 )
 # ImageJFunctions.show( matrix2 )

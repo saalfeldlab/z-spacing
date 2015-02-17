@@ -34,24 +34,24 @@ public abstract class AbstractPerumtationTransform implements
 	}
 	
 	
-	protected int apply( final int x )
+	public int apply( final int x )
 	{
 		return lut[ x ];
 	}
 
-	protected long applyChecked( final int x )
+	public long applyChecked( final int x )
 	{
 		if ( x < 0 ) return -Long.MAX_VALUE;
 		else if ( x >= lut.length ) return Long.MAX_VALUE;
 		else return apply( x );
 	}
 
-	protected int applyInverse( final int y )
+	public int applyInverse( final int y )
 	{
 		return inverseLut[ y ];
 	}
 
-	protected long applyInverseChecked( final int y )
+	public long applyInverseChecked( final int y )
 	{
 	    if ( y < 0 ) return -Long.MAX_VALUE;
         else if ( y >= lut.length ) return Long.MAX_VALUE;
