@@ -134,7 +134,8 @@ public class InferFromMatrix< M extends Model<M> > {
     		this.applyShifts( 
     				permutedLut, // rewrite interface to use view on permuted lut? probably not
     				shifts, 
-    				multipliers, 
+    				multipliers,
+    				startingCoordinates,
     				permutation.copyToDimension( 1, 1 ), 
     				options);
     		
@@ -211,6 +212,7 @@ public class InferFromMatrix< M extends Model<M> > {
     		final double[] coordinates, 
     		final double[] shifts, 
     		final double[] multipliers,
+    		final double[] regularizerCoordinates,
     		final PermutationTransform permutation, 
     		final Options options ) 
     {
@@ -243,12 +245,14 @@ public class InferFromMatrix< M extends Model<M> > {
 			smoothedShifts[ i ] /= weightSum;
 		}
 		
+		final double inverseCoordinateUpdateRegularizerWeight = 1 - options.coordinateUpdateRegularizerWeight;
+		
 	    
 		final double accumulatedCorrections = 0.0;
 		for ( int ijk = 0; ijk < coordinates.length; ++ijk ) {
 			double val = coordinates[ ijk ];
 		    val += accumulatedCorrections + options.shiftProportion * smoothedShifts[ ijk ];
-//		    val = options.coordinateUpdateRegularizerWeight * ijk + inverseCoordinateUpdateRegularizerWeight * val;
+		    val = options.coordinateUpdateRegularizerWeight * regularizerCoordinates[ permutation.applyInverse( ijk ) ] + inverseCoordinateUpdateRegularizerWeight * val;
 		    coordinates[ ijk ] = val;
 		}
 		
