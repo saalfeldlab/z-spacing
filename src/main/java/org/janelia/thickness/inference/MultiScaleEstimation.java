@@ -3,9 +3,6 @@ package org.janelia.thickness.inference;
 import ij.IJ;
 
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -27,13 +24,12 @@ import net.imglib2.realtransform.InverseRealTransform;
 import net.imglib2.realtransform.RealTransformRealRandomAccessible;
 import net.imglib2.realtransform.RealViews;
 import net.imglib2.realtransform.Scale3D;
+import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
-import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
 import org.janelia.correlations.AbstractIntegralCrossCorrelation.NotEnoughSpaceException;
-import org.janelia.correlations.FloatingPointIntegralCrossCorrelation;
 import org.janelia.correlations.storage.DenseCorrelationMatricesWithRadius;
 import org.janelia.thickness.cluster.Categorizer;
 import org.janelia.thickness.cluster.RangedCategorizer;
@@ -47,31 +43,20 @@ import org.janelia.thickness.mediator.OpinionMediatorModel;
  *
  * @param <T>
  */
-public class MultiScaleEstimation< T extends RealType< T > > {
+public class MultiScaleEstimation {
 	
-	private final RandomAccessibleInterval< T > images;
-
-	/**
-	 * @param images
-	 */
-	public MultiScaleEstimation(final RandomAccessibleInterval<T> images) {
-		super();
-		this.images = images;
-	}
-	
-	
-	public RandomAccessibleInterval< DoubleType > estimateZCoordinates(
-			final DenseCorrelationMatricesWithRadius< DoubleType > matrices,
+	public static < T extends RealType< T > & NativeType< T > > RandomAccessibleInterval< DoubleType > estimateZCoordinates(
+			final DenseCorrelationMatricesWithRadius< T > matrices,
             final double[] startingCoordinates,
             final int range,
             final long[][] radii,
             final int[][] steps,
             final Options[] options) throws NotEnoughDataPointsException, IllDefinedDataPointsException, NotEnoughSpaceException {
-		return this.estimateZCoordinates( matrices, startingCoordinates, range, radii, steps, new LazyMultiScaleVisitor(), options );
+		return estimateZCoordinates( matrices, startingCoordinates, range, radii, steps, new LazyMultiScaleVisitor(), options );
 	}
 	
-	public RandomAccessibleInterval< DoubleType > estimateZCoordinates(
-			final DenseCorrelationMatricesWithRadius< DoubleType > matrices,
+	public static < T extends RealType< T > & NativeType< T > > RandomAccessibleInterval< DoubleType > estimateZCoordinates(
+			final DenseCorrelationMatricesWithRadius< T > matrices,
             final double[] startingCoordinates,
             final int range,
             final long[][] radii,
@@ -84,8 +69,8 @@ public class MultiScaleEstimation< T extends RealType< T > > {
 	}
 	
 	
-	public RandomAccessibleInterval< DoubleType > estimateZCoordinates(
-			final DenseCorrelationMatricesWithRadius< DoubleType > matrices,
+	public static < T extends RealType< T > & NativeType< T > > RandomAccessibleInterval< DoubleType > estimateZCoordinates(
+			final DenseCorrelationMatricesWithRadius< T > matrices,
             final double[] startingCoordinates,
             final int range,
             final long[][] radii,
@@ -97,14 +82,11 @@ public class MultiScaleEstimation< T extends RealType< T > > {
 		assert radii.length == steps.length;
 		assert radii.length == options.length;
 		
-		final TreeMap< Long, List< FloatingPointIntegralCrossCorrelation< T, T, FloatType > > > correlationsMap = new TreeMap<Long, List<FloatingPointIntegralCrossCorrelation<T,T,FloatType>>>();
-		
 		final long[] r = radii[0];
 		
-		final long width  = images.dimension( 0 );
-		final long height = images.dimension( 1 );
-		final long depth  = images.dimension( 2 );
-		
+		final long width  = matrices.dimension( 0 );
+		final long height = matrices.dimension( 1 );
+		final long depth  = matrices.randomAccess().get().dimension( 0 );
 		
 		
 		ArrayImg< DoubleType, DoubleArray > coordinates = ArrayImgs.doubles( width/steps[0][0], height/steps[0][1], depth );
@@ -115,13 +97,9 @@ public class MultiScaleEstimation< T extends RealType< T > > {
 		
 		for ( int i = 0; i < radii.length; ++i ) {
 			
+			matrices.setRadius( radii[i] );
+			
 			categorizer.setState( i );
-			
-			for ( final Entry<Long, List<FloatingPointIntegralCrossCorrelation<T, T, FloatType>>> entry : correlationsMap.entrySet() ) {
-				for ( final FloatingPointIntegralCrossCorrelation<T, T, FloatType> cc : entry.getValue() )
-					cc.setRadius( radii[i] );
-			}
-			
 			
 			final ExecutorService es = Executors.newFixedThreadPool( options[i].nThreads );
 			
@@ -146,7 +124,7 @@ public class MultiScaleEstimation< T extends RealType< T > > {
 			final ListImg< double[] > coordinateListImage = new ListImg< double[] >( al, currentWidth, currentHeight );// new ListImgFactory< double[] >().create( new FinalInterval( currentWidth, currentHeight ), new double[ (int) depth ] );
 			
 			final RealRandomAccess< DoubleType > ra                    = transformed.realRandomAccess();
-			final RandomAccess<RandomAccessibleInterval<DoubleType>> m = matrices.randomAccess();
+			final RandomAccess<RandomAccessibleInterval< T > > m = matrices.randomAccess();
 			final ArrayList<Callable<Void>> tasks = new ArrayList< Callable<Void> >();
 			for ( final Cursor<double[]> c = coordinateListImage.cursor(); c.hasNext(); ) {
 				IJ.log( "Iterating at c=" + c.getIntPosition( 0 ) + "x" + c.getIntPosition( 1 ) );
