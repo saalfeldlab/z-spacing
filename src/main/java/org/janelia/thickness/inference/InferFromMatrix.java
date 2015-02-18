@@ -175,15 +175,6 @@ public class InferFromMatrix< M extends Model<M> > {
     	final LUTRealTransform transform = new LUTRealTransform( lut, nMatrixDimensions, nMatrixDimensions );
     	
    
-//		final ArrayList<double[]> fitList = new ArrayList< double[] >();
-//		for ( int i = 0; i < lut.length; ++i ) {
-//			fitList.add( new double[ options.comparisonRange ] );
-//		}
-		
-//		final ListImg< double[] > localFits = new ListImg<double[]>( fitList, fitList.size() );
-    	
-//		LocalizedCorrelationFit.estimateFromMatrix( matrix, lut, weights, multipliers, transform, options.comparisonRange, correlationFitModel, categorizer, localFits ); // this has window range
-    	
     	LocalizedCorrelationFit.estimateFromMatrix( matrix, lut, weights, multipliers, transform, options.comparisonRange, correlationFitModel, localFits );
 		
 		EstimateQualityOfSlice.estimateQuadraticFromMatrix( matrix, 
