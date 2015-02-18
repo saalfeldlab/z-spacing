@@ -21,7 +21,6 @@ from mpicbg.ij.util import Filter
 from net.imglib2.img.array import ArrayImgs
 from net.imglib2.img.display.imagej import ImageJFunctions
 from net.imglib2.img import ImagePlusAdapter
-from net.imglib2.img.display.imagej import ImgLib2Display
 from net.imglib2.interpolation.randomaccess import NLinearInterpolatorFactory
 from net.imglib2.interpolation.randomaccess import NearestNeighborInterpolatorFactory
 from net.imglib2.interpolation.randomaccess import FloorInterpolatorFactory
@@ -32,25 +31,15 @@ from net.imglib2.type.numeric.real import DoubleType
 
 from org.apache.commons.math3.ml.clustering import KMeansPlusPlusClusterer
 
+from org.janelia.correlations.storage import DenseCorrelationMatricesWithRadius
 from org.janelia.models import ScaleModel
-from org.janelia.utility import ConstantPair
-from org.janelia.utility import CopyFromIntervalToInterval
-from org.janelia.utility import SerializableConstantPair
-from org.janelia.utility import Serialization
-from org.janelia.utility.sampler import SparseXYSampler
-from org.janelia.correlations import CorrelationsObject
-from org.janelia.correlations import CorrelationsObjectFactory
-from org.janelia.correlations import SparseCorrelationsObject
-from org.janelia.correlations import SparseCorrelationsObjectFactory
-from org.janelia.correlations.pyramid import CorrelationsObjectPyramidFactory
-from org.janelia.correlations.pyramid import InferFromCorrelationsObjectPyramid
 from org.janelia.thickness.cluster import CategorizerWithState
 from org.janelia.thickness.cluster import ClusteringCategorizer
 from org.janelia.thickness.cluster import RangedCategorizer
 from org.janelia.thickness.cluster import ChooseBestClusteringCategorizer
 from org.janelia.thickness.cluster import FilterRansac
 from org.janelia.thickness.cluster.evaluation import CalinskiHarabasz
-from org.janelia.thickness.inference import InferFromCorrelationsObject
+from org.janelia.thickness.inference import InferFromMatrix
 from org.janelia.thickness.inference import Options
 from org.janelia.thickness.inference import MultiScaleEstimation
 from org.janelia.thickness.inference.visitor import ActualCoordinatesTrackerVisitor
@@ -61,7 +50,6 @@ from org.janelia.thickness.inference.visitor import CorrelationFitTrackerVisitor
 from org.janelia.thickness.inference.visitor import CorrelationMatrixTrackerVisitor
 from org.janelia.thickness.inference.visitor import LazyVisitor
 from org.janelia.thickness.inference.visitor import MultipliersTrackerVisitor
-from org.janelia.thickness.inference.visitor import PositionTrackerVisitor
 from org.janelia.thickness.inference.visitor import WeightsTrackerVisitor
 from org.janelia.thickness.inference.visitor.multiscale import CoordinateDifferenceMultiScaleVisitor
 from org.janelia.thickness.inference.visitor.multiscale import CoordinateDifferenceToGridMultiScaleVisitor
@@ -247,7 +235,6 @@ if __name__ == "__main__":
         startingCoordinates = range( start - 1, stop )
 
         wrappedImage = ImagePlusAdapter.wrap( img )
-        mse    = MultiScaleEstimation( wrappedImage )
         radii  = [ [ width, height ], [ 50, 50 ], [ 20, 20 ], [ 7, 7 ], [ 7, 7 ] ] #,[ 75, 75 ] ]#, [ 30, 30 ], [ 15, 15 ], [ 7, 7 ] ]#, [ 15, 15 ] ]
         steps  = [ [ width, height ], [ 50, 50 ], [ 20, 20 ], [ 7, 7 ], [ 1, 1 ] ] #,[ 75, 75 ] ]#, [ 30, 30 ], [ 15, 15 ], [ 3, 3 ] ]#, [ 1, 1 ] ]
         ranges = [ int( scaleZBy*max(x) ) for x in radii ]
@@ -301,8 +288,15 @@ if __name__ == "__main__":
         categorizer = CategorizerWithState.generateFixedRange( ranges )
 
         categorizer = RangedCategorizer( nImages )
+
+        matrices    = DenseCorrelationMatricesWithRadius(
+			wrappedImage,
+			radii[0],
+			c,
+			DoubleType()
+			)
         
-        result = mse.estimateZCoordinates( startingCoordinates, c, radii, steps, visitor, categorizer, opt )
+        result = MultiScaleEstimation.estimateZCoordinates( matrices, startingCoordinates, c, radii, steps, visitor, categorizer, opt )
         IJ.log("done")
 
         resultFileName = '%s/result.tif' % home.rstrip('/')
