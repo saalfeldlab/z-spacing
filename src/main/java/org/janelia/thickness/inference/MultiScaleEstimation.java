@@ -42,6 +42,11 @@ import org.janelia.thickness.inference.visitor.multiscale.LazyMultiScaleVisitor;
 import org.janelia.thickness.inference.visitor.multiscale.MultiScaleVisitor;
 import org.janelia.thickness.mediator.OpinionMediatorModel;
 
+/**
+ * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>
+ *
+ * @param <T>
+ */
 public class MultiScaleEstimation< T extends RealType< T > > {
 	
 	private final RandomAccessibleInterval< T > images;
