@@ -82,11 +82,11 @@ public class CrossCorrelationFromFormatString {
         }
 
         /* match */
-        final ArrayList<Thread> threads = new ArrayList<Thread>();
         for (int z1 = 0; z1 < size; ++z1) {
             final int fz1 = z1;
             final FloatProcessor ip1 = openImage(formatString, fz1);
             final AtomicInteger j = new AtomicInteger(fz1 + 1);
+            final ArrayList<Thread> threads = new ArrayList<Thread>();
             for (int t = 0; t < Runtime.getRuntime().availableProcessors(); ++t) {
                 final Thread thread = new Thread(
                     new Runnable(){
@@ -113,10 +113,10 @@ public class CrossCorrelationFromFormatString {
 	
 	
 	public static void main(final String[] args) throws InterruptedException {
-		final String formatString = "/groups/saalfeld/saalfeldlab/data/boergens/export-elastic-5/%04d.tif";
-	    final int size = 100;
-	    final int range = 5;
-	    final RandomAccessibleInterval<FloatType> matrix = createMatrix(formatString, size, range );
+		final String formatString = "/tier2/saalfeld/hanslovskyp/shan/crop-3350x3520+1200+1040/data/%05d.tif";
+	    final int size = 11999;
+	    final int range = 500;
+	    final RandomAccessibleInterval<FloatType> matrix = createMatrix(formatString, size, range, true );
 	    new ImageJ();
 	    ImageJFunctions.show( matrix );
 	}

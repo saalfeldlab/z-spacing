@@ -70,9 +70,11 @@ if __name__ == "__main__":
     print t0 - t0
 
     # correlationRanges = range( 10, 1001, 222221 )
-    correlationRange = 10
-    nImages = 63
-    root = '/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/'
+    correlationRange = 5
+    nImages = 100
+    # root = '/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/'
+    root = '/data/hanslovskyp/tweak_CutOn4-15-2013_ImagedOn1-27-2014/substacks/01/'
+    root = '/data/hanslovskyp/shan/2/'
     IJ.run("Image Sequence...", "open=%s/data number=%d sort" % ( root.rstrip(), nImages ) );
     imgSource = IJ.getImage()
     nImages = imgSource.getStack().getSize();
@@ -80,20 +82,20 @@ if __name__ == "__main__":
     conv = ImageConverter( imgSource )
     conv.convertToGray32()
     stackSource = imgSource.getStack()
-    nThreads = 1
+    nThreads = 48
     scale = 5.0
     stackMin, stackMax = ( None, None )
     # xyScale = 0.25 # fibsem (crack from john) ~> 0.25
     # xyScale = 0.1 # fibsem (crop from john) ~> 0.1? # boergens
     xyScale = 0.1
-    doXYScale = True
+    doXYScale = False
     matrixSize = nImages
     matrixScale = 10.0
     serializeCorrelations = True
     deserializeCorrelations = not serializeCorrelations
     options = Options.generateDefaultOptions()
     options.shiftProportion = 0.6
-    options.nIterations = 100
+    options.nIterations = 200
     options.nThreads = nThreads
     options.windowRange = 100
     options.shiftsSmoothingSigma = 1.5
@@ -174,7 +176,8 @@ if __name__ == "__main__":
             ImagePlusAdapter.wrap( img ), # wrap input to RandomAccessibleInterval
             [ Long(0), Long(0) ], # coordinates (take any, as we correlate complete image)
             correlationRange, # range for pairwise similarities
-            [ img.getWidth(), img.getHeight() ], # radii of correlation window (complete image)
+            [ img.getWidth(), img.getHeight() ], # radii of correlation window (complete image),
+            nThreads, # number of threads
             DoubleType() # dummy object necessary for call to generic function
              )
         FileSaver( ImageJFunctions.wrap( matrix, "wrapped matrix for writing" ) ).saveAsTiff( serializationString )
@@ -224,8 +227,8 @@ if __name__ == "__main__":
                                                              0,                                 
                                                              imgSource.getWidth(),              
                                                              nImages)                           
-    for i in xrange(-2, 3, 1):                                                                  
-        renderTracker.addImage( Views.hyperSlice( ImagePlusImgs.from( imgSource ), 1,  30 + i ) )                                                 
+    for i in xrange(0, 1, 1):                                                                  
+        renderTracker.addImage( Views.hyperSlice( ImagePlusImgs.from( imgSource ), 1,  58 + i ) )                                                 
                                                                                                 
     renderTracker.average()                                                                     
                                                                                                 
