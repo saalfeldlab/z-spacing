@@ -106,11 +106,7 @@ public class MultiScaleEstimation {
 			final long currentWidth  = width / stepX;
 			final long currentHeight = height / stepY;
 			final Options currentOptions = options[i];
-			Scale3D transform;
-			if ( i == 0  )
-				transform = new Scale3D( 1.0, 1.0, 1.0 );
-			else
-				transform = new Scale3D( currentWidth * 1.0 / coordinates.dimension( 0 ), currentHeight * 1.0 / coordinates.dimension( 1 ), 1.0 );
+			final Scale3D transform = new Scale3D( currentWidth * 1.0 / coordinates.dimension( 0 ), currentHeight * 1.0 / coordinates.dimension( 1 ), 1.0 );
 			final RealTransformRealRandomAccessible<DoubleType, InverseRealTransform> transformed = RealViews.transformReal( Views.interpolate( Views.extendBorder( coordinates ), new NLinearInterpolatorFactory<DoubleType>() ), transform );
 			
 			
