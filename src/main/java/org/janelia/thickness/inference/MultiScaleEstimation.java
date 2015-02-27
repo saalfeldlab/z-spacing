@@ -82,8 +82,6 @@ public class MultiScaleEstimation {
 		assert radii.length == steps.length;
 		assert radii.length == options.length;
 		
-		final long[] r = radii[0];
-		
 		final long width  = matrices.dimension( 0 );
 		final long height = matrices.dimension( 1 );
 		final long depth  = matrices.randomAccess().get().dimension( 0 );
