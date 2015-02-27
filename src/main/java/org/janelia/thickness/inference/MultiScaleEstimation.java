@@ -3,6 +3,7 @@ package org.janelia.thickness.inference;
 import ij.IJ;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -19,6 +20,7 @@ import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.img.list.ListImg;
+import net.imglib2.img.list.ListRandomAccess;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.realtransform.InverseRealTransform;
 import net.imglib2.realtransform.RealTransformRealRandomAccessible;
@@ -118,10 +120,8 @@ public class MultiScaleEstimation {
 			final ListImg< double[] > coordinateListImage = new ListImg< double[] >( al, currentWidth, currentHeight );// new ListImgFactory< double[] >().create( new FinalInterval( currentWidth, currentHeight ), new double[ (int) depth ] );
 			
 			final RealRandomAccess< DoubleType > ra                    = transformed.realRandomAccess();
-			final RandomAccess<RandomAccessibleInterval< T > > m = matrices.randomAccess();
 			final ArrayList<Callable<Void>> tasks = new ArrayList< Callable<Void> >();
 			for ( final Cursor<double[]> c = coordinateListImage.cursor(); c.hasNext(); ) {
-				IJ.log( "Iterating at c=" + c.getIntPosition( 0 ) + "x" + c.getIntPosition( 1 ) );
 				final double[] arr = c.next();
 				ra.setPosition( c.getDoublePosition( 0 ), 0 );
 				ra.setPosition( c.getDoublePosition( 1 ), 1 );
@@ -132,8 +132,11 @@ public class MultiScaleEstimation {
 				final int x = c.getIntPosition( 0 );
 				final int y = c.getIntPosition( 1 );
 				
+				final RandomAccess<RandomAccessibleInterval< T > > m = matrices.randomAccess();
 				m.setPosition( x, 0 );
 				m.setPosition( y, 1 );
+				
+				final RandomAccessibleInterval<T> currMat = m.get();
 				
 				tasks.add( new Callable<Void>() {
 
@@ -142,7 +145,12 @@ public class MultiScaleEstimation {
 						final InferFromMatrix<TranslationModel1D> inference = new InferFromMatrix<TranslationModel1D>( 
 								new TranslationModel1D(), 
 								new OpinionMediatorModel<TranslationModel1D>( new TranslationModel1D() ) );
-						inference.estimateZCoordinates( m.get(), arr, new LazyVisitor(), categorizer, currentOptions );
+						
+						final double[] lut = inference.estimateZCoordinates( currMat, arr, new LazyVisitor(), categorizer, currentOptions );
+						IJ.log( "Iterating at c=" + x + "x" + y + " " + Arrays.toString( lut ) );
+						final ListRandomAccess<double[]> rax = coordinateListImage.randomAccess();
+						rax.setPosition( new int[] { x, y } );
+						rax.set( lut );
 						return null;
 					}
 				});
