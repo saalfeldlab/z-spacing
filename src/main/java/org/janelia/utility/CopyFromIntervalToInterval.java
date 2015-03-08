@@ -60,5 +60,24 @@ public class CopyFromIntervalToInterval {
 			converter.convert( s, t );
 		}
 	}
-
+	
+	public static <T extends RealType< T >, U extends RealType< U > > void copyToRealTypeIgnoreNaN( final RandomAccessibleInterval<T> source, final RandomAccessibleInterval<U> target ) {
+		assert source.numDimensions() == target.numDimensions(): "Dimension mismatch";
+		for ( int d = 0; d < source.numDimensions(); ++ d ) {
+			assert target.dimension( d ) == source.dimension( d ): "Dimension mismatch";
+		}
+		final Cursor<T> sourceCursor = Views.flatIterable( source ).cursor();
+		final Cursor<U> targetCursor = Views.flatIterable( target ).cursor();
+		
+		while ( sourceCursor.hasNext() ) {
+			final double val = sourceCursor.next().getRealDouble();
+			targetCursor.fwd();
+			if ( Double.isNaN( val ) )
+				continue;
+			else
+				targetCursor.get().setReal( val );
+		}
+	}
+	
+	
 }
