@@ -34,12 +34,12 @@ public class StripToMatrix implements InvertibleTransform {
 	/**
 	 * @param range
 	 */
-	public StripToMatrix(int range) {
+	public StripToMatrix(final int range) {
 		this.range       = range;
 		this.inverse     = new MatrixToStrip( range, this );
 	}
 	
-	public StripToMatrix( int range, MatrixToStrip inverse ) {
+	public StripToMatrix( final int range, final MatrixToStrip inverse ) {
 		this.range       = range;
 		this.inverse     = inverse;
 	}
@@ -55,41 +55,41 @@ public class StripToMatrix implements InvertibleTransform {
 	}
 
 	@Override
-	public void apply(long[] source, long[] target) {
-		long y      = source[ 1 ];
-		long x      = source[ 0 ] - y + range;
+	public void apply(final long[] source, final long[] target) {
+		final long y      = source[ 1 ];
+		final long x      = source[ 0 ] - y + range;
 		target[ 0 ] = x;
 		target[ 1 ] = y;
 	}
 
 	@Override
-	public void apply(int[] source, int[] target) {
-		int y       = source[ 1 ];
-		int x       = source[ 0 ] - y + range;
+	public void apply(final int[] source, final int[] target) {
+		final int y       = source[ 1 ];
+		final int x       = source[ 0 ] - y + range;
 		target[ 0 ] = x;
 		target[ 1 ] = y;
 	}
 
 	@Override
-	public void apply(Localizable source, Positionable target) {
-		long y = source.getLongPosition( 1 );
-		long x = source.getLongPosition( 0 ) - y + range;
+	public void apply(final Localizable source, final Positionable target) {
+		final long y = source.getLongPosition( 1 );
+		final long x = source.getLongPosition( 0 ) - y + range;
 		target.setPosition( x, 0 );
 		target.setPosition( y, 1 );
 	}
 
 	@Override
-	public void applyInverse(long[] source, long[] target) {
+	public void applyInverse(final long[] source, final long[] target) {
 		this.inverse.apply( target, source );
 	}
 
 	@Override
-	public void applyInverse(int[] source, int[] target) {
+	public void applyInverse(final int[] source, final int[] target) {
 		this.inverse.apply( target, source );
 	}
 
 	@Override
-	public void applyInverse(Positionable source, Localizable target) {
+	public void applyInverse(final Positionable source, final Localizable target) {
 		this.inverse.apply( target, source );
 	}
 
