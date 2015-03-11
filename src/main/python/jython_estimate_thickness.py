@@ -66,7 +66,7 @@ def make_sure_path_exists(path):
 
 if __name__ == "__main__":
 
-    correlationRange = 5
+    correlationRange = 10
     nImages = 100
     root    = '' # specify root for results
     dataDir = '' # specify data dir, if empty, use current stack
