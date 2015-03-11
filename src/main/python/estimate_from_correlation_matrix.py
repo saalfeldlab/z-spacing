@@ -60,8 +60,6 @@ import time
 import shutil
 import sys
 
-# import utility
-
 def make_sure_path_exists(path):
     try:
         os.makedirs( os.path.dirname( path ) )
