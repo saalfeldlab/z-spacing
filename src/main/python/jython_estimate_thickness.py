@@ -66,50 +66,43 @@ def make_sure_path_exists(path):
 
 if __name__ == "__main__":
 
-    t0 = time.time()
-    print t0 - t0
-
-    # correlationRanges = range( 10, 1001, 222221 )
     correlationRange = 5
     nImages = 100
-    # root = '/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/'
-    root = '/data/hanslovskyp/tweak_CutOn4-15-2013_ImagedOn1-27-2014/substacks/01/'
-    root = '/data/hanslovskyp/shan/2/'
-    IJ.run("Image Sequence...", "open=%s/data number=%d sort" % ( root.rstrip(), nImages ) );
+    root    = '' # specify root for results
+    dataDir = '' # specify data dir, if empty, use current stack
+    if not dataDir == '':
+        IJ.run("Image Sequence...", "open=%s sort" % ( dataDir ) );
     imgSource = IJ.getImage()
     nImages = imgSource.getStack().getSize();
     # imgSource.show()
     conv = ImageConverter( imgSource )
     conv.convertToGray32()
     stackSource = imgSource.getStack()
-    nThreads = 48
+    nThreads = 1 # specify threads if necessary
     scale = 5.0
     stackMin, stackMax = ( None, None )
-    # xyScale = 0.25 # fibsem (crack from john) ~> 0.25
-    # xyScale = 0.1 # fibsem (crop from john) ~> 0.1? # boergens
-    xyScale = 0.1
-    doXYScale = False
+    xyScale = 0.1 # by what factor scale x and y, if doXYScale is True
+    doXYScale = False 
     matrixSize = nImages
-    matrixScale = 10.0
-    serializeCorrelations = True
-    deserializeCorrelations = not serializeCorrelations
+    matrixScale = 10.0 # by what factor increase matrix resolution if it is rendered at each iteration
+    serializeCorrelations = True # save correlations to file?
+    deserializeCorrelations = not serializeCorrelations # read correlations from file?
     options = Options.generateDefaultOptions()
-    options.shiftProportion = 0.6
-    options.nIterations = 200
+    options.shiftProportion = 0.6 # only shift by this fraction in each iteration
+    options.nIterations = 200 # run for this number of iterations
     options.nThreads = nThreads
     options.windowRange = 100
     options.shiftsSmoothingSigma = 1.5
-    options.shiftsSmoothingRange = 0
+    options.shiftsSmoothingRange = 0 # smoothing between adjacent shifts, set to 0 for no smoothing
     options.withRegularization = True
-    options.minimumSectionThickness = Double.NaN # 0.1
+    options.minimumSectionThickness = 0.1 # minimum section thickness if no reordering
     options.multiplierRegularizerDecaySpeed = 50
-    options.multiplierWeightsSigma = 0.04 # weights[ i ] = exp( -0.5*(multiplier[i] - 1.0)^2 / multiplierWeightSigma^2 )
-    options.multiplierGenerationRegularizerWeight = 0.1
-    options.coordinateUpdateRegularizerWeight = 0.01
+    options.multiplierWeightsSigma = 0.04 
+    options.multiplierGenerationRegularizerWeight = 0.1 # how stronlgy should mulitpliers be regularized to 1.0?
+    options.coordinateUpdateRegularizerWeight = 0.01 # how strongly should coordinates be regularized to initial coordinates?
     options.neighborRegularizerWeight = 0.05
-    options.multiplierEstimationIterations = 10
-    options.withReorder = True
-    thickness_estimation_repo_dir = '/groups/saalfeld/home/hanslovskyp/workspace/em-thickness-estimation'
+    options.multiplierEstimationIterations = 10 # number of iterations in inner loop for multiplier estimation
+    options.withReorder = True # how strongly should coordinates be regularized to initial coordinates?
 
     if not doXYScale:
         xyScale = 1.0
@@ -117,7 +110,6 @@ if __name__ == "__main__":
    
 
     img = imgSource.clone()
-    print stackSource.getSize()
     if doXYScale:
         stack = ImageStack(int(round(imgSource.getWidth()*xyScale)), int(round(imgSource.getHeight()*xyScale)))
         for z in xrange(stackSource.getSize()):
@@ -141,22 +133,10 @@ if __name__ == "__main__":
                                                                                                 
     serializationString = '%s/correlations_range=%d.tif' % ( homeScale.rstrip(), correlationRange )
                                                                                                 
-    gitCommitInfoFile = '%s/commitHash' % home.rstrip('/')                                      
-    with open( gitCommitInfoFile, 'w' ) as f:                                                   
-        f.write( '%s\n' % utility.gitcommit.getCommit( thickness_estimation_repo_dir ) )        
-                                                                                                
-    gitDiffFile = '%s/gitDiff' % home.rstrip('/')                                               
-    with open( gitDiffFile, 'w' ) as f:                                                         
-        f.write( '%s\n' % utility.gitcommit.getDiff( thickness_estimation_repo_dir ) )          
-                                                                                                
-                                                                                                
     optionsFile = '%s/options' % home.rstrip('/')                                               
     with open( optionsFile, 'w' ) as f:                                                         
         f.write( '%s\n' % options.toString() )                                                  
                                                                                                 
-                                                                                                
-    this_file_name = os.path.realpath( inspect.getfile( lambda : None ) ) # inspect.getfile requires method, class, ... as input and returns the file in which input was defined
-    shutil.copyfile( this_file_name, '%s/%s' % ( home.rstrip('/'), this_file_name.split('/')[-1] ) )
                                                                                                 
     startingCoordinates = []                                                                    
                                                                                                 
@@ -168,7 +148,6 @@ if __name__ == "__main__":
         stop  = stackMax                                                                        
     startingCoordinates = range( start - 1, stop )                                              
                                                                                                 
-    t0Prime = time.time()                                                                       
     if deserializeCorrelations:
         matrix = ImagePlusAdatper.wrapFloat( ImagePlus( serialiationString ) )                                                 
     else:
@@ -182,8 +161,6 @@ if __name__ == "__main__":
              )
         FileSaver( ImageJFunctions.wrap( matrix, "wrapped matrix for writing" ) ).saveAsTiff( serializationString )
                                                                                                 
-    t3 = time.time()                                                                            
-    print t3 - t0Prime                                                                          
                                                                                                 
     inference = InferFromMatrix( 
                                  TranslationModel1D(),
@@ -215,23 +192,7 @@ if __name__ == "__main__":
                                                    correlationRange ) # range for pairwise correlations
                                                                                                 
                                                                                                 
-                                                                                                
-    bp = home + "/render/render_%02d.tif"                                                       
-    make_sure_path_exists( bp )                                                                 
-    hyperSlices = ArrayList()                                                                   
-                                                                                                
-    renderTracker = ApplyTransformToImagesAndAverageVisitor( bp, # base path                    
-                                                             FloorInterpolatorFactory(), # interpolation
-                                                             scale,                             
-                                                             0,                                 
-                                                             0,                                 
-                                                             imgSource.getWidth(),              
-                                                             nImages)                           
-    for i in xrange(0, 1, 1):                                                                  
-        renderTracker.addImage( Views.hyperSlice( ImagePlusImgs.from( imgSource ), 1,  58 + i ) )                                                 
-                                                                                                
-    renderTracker.average()                                                                     
-                                                                                                
+                                                                                                                                                                                                
     bp = home + "/fit_tracker/fitTracker_%d.csv"                                                
     make_sure_path_exists( bp )                                                                 
     separator = ','                                                                             
@@ -255,17 +216,17 @@ if __name__ == "__main__":
                                                      
     weightsTracker = WeightsTrackerVisitor( bp,                                         
                                             separator )
-                                                                                                
-    matrixTracker.addVisitor( arrayTracker )
-    matrixTracker.addVisitor( renderTracker )
-    matrixTracker.addVisitor( fitTracker )
-    matrixTracker.addVisitor( coordinateTracker )
-    matrixTracker.addVisitor( multiplierTracker )
-    matrixTracker.addVisitor( weightsTracker )
-    matrixTracker.addVisitor( floorTracker )
+
+                                             
+    coordinateTracker.addVisitor( arrayTracker )
+    coordinateTracker.addVisitor( fitTracker )
+    # coordinateTracker.addVisitor( matrixTracker ) # uncomment if matrix should be rendered at each iteration
+    coordinateTracker.addVisitor( multiplierTracker )
+    coordinateTracker.addVisitor( weightsTracker )
+    # coordinateTracker.addVisitor( floorTracker ) # uncomment if matrix should be rendered at each iteration
                                                                                                 
     # if you want to specify values for options, do:                                            
     # options.multiplierGenerationRegularizerWeight = <value>                                   
     # or equivalent
-    result = inference.estimateZCoordinates( matrix, startingCoordinates, matrixTracker, options )
+    result = inference.estimateZCoordinates( matrix, startingCoordinates, coordinateTracker, options )
  
