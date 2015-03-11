@@ -81,7 +81,7 @@ if __name__ == "__main__":
     root       = '' # (intermediate) results will be stored within this directory
     sourceFile = '' # correlation matrix (image file), use current image, if empty
 
-    if sourceFile == ''
+    if sourceFile == '':
         imgSource = IJ.getImage()
     else:
         imgSource = ImagePlus( sourceFile )
