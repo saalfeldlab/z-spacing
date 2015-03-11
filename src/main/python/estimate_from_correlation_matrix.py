@@ -33,7 +33,6 @@ from org.janelia.utility.tuple import ConstantPair
 from org.janelia.utility import CopyFromIntervalToInterval
 from org.janelia.utility.tuple import SerializableConstantPair
 from org.janelia.utility.io import Serialization
-from org.janelia.utility.sampler import SparseXYSampler
 from org.janelia.thickness.inference import InferFromMatrix
 from org.janelia.thickness.inference import Options
 from org.janelia.thickness.inference.visitor import ActualCoordinatesTrackerVisitor
