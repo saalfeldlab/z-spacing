@@ -16,7 +16,7 @@ import net.imglib2.type.numeric.real.DoubleType;
 import org.janelia.utility.tuple.ConstantPair;
 
 public class OpinionMediatorModel< M extends Model<M> > implements OpinionMediator {
-	
+
 	private final M model;
 
 	public OpinionMediatorModel(final M model) {
@@ -27,10 +27,10 @@ public class OpinionMediatorModel< M extends Model<M> > implements OpinionMediat
 	@Override
 	public ArrayImg<DoubleType, DoubleArray> mediate(
 			final TreeMap<Long, ArrayList<ConstantPair<Double, Double>>> shifts) {
-		
+
 		final double[] result = new double[ shifts.size() ];
-		
-		
+
+
 		mediate( shifts, result );
 		return ArrayImgs.doubles( result, result.length );
 	}
@@ -39,12 +39,12 @@ public class OpinionMediatorModel< M extends Model<M> > implements OpinionMediat
 	public void mediate(
 			final TreeMap<Long, ArrayList<ConstantPair<Double, Double>>> shifts,
 			final double[]result) {
-		
+
 		{
 			for ( int i = 0; i < result.length; ++i ) {
 				final ArrayList<ConstantPair<Double, Double>> localShifts = shifts.get( (long) i );
 				final ArrayList<PointMatch> pointMatches = new ArrayList< PointMatch >();
-				
+
 				if ( localShifts == null || localShifts.size() == 0 )
 					result[ i ] = 0.0;
 				else {
@@ -52,13 +52,13 @@ public class OpinionMediatorModel< M extends Model<M> > implements OpinionMediat
 						if ( Double.isInfinite( l.getA() ) || Double.isNaN( l.getA() ) ) {
 							continue;
 						}
-						pointMatches.add( new PointMatch( new Point( new float[] { 0.0f } ), new Point( new float[] { new Float( l.getA() ) } ), new Float( l.getB() ) ) );
+						pointMatches.add( new PointMatch( new Point( new double[] { 0.0 } ), new Point( new double[] { l.getA() } ), l.getB() ) );
 					}
-					
+
 //					final M mc = model.copy();
 					try {
 						model.fit( pointMatches );
-						result[ i ] = model.apply( new float[] { 0.0f } )[ 0 ];
+						result[ i ] = model.apply( new double[] { 0.0 } )[ 0 ];
 //						if ( Double.isNaN( result[ i ] ) )
 //							result[ i ] = 0.0;
 					} catch (final NotEnoughDataPointsException e) {
@@ -68,13 +68,13 @@ public class OpinionMediatorModel< M extends Model<M> > implements OpinionMediat
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-					
+
 				}
 			}
 		}
-		
+
 	}
-	
+
 	@Override
 	public OpinionMediatorModel< M > copy() {
 		return new OpinionMediatorModel< M >( this.model.copy() );

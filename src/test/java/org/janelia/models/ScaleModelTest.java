@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package org.janelia.models;
 
@@ -20,7 +20,7 @@ import org.junit.Test;
  *
  */
 public class ScaleModelTest {
-	
+
 	private final long randomSeed = 100;
 	private final int numberOfTestSamples = 10000;
 	private final double meanSource = 1.0;
@@ -28,9 +28,9 @@ public class ScaleModelTest {
 	private final double varianceSource = 0.02;
 	private final double varianceTarget = 0.02;
 	private final Random rng = new Random( randomSeed );
-	
-	private float[] source;
-	private float[] target;
+
+	private double[] source;
+	private double[] target;
 	private final ArrayList< PointMatch > matches = new ArrayList<PointMatch>();
 
 	/**
@@ -38,25 +38,25 @@ public class ScaleModelTest {
 	 */
 	@Before
 	public void setUp() throws Exception {
-		
-		
-		source = new float[ numberOfTestSamples ];
-		target = new float[ numberOfTestSamples ];
-		
+
+
+		source = new double[ numberOfTestSamples ];
+		target = new double[ numberOfTestSamples ];
+
 		for ( int i = 0; i < numberOfTestSamples; ++i ) {
-			source[i] = (float) (meanSource + rng.nextGaussian()*varianceSource);
-			target[i] = (float) (meanTarget + rng.nextGaussian()*varianceTarget);
-			matches.add( new PointMatch( new Point( new float[] { source[i] } ), new Point( new float[] { target[i] } ) ) );
+			source[i] = meanSource + rng.nextGaussian()*varianceSource;
+			target[i] = meanTarget + rng.nextGaussian()*varianceTarget;
+			matches.add( new PointMatch( new Point( new double[] { source[i] } ), new Point( new double[] { target[i] } ) ) );
 		}
-		
+
 	}
 
 	@Test
 	public void test() throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 		final ScaleModel model = new ScaleModel();
 		model.fit(matches);
-		
-		Assert.assertEquals( model.apply( new float[] { (float) meanSource } )[0], (float) meanTarget, 0.01f );
+
+		Assert.assertEquals( model.apply( new double[] { meanSource } )[0], meanTarget, 0.01 );
 	}
 
 }

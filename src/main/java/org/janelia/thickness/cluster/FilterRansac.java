@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package org.janelia.thickness.cluster;
 
@@ -23,16 +23,16 @@ import org.janelia.models.TranslationModelND;
  *
  */
 public class FilterRansac implements Categorizer {
-	
-	private final static float[] ZERO_1D = new float[] { 0.0f };
-	
-	private final int iterations;
-	private final float maxEpsilon;
-	private final float minInlierRatio;
-	private final int minNumInliers;
-	private final float maxTrust;
 
-	
+	private final static double[] ZERO_1D = new double[] { 0.0 };
+
+	private final int iterations;
+	private final double maxEpsilon;
+	private final double minInlierRatio;
+	private final int minNumInliers;
+	private final double maxTrust;
+
+
 	/**
 	 * @param iterations
 	 * @param maxEpsilon
@@ -40,8 +40,8 @@ public class FilterRansac implements Categorizer {
 	 * @param minNumInliers
 	 * @param maxTrust
 	 */
-	public FilterRansac(final int iterations, final float maxEpsilon, final float minInlierRatio,
-			final int minNumInliers, final float maxTrust) {
+	public FilterRansac(final int iterations, final double maxEpsilon, final double minInlierRatio,
+			final int minNumInliers, final double maxTrust) {
 		super();
 		this.iterations = iterations;
 		this.maxEpsilon = maxEpsilon;
@@ -49,8 +49,8 @@ public class FilterRansac implements Categorizer {
 		this.minNumInliers = minNumInliers;
 		this.maxTrust = maxTrust;
 	}
-	
-	
+
+
 	public FilterRansac() {
 		// take default values from TrakEM2: pom-trakem2/TrakEM2_/src/main/java/mpicbg/trakem2/align/Align.java
 		// how to calculate iterations (Saalfeld thesis, p. 27)
@@ -81,23 +81,23 @@ public class FilterRansac implements Categorizer {
 			distance[i] = coordinates[i+1] - coordinates[i];
 		}
 		distance[distance.length-1] = distance[distance.length-2];
-		
+
 		final TranslationModel1D model = new TranslationModel1D();
 		final ArrayList<PointMatch> candidates = new ArrayList< PointMatch >();
 		double d;
 		for (int i = 0; i < distance.length; i++) {
 			d = distance[i];
-			final float[] ZERO_IN_FIRST_DIMENSION_2D = new float[] { 0.0f, 0.0f };
+			final double[] ZERO_IN_FIRST_DIMENSION_2D = new double[] { 0.0, 0.0 };
 			ZERO_IN_FIRST_DIMENSION_2D[1] = i;
-			candidates.add( new PointMatch( new Point( ZERO_IN_FIRST_DIMENSION_2D ), new Point( new float[] { (float)d, i } ) ) );
+			candidates.add( new PointMatch( new Point( ZERO_IN_FIRST_DIMENSION_2D ), new Point( new double[] { d, i } ) ) );
 		}
-		
+
 		final List<List<PointMatch>> clusters = findClusters( model, candidates, iterations, maxEpsilon, minInlierRatio, minNumInliers, maxTrust );
-		
+
 		final double[][] result;
-		
+
 		if ( clusters.size() > 0 ) {
-			result = generateResult( clusters, candidates, coordinates.length ); 
+			result = generateResult( clusters, candidates, coordinates.length );
 		}
 		else
 			result = new double[ coordinates.length ][ 1 ];
@@ -111,46 +111,46 @@ public class FilterRansac implements Categorizer {
 			final RandomAccessibleInterval<T> strip ) {
 		final int numberOfCorrelations = (int) strip.dimension( 0 );
 		final int numberOfZPositions   = (int) strip.dimension( 1 );
-		
-		final float[] NDIMENSIONS_ZERO = new float[ numberOfCorrelations ];
-		
+
+		final double[] NDIMENSIONS_ZERO = new double[ numberOfCorrelations ];
+
 		final ArrayList<PointMatch> candidates = new ArrayList< PointMatch>();
 		for ( int i = 0; i < numberOfZPositions; ++i ) {
 			final Cursor<T> cursor = Views.flatIterable( Views.hyperSlice( strip, 1, i ) ).cursor();
-			final float[] target = new float[ numberOfCorrelations + 1 ];
+			final double[] target = new double[ numberOfCorrelations + 1 ];
 			for ( int dz = 0; cursor.hasNext(); ++dz ) {
-				target[dz] = cursor.next().getRealFloat();
+				target[dz] = cursor.next().getRealDouble();
 			}
 			target[numberOfCorrelations] = i;
 			candidates.add( new PointMatch( new Point( NDIMENSIONS_ZERO ), new Point( target ) ) );
 		}
-		
-		final float[] t = new float[ numberOfCorrelations ];
+
+		final double[] t = new double[ numberOfCorrelations ];
 		final TranslationModelND model = new TranslationModelND( t );
-		
-		final List<List<PointMatch>> clusters = findClusters(model, candidates, numberOfCorrelations, 
+
+		final List<List<PointMatch>> clusters = findClusters(model, candidates, numberOfCorrelations,
 				numberOfZPositions, numberOfZPositions, numberOfCorrelations, numberOfZPositions);
-		
+
 		final double[][] result;
-		
+
 		if ( clusters.size() > 0 ) {
-			result = generateResult( clusters, candidates, numberOfZPositions ); 
+			result = generateResult( clusters, candidates, numberOfZPositions );
 		}
 		else
 			result = new double[ numberOfZPositions ][ 1 ];
 		return result;
-		
-		
+
+
 	}
-	
-	
-	public static < M extends Model<M> > List< List< PointMatch > > findClusters( final M model, 
+
+
+	public static < M extends Model<M> > List< List< PointMatch > > findClusters( final M model,
 			final List< PointMatch > candidates,
 			final int iterations,
-			final float maxEpsilon,
-			final float minInlierRatio,
+			final double maxEpsilon,
+			final double minInlierRatio,
 			final int minNumInliers,
-			final float maxTrust ) {
+			final double maxTrust ) {
 		boolean foundInliers = true;
 		final List< List< PointMatch > > clusters = new ArrayList< List < PointMatch > >();
 		while( foundInliers ) {
@@ -165,13 +165,13 @@ public class FilterRansac implements Categorizer {
 		}
 		return clusters;
 	}
-	
-	
+
+
 	public static double[][] generateResult( final List< List< PointMatch > > clusters,
 			final List< PointMatch > outliers,
 			final int size ) {
 		final int nClusters = clusters.size();
-		final int nClasses; 
+		final int nClasses;
 		if ( outliers.size() > 0 )
 			nClasses = nClusters + 1;
 		else
@@ -185,7 +185,7 @@ public class FilterRansac implements Categorizer {
 				result[ index ][ i ] = 1.0;
 			}
 		}
-		
+
 		final int nEntries = outliers.size();
 		for ( int k = 0; k < nEntries; ++k ) {
 			final int index = (int)outliers.get( k ).getP2().getW()[1];
@@ -193,8 +193,8 @@ public class FilterRansac implements Categorizer {
 		}
 		return null;
 	}
-	
-	
+
+
 	@Override
 	public void setState(final int n) {
 		// do nothing
