@@ -74,9 +74,9 @@ if __name__ == "__main__":
     t0 = time.time()
     print t0 - t0
 
-    r = 105 # range in z for pairwise similarity evaluation
+    r = 5 # range in z for pairwise similarity evaluation
     
-    root       = '' # (intermediate) results will be stored within this directory
+    root       = '/nobackup/saalfeld/tmp/' # (intermediate) results will be stored within this directory
     sourceFile = '' # correlation matrix (image file), use current image, if empty
 
     if sourceFile == '':
@@ -176,11 +176,11 @@ if __name__ == "__main__":
                                             separator )
                                                                                                       
     coordinateTracker.addVisitor( fitTracker )
-    # coordinateTracker.addVisitor( matrixTracker ) # uncomment if you want to render at each iteration
+    coordinateTracker.addVisitor( matrixTracker ) # uncomment if you want to render at each iteration
     coordinateTracker.addVisitor( multiplierTracker )
     coordinateTracker.addVisitor( weightsTracker )
-    # coordinateTracker.addVisitor( floorTracker ) # uncomment if you want to render at each iteration
-                                                                                                      
+    coordinateTracker.addVisitor( floorTracker ) # uncomment if you want to render at each iteration                                                                                                      
+    
     matrix = ImageJFunctions.wrapFloat( imgSource )                                                   
     result = inference.estimateZCoordinates( matrix, startingCoordinates, coordinateTracker, options )
              
