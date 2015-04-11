@@ -2,8 +2,25 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>saalfeldlab</groupId>
+	
 	<artifactId>em-thickness-estimation</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
+	
+	<name>plugins/em-thickness-estimation.jar</name>
+	<description></description>
+	
+	<dependencyManagement>
+		<dependencies>
+			<!-- TrakEM2 BOM -->
+			<dependency>
+				<groupId>sc.fiji</groupId>
+				<artifactId>pom-trakem2</artifactId>
+				<version>${pom-trakem2.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 	<dependencies>
 		<dependency>
 			<groupId>net.imagej</groupId>
@@ -45,6 +62,10 @@
 		<dependency>
 			<groupId>net.imglib2</groupId>
 			<artifactId>imglib2-algorithm-fft</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>sc.fiji</groupId>
+			<artifactId>TrakEM2_</artifactId>
 		</dependency>
 	</dependencies>
 	<parent>
