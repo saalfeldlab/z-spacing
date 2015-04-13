@@ -1,12 +1,27 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>saalfeldlab</groupId>
 	
-	<artifactId>em-thickness-estimation</artifactId>
+	<repositories>
+		<!-- NB: for project parent -->
+		<repository>
+			<id>imagej.public</id>
+			<url>http://maven.imagej.net/content/groups/public</url>
+		</repository>
+	</repositories>
+	
+	<parent>
+		<groupId>sc.fiji</groupId>
+		<artifactId>pom-fiji</artifactId>
+		<version>9.0.0</version>
+		<relativePath />
+	</parent>
+	
+	<groupId>saalfeldlab</groupId>
+	<artifactId>z_spacing</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	
-	<name>plugins/em-thickness-estimation.jar</name>
+	<name>plugins/z_spacing.jar</name>
 	<description></description>
 	
 	<dependencyManagement>
@@ -68,18 +83,6 @@
 			<artifactId>TrakEM2_</artifactId>
 		</dependency>
 	</dependencies>
-	<parent>
-		<groupId>sc.fiji</groupId>
-		<artifactId>pom-fiji</artifactId>
-		<version>9.0.0</version>
-		<relativePath />
-	</parent>
-	<repositories>
-		<!-- NB: for project parent -->
-		<repository>
-			<id>imagej.public</id>
-			<url>http://maven.imagej.net/content/groups/public</url>
-		</repository>
-	</repositories>
+	
 </project>
 

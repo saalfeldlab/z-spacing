@@ -120,10 +120,10 @@ public class LayerZPosition implements TPlugIn
 		switch ( method )
 		{
 		case 1:
-			invokeSIFT( layers );
-		default :
-			invokeNCC( layers );
+			invokeSIFT( layers, null );
 			break;
+		default :
+			invokeNCC( layers, null );
 		}
 
 		return null;
