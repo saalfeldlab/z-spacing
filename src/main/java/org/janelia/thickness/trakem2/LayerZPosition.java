@@ -16,6 +16,7 @@
  */
 package org.janelia.thickness.trakem2;
 
+import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.GenericDialog;
 import ij.gui.Roi;
@@ -35,12 +36,26 @@ import java.awt.Color;
 import java.awt.Image;
 import java.awt.Rectangle;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+
+import mpicbg.models.IllDefinedDataPointsException;
+import mpicbg.models.NotEnoughDataPointsException;
+import mpicbg.models.TranslationModel1D;
+import mpicbg.trakem2.align.Align;
+import mpicbg.trakem2.align.Align.Param;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.imageplus.ImagePlusImgs;
+import net.imglib2.type.numeric.real.FloatType;
+
+import org.janelia.thickness.inference.InferFromMatrix;
+import org.janelia.thickness.inference.Options;
+import org.janelia.thickness.mediator.OpinionMediatorWeightedAverage;
 
 /**
  *
@@ -58,6 +73,7 @@ public class LayerZPosition implements TPlugIn
 	static protected boolean reorder = true;
 	static protected double scale = -1;
 	static protected boolean showMatrix = true;
+	static protected Param siftParam = Align.param.clone();
 
 	private Layer currentLayer( final Object... params )
 	{
@@ -165,6 +181,51 @@ public class LayerZPosition implements TPlugIn
 			return null;
 	}
 
+	static public void optimize(
+			final List< Layer > layers,
+			final FloatProcessor matrix,
+			final int radius,
+			final int iterations,
+			final double regularize,
+			final int innerIterations,
+			final double innerRegularize,
+			final boolean reorder ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
+	{
+		final Options options = Options.generateDefaultOptions();
+		options.comparisonRange = radius;
+		options.nIterations = iterations;
+		options.shiftProportion = regularize;
+		options.multiplierEstimationIterations = innerIterations;
+		options.multiplierGenerationRegularizerWeight = innerRegularize;
+		options.withReorder = reorder;
+		options.withRegularization = true;
+		options.minimumSectionThickness = 0.0;
+
+		/* estimate reasonable integer step size */
+		final double zMin = layers.get( 0 ).getZ();
+		final double zScale = 1.0 / ( layers.get( 1 ).getZ() - zMin );
+
+		final double[] lut = new double[ layers.size() ];
+		for ( int i = 0; i < lut.length; ++i )
+			lut[ i ] = ( layers.get( i ).getZ() - zMin ) * zScale;
+
+		IJ.log( Arrays.toString( lut ) );
+
+		final InferFromMatrix< TranslationModel1D > inference =
+				new InferFromMatrix< TranslationModel1D >(
+						new TranslationModel1D(),
+						new OpinionMediatorWeightedAverage() );
+
+		final RandomAccessibleInterval< FloatType > raMatrix = ImagePlusImgs.from( new ImagePlus( "", matrix ) );
+
+		final double[] lutCorrected = inference.estimateZCoordinates( raMatrix, lut, options );
+
+		IJ.log( Arrays.toString( lutCorrected ) );
+
+		for ( int i = 0; i < lutCorrected.length; ++i )
+			layers.get( i ).setZ( lutCorrected[ i ] / zScale + zMin );
+	}
+
 	static public FloatProcessor calculateNCCSimilarity(
 			final List< Layer > layers,
 			final Rectangle fov,
@@ -251,22 +312,47 @@ public class LayerZPosition implements TPlugIn
 		return ip;
 	}
 
+	/**
+	 * Run thickness estimation for a list of layers using NCC similarity.
+	 *
+	 * @param layers
+	 * @param fov
+	 * @param r
+	 * @param s
+	 * @throws InterruptedException
+	 * @throws ExecutionException
+	 */
 	static public void runNCC(
 			final List< Layer > layers,
 			final Rectangle fov,
 			final int r,
-			final double s ) throws InterruptedException, ExecutionException
+			final double s,
+			final int iterations,
+			final double regularize,
+			final int innerIterations,
+			final double innerRegularize,
+			final boolean reorder ) throws InterruptedException, ExecutionException
 	{
-		final FloatProcessor ip = calculateNCCSimilarity( layers, fov, r, s );
+		final FloatProcessor matrix = calculateNCCSimilarity( layers, fov, r, s );
 
-		new ImagePlus( "matrix", ip ).show();
+		try
+		{
+			optimize( layers, matrix, r, iterations, regularize, innerIterations, innerRegularize, reorder );
+		}
+		catch ( final Exception e )
+		{
+			throw new ExecutionException( e.getCause() );
+		}
 	}
 
-	public void invokeSIFT( final List< Layer > layers, final Rectangle fov )
-	{
-		// TODO implement
-	}
-
+	/**
+	 * Run plugin with NCC similarity.
+	 *
+	 * @param layers
+	 * @param fov
+	 * @throws InterruptedException
+	 * @throws ExecutionException
+	 */
 	public void invokeNCC( final List< Layer > layers, final Rectangle fov ) throws InterruptedException, ExecutionException
 	{
 		final GenericDialog gd = new GenericDialog( "Correct layer z-positions - NCC" );
@@ -277,8 +363,60 @@ public class LayerZPosition implements TPlugIn
 
 		scale = gd.getNextNumber();
 
-		runNCC( layers, fov, radius, scale );
+		runNCC( layers, fov, radius, scale, iterations, regularize, innerIterations, innerRegularize, reorder );
 	}
+
+	static public FloatProcessor calculateSIFTSimilarity(
+			final List< Layer > layers,
+			final Rectangle fov,
+			final int r,
+			final Param p ) throws InterruptedException, ExecutionException
+	{
+		return null;
+	}
+
+	static public void runSIFT(
+			final List< Layer > layers,
+			final Rectangle fov,
+			final int r,
+			final Param p ) throws InterruptedException, ExecutionException
+	{
+		final FloatProcessor ip = calculateSIFTSimilarity( layers, fov, r, p );
+
+
+
+		new ImagePlus( "matrix", ip ).show();
+	}
+
+	/**
+	 * Run plugin with SIFT consensus similarity.
+	 *
+	 * @param layers
+	 * @param fov
+	 * @throws ExecutionException
+	 * @throws InterruptedException
+	 */
+	public void invokeSIFT( final List< Layer > layers, final Rectangle fov ) throws InterruptedException, ExecutionException
+	{
+		final GenericDialog gd = new GenericDialog( "Correct layer z-positions - SIFT consensus" );
+		gd.addMessage( "Scale Invariant Features :" );
+		siftParam.addSIFTFields( gd );
+		gd.addMessage( "Consensus Filter :" );
+		siftParam.addGeometricConsensusFilterFields( gd );
+
+		gd.showDialog();
+		if ( gd.wasCanceled() )
+			return;
+
+		siftParam.readSIFTFields( gd );
+		siftParam.readGeometricConsensusFilterFields( gd );
+
+
+		runSIFT( layers, fov, radius, siftParam.clone() );
+	}
+
+
+
 
 	@Override
 	public Object invoke( final Object... params )
