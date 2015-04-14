@@ -19,6 +19,7 @@ package org.janelia.thickness.trakem2;
 import ij.ImagePlus;
 import ij.gui.GenericDialog;
 import ij.gui.Roi;
+import ij.measure.Calibration;
 import ij.process.ColorProcessor;
 import ij.process.FloatProcessor;
 import ini.trakem2.Project;
@@ -28,20 +29,18 @@ import ini.trakem2.display.Layer;
 import ini.trakem2.display.LayerSet;
 import ini.trakem2.display.Patch;
 import ini.trakem2.plugin.TPlugIn;
-import ini.trakem2.utils.Filter;
 import ini.trakem2.utils.Utils;
 
 import java.awt.Color;
 import java.awt.Image;
 import java.awt.Rectangle;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-
-import mpicbg.trakem2.align.AlignmentUtils;
 
 /**
  *
@@ -58,6 +57,7 @@ public class LayerZPosition implements TPlugIn
 	static protected double innerRegularize = 0.1;
 	static protected boolean reorder = true;
 	static protected double scale = -1;
+	static protected boolean showMatrix = true;
 
 	private Layer currentLayer( final Object... params )
 	{
@@ -98,6 +98,20 @@ public class LayerZPosition implements TPlugIn
 			return roi.getBounds();
 	}
 
+	private double suggestScale( final List< Layer > layers )
+	{
+		if ( layers.size() < 2 )
+			return 0.0;
+
+		final Layer layer1 = layers.get( 0 );
+		final Layer layer2 = layers.get( 1 );
+		final Calibration calib = layer1.getParent().getCalibration();
+		final double width = ( calib.pixelWidth + calib.pixelHeight ) * 0.5;
+		final double depth = calib.pixelDepth;
+
+		return ( layer2.getZ() - layer1.getZ() ) * width / depth;
+	}
+
 	@Override
 	public boolean setup( final Object... params )
 	{
@@ -125,20 +139,30 @@ public class LayerZPosition implements TPlugIn
 	static private int[] getPixels(
 			final Layer layer,
 			final Rectangle fov,
-			final double s,
-			final Filter< Patch > filter )
+			final double s )
 	{
-		final Image imgi = layer.getProject().getLoader().getFlatAWTImage(
-                layer,
-                fov,
-                s,
-                0xffffffff,
-                ImagePlus.COLOR_RGB,
-                Patch.class,
-                AlignmentUtils.filterPatches( layer, filter ),
-                true,
-                new Color( 0x00ffffff, true ) );
-		return ( int[] )new ColorProcessor( imgi ).getPixels();
+		final Collection< Displayable > filteredDisplayables = layer.getDisplayables( Patch.class, fov );
+		final ArrayList< Patch > filteredPatches = new ArrayList< Patch >();
+		for ( final Displayable d : filteredDisplayables )
+			if ( d.isVisible() )
+				filteredPatches.add( ( Patch )d );
+
+		if ( filteredPatches.size() > 0 )
+		{
+			final Image imgi = layer.getProject().getLoader().getFlatAWTImage(
+	                layer,
+	                fov,
+	                s,
+	                0xffffffff,
+	                ImagePlus.COLOR_RGB,
+	                Patch.class,
+	                filteredPatches,
+	                true,
+	                new Color( 0x00ffffff, true ) );
+			return ( int[] )new ColorProcessor( imgi ).getPixels();
+		}
+		else
+			return null;
 	}
 
 	static public FloatProcessor calculateNCCSimilarity(
@@ -151,26 +175,32 @@ public class LayerZPosition implements TPlugIn
 		final float[] ipPixels = ( float[] )ip.getPixels();
 		for ( int i = 0; i < ipPixels.length; ++i )
 			ipPixels[ i ] = Float.NaN;
+		ip.setMinAndMax( -0.2, 1.0 );
 
-		final Filter< Patch > filter = new Filter< Patch >()
+		final ImagePlus impMatrix;
+		if ( showMatrix )
 		{
-			@Override
-			public final boolean accept( final Patch patch )
-			{
-				return patch.isVisible();
-			}
-		};
+			impMatrix = new ImagePlus( "Similarity matrix", ip );
+			impMatrix.show();
+		}
+		else
+			impMatrix = null;
+
 
 		for ( int i = 0; i < layers.size(); ++i )
 		{
 			final int fi = i;
 			final Layer li = layers.get( i );
-			final int[] argbi = getPixels( li, fov, s, filter );
+			final int[] argbi = getPixels( li, fov, s );
+			if ( argbi == null )
+				continue;
+
+			ip.setf( fi, fi, 1.0f );
 
 	        final ExecutorService exec = Executors.newFixedThreadPool( Runtime.getRuntime().availableProcessors() );
 			final ArrayList< Future< FloatProcessor > > tasks = new ArrayList< Future< FloatProcessor > >();
 
-			for ( final int j = i + 1; j < layers.size() && j <= i + r; ++i )
+			for ( int j = i + 1; j < layers.size() && j <= i + r; ++j )
 			{
 				final int fj = j;
 				final Layer lj = layers.get( j );
@@ -179,10 +209,15 @@ public class LayerZPosition implements TPlugIn
 					@Override
 					public void run()
 					{
-						final int[] argbj = getPixels( lj, fov, s, filter );
-						final Double d = new RealSumARGBNCC( argbi, argbj ).call();
-						ip.setf( fi, fj, d.floatValue() );
-						ip.setf( fj, fi, d.floatValue() );
+						final int[] argbj = getPixels( lj, fov, s );
+						if ( argbj != null )
+						{
+							final Double d = new RealSumARGBNCC( argbi, argbj ).call();
+							ip.setf( fi, fj, d.floatValue() );
+							ip.setf( fj, fi, d.floatValue() );
+							if ( impMatrix != null )
+								impMatrix.updateAndDraw();
+						}
 					}
 				},
 				ip ) );
@@ -208,6 +243,9 @@ public class LayerZPosition implements TPlugIn
 
 			tasks.clear();
 			exec.shutdown();
+
+			if ( impMatrix != null )
+				impMatrix.updateAndDraw();
 		}
 
 		return ip;
@@ -220,6 +258,8 @@ public class LayerZPosition implements TPlugIn
 			final double s ) throws InterruptedException, ExecutionException
 	{
 		final FloatProcessor ip = calculateNCCSimilarity( layers, fov, r, s );
+
+		new ImagePlus( "matrix", ip ).show();
 	}
 
 	public void invokeSIFT( final List< Layer > layers, final Rectangle fov )
@@ -230,7 +270,7 @@ public class LayerZPosition implements TPlugIn
 	public void invokeNCC( final List< Layer > layers, final Rectangle fov ) throws InterruptedException, ExecutionException
 	{
 		final GenericDialog gd = new GenericDialog( "Correct layer z-positions - NCC" );
-		gd.addNumericField( "scale :", scale, 2, 6, "" );
+		gd.addNumericField( "scale :", scale < 0 ? suggestScale( layers ) : scale, 2, 6, "" );
 		gd.showDialog();
 		if ( gd.wasCanceled() )
 			return;
@@ -262,6 +302,7 @@ public class LayerZPosition implements TPlugIn
 		gd.addChoice(
 				"Similarity_method :",
 				new String[]{ "NCC (aligned)", "SIFT consensus (unaligned)" }, "NCC (aligned)" );
+		gd.addCheckbox( "show_matrix", showMatrix );
 		gd.showDialog();
 		if ( gd.wasCanceled() )
 			return null;
@@ -272,6 +313,7 @@ public class LayerZPosition implements TPlugIn
 						gd.getNextChoiceIndex() + 1 );
 		radius = ( int )gd.getNextNumber();
 		final int method = gd.getNextChoiceIndex();
+		showMatrix = gd.getNextBoolean();
 		try
 		{
 			switch ( method )
