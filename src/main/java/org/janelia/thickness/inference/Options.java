@@ -25,20 +25,20 @@ public class Options implements Serializable {
 
 	public static Options generateDefaultOptions() {
 	        final Options result = new Options();
-	        result.multiplierGenerationRegularizerWeight = 0.01;
-	        result.coordinateUpdateRegularizerWeight = 0.01;
-	        result.shiftProportion = 0.5;
-	        result.nIterations = 1;
+	        result.multiplierGenerationRegularizerWeight = 0.1;
+	        result.coordinateUpdateRegularizerWeight = 0.0;
+	        result.shiftProportion = 0.6;
+	        result.nIterations = 100;
 	        result.nThreads = 1;
 	        result.comparisonRange = 10;
 	        result.neighborRegularizerWeight = 0.05;
-	        result.minimumSectionThickness = 0.1;
-	        result.windowRange = 150;
+	        result.minimumSectionThickness = 0.01;
+	        result.windowRange = 100;
 	        result.shiftsSmoothingSigma = 4.0;
-	        result.shiftsSmoothingRange = 10;
+	        result.shiftsSmoothingRange = 0;
 	        result.withRegularization = true;
-	        result.multiplierRegularizerDecaySpeed = 10000.0;
-	        result.multiplierWeightsSigma = 0.2;
+	        result.multiplierRegularizerDecaySpeed = 50.0;
+	        result.multiplierWeightsSigma = 0.04;
 	        result.multiplierEstimationIterations = 10;
 	        result.withReorder = true;
 	        return result;
