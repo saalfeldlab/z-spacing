@@ -87,6 +87,8 @@ public class LayerZPosition implements TPlugIn
 	static protected double scale = -1;
 	static protected boolean showMatrix = true;
 	static protected Param siftParam = Align.param.clone();
+	final static protected String[] similarityMethods = new String[]{ "NCC (aligned)", "SIFT consensus (unaligned)" };
+	static protected String similarityMethod = similarityMethods[ 0 ];
 
 	private Layer currentLayer( final Object... params )
 	{
@@ -94,12 +96,12 @@ public class LayerZPosition implements TPlugIn
 		if (params != null && params[ 0 ] != null)
 		{
 			final Object param = params[ 0 ];
-			if ( Layer.class.isInstance( param.getClass() ) )
+			if ( Layer.class.isInstance( param ) )
 				layer = ( Layer)param;
-			else if ( LayerSet.class.isInstance( param.getClass() ) )
+			else if ( LayerSet.class.isInstance( param ) )
 				layer = ( ( LayerSet )param ).getLayer( 0 );
-			else if ( Displayable.class.isInstance( param.getClass() ) )
-				layer = ( ( Displayable )param ).getLayerSet().getLayer( 0 );
+			else if ( Displayable.class.isInstance( param ) )
+				layer = ( ( Displayable )param ).getLayer();
 			else layer = null;
 		}
 		else
@@ -122,7 +124,7 @@ public class LayerZPosition implements TPlugIn
 		else
 			roi = front.getRoi();
 		if ( roi == null )
-			return layerset.getBoundingBox();
+			return new Rectangle( 0, 0, ( int )layerset.getLayerWidth(), ( int )layerset.getLayerHeight() );
 		else
 			return roi.getBounds();
 	}
@@ -147,9 +149,9 @@ public class LayerZPosition implements TPlugIn
 		if (params != null && params[ 0 ] != null)
 		{
 			final Object param = params[ 0 ];
-			if ( LayerSet.class.isInstance( param.getClass() ) )
+			if ( LayerSet.class.isInstance( param ) )
 				layerset = ( LayerSet )param;
-			else if ( Displayable.class.isInstance( param.getClass() ) )
+			else if ( Displayable.class.isInstance( param ) )
 				layerset = ( ( Displayable )param ).getLayerSet();
 			else
 				return false;
@@ -641,8 +643,7 @@ public class LayerZPosition implements TPlugIn
 
 		gd.addChoice(
 				"Similarity_method :",
-				new String[]{ "NCC (aligned)", "SIFT consensus (unaligned)" }, "NCC (aligned)" );
-//				new String[]{ "NCC (aligned)"}, "NCC (aligned)" );
+				similarityMethods, similarityMethod );
 		gd.addCheckbox( "show_matrix", showMatrix );
 		gd.showDialog();
 		if ( gd.wasCanceled() )
@@ -654,6 +655,7 @@ public class LayerZPosition implements TPlugIn
 						gd.getNextChoiceIndex() + 1 );
 		radius = ( int )gd.getNextNumber();
 		final int method = gd.getNextChoiceIndex();
+		similarityMethod = similarityMethods[ method ];
 		showMatrix = gd.getNextBoolean();
 		try
 		{
