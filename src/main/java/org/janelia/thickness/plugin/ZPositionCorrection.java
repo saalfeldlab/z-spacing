@@ -184,7 +184,7 @@ public class ZPositionCorrection implements PlugIn {
 				ImagePlus resultImp = new ImagePlus( "Warped image stack", transformedStack );
 				resultImp.show();
 				
-				IJ.log( "Done." );
+				IJ.log( "Rendered warped image stack." );
 			}
 			
 		}
