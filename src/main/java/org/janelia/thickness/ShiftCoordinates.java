@@ -99,7 +99,8 @@ public class ShiftCoordinates {
 				
 				corrAccess.setPosition( k, 0 );
 				
-				if ( Double.isNaN( corrAccess.get().getRealDouble() ) )
+				double measurement = corrAccess.get().getRealDouble();
+				if ( Double.isNaN( measurement ) || measurement <= 0.0 )
 					continue;
 				
 				ArrayList< ConstantPair< Double, Double > > localShifts = weightedShifts.get( ( long ) k );
@@ -111,7 +112,7 @@ public class ShiftCoordinates {
 				final double m = ( k == i ) ? 1.0 : multipliers[ i ] * multipliers[ k ];
 				
 				/* TODO inverts because LUTRealTransform can only increasing */
-				reference[ 0 ] = -corrAccess.get().getRealDouble() * m;
+				reference[ 0 ] = -measurement * m;
 				
 				lut.applyInverse( reference, reference );
 				

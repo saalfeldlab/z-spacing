@@ -123,7 +123,7 @@ public class LocalizedCorrelationFit {
 				final double a1 = access.get().getRealDouble();
 				final double a2 = access2.get().getRealDouble();
 
-				if ( ! Double.isNaN( a1 ) )
+				if ( ( ! Double.isNaN( a1 ) ) && ( a1 > 0.0 ) )
 				{
 					final int index = i + k;
 					if ( index < weights.length ) {
@@ -133,7 +133,7 @@ public class LocalizedCorrelationFit {
 					}
 				}
 
-				if ( ( ! Double.isNaN( a2 ) ) )
+				if ( ( ! Double.isNaN( a2 ) ) && ( a2 > 0.0 ) )
 				{
 					final int index = i - k;
 					if ( index > 0 ) {

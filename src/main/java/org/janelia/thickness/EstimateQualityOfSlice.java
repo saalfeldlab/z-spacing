@@ -259,7 +259,7 @@ public class EstimateQualityOfSlice {
 					// fits are negative because LUTRealtransform requires increasing function
 					final double fitVal  = -ra.get().get();
 					final double measure = corrAccess.get().getRealDouble();
-					if ( Double.isNaN( fitVal ) || Double.isNaN( measure ) )
+					if ( Double.isNaN( fitVal ) || Double.isNaN( measure ) || measure <= 0.0  )
 						continue;
 					final double prod = oldMultipliers[ i ] * measure;
 					enumeratorSum  += prod * fitVal;
