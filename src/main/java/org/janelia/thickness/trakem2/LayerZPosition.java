@@ -629,7 +629,7 @@ public class LayerZPosition implements TPlugIn
 		final Layer layer = currentLayer( params );
 		final GenericDialog gd = new GenericDialog( "Correct layer z-positions" );
 		Utils.addLayerRangeChoices( layer, gd );
-		gd.addMessage( "Layer neighbor range :" );
+		gd.addMessage( "Layer neighborhood range :" );
 		gd.addNumericField( "test_maximally :", radius, 0, 6, "layers" );
 		gd.addMessage( "Optimizer :" );
 		gd.addNumericField( "outer_iterations :", iterations, 0, 6, "" );
