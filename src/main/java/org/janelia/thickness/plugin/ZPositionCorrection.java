@@ -29,8 +29,11 @@ import net.imglib2.converter.RealDoubleConverter;
 import net.imglib2.converter.read.ConvertedRandomAccessibleInterval;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
+import net.imglib2.realtransform.InverseRealTransform;
 import net.imglib2.realtransform.InvertibleRealTransform;
+import net.imglib2.realtransform.RealTransformRealRandomAccessible;
 import net.imglib2.realtransform.RealViews;
+import net.imglib2.realtransform.Scale3D;
 import net.imglib2.transform.Transform;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
@@ -147,15 +150,18 @@ public class ZPositionCorrection implements PlugIn {
 			
 			ImageJFunctions.show( Views.interval( Views.raster( transformedMatrix ), matrix ), "Warped matrix" );
 			
+			double renderingZScale = 1.0;
 			final GenericDialogPlus renderDialog = new GenericDialogPlus( "Rendering." );
 			renderDialog.addCheckbox( "Render stack?", renderTransformedStack );
 			if ( inputIsMatrix ) renderDialog.addFileField( "Input path (use current image if empty)", "" );
+			renderDialog.addNumericField( "Scale result stack", renderingZScale, 4 );
 			renderDialog.showDialog();
 			
 			if ( renderDialog.wasCanceled() )
 				return;
 			
 			renderTransformedStack = renderDialog.getNextBoolean();
+			renderingZScale        = renderDialog.getNextNumber();
 			
 			if ( renderTransformedStack ) {
 				ImagePlus stackImp = inputIsMatrix ? getFileFromOption( renderDialog.getNextString() ) : input;
@@ -170,7 +176,8 @@ public class ZPositionCorrection implements PlugIn {
 								generateTransformed( stack, permutation1D, lut1D, new FloatType( Float.NaN ) ),
 								stackImp.getWidth(),
 								stackImp.getHeight(),
-								stackImp.getStackSize()
+								(int)stackImp.getStackSize(),
+								renderingZScale
 								)
 								;
 				
@@ -318,6 +325,19 @@ public class ZPositionCorrection implements PlugIn {
 		IntervalView<T> permuted = Views.interval( new TransformView<T>( input, permutation ), input );
 		RealRandomAccessible< T > interpolated = Views.interpolate( Views.extendValue( permuted, dummy ), new NLinearInterpolatorFactory< T >() );
 		return RealViews.transformReal( interpolated, lut );
+	}
+	
+	
+	public static < T extends RealType< T > > ImageStack generateStack( 
+			RealRandomAccessible< T > input, 
+			final int width, 
+			final int height, 
+			final int size,
+			final double zScale ) {
+		Scale3D scaleTransform = new Scale3D( 1.0, 1.0, zScale );
+		RealTransformRealRandomAccessible<T, InverseRealTransform> scaledInput = RealViews.transformReal( input, scaleTransform );
+		int scaledSize = (int) ( size * zScale );
+		return generateStack( scaledInput, width, height, scaledSize );
 	}
 	
 	
