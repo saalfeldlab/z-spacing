@@ -95,10 +95,12 @@ public class ZPositionCorrection implements PlugIn {
 				normalize( input ).getProcessor().convertToFloatProcessor() : 
 					calculateSimilarityMatrix( input, options.comparisonRange );
 		
-		RandomAccessibleInterval<DoubleType> matrix = wrapDouble( new ImagePlus( "", matrixFp ) );
 		
-		if ( matrix == null )
+		
+		if ( matrixFp == null )
 			return;
+		
+		RandomAccessibleInterval<DoubleType> matrix = wrapDouble( new ImagePlus( "", matrixFp ) );
 		
 		if ( ! inputIsMatrix ) ImageJFunctions.show( matrix );
 		
