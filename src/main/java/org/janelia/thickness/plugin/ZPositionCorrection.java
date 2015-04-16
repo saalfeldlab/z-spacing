@@ -1,12 +1,5 @@
 package org.janelia.thickness.plugin;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 import fiji.util.gui.GenericDialogPlus;
 import ij.IJ;
 import ij.ImagePlus;
@@ -17,32 +10,32 @@ import ij.plugin.PlugIn;
 import ij.process.FloatProcessor;
 import ij.process.FloatStatistics;
 import ij.process.ImageConverter;
-import ini.trakem2.utils.Utils;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import mpicbg.ij.util.Filter;
 import mpicbg.models.IllDefinedDataPointsException;
 import mpicbg.models.NotEnoughDataPointsException;
 import mpicbg.models.TranslationModel1D;
-import net.imglib2.FinalInterval;
+import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
-import net.imglib2.RealRandomAccessibleRealInterval;
 import net.imglib2.converter.RealDoubleConverter;
 import net.imglib2.converter.read.ConvertedRandomAccessibleInterval;
-import net.imglib2.img.array.ArrayCursor;
-import net.imglib2.img.array.ArrayImg;
-import net.imglib2.img.array.ArrayImgs;
-import net.imglib2.img.array.ArrayRandomAccess;
-import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
-import net.imglib2.realtransform.InverseRealTransform;
 import net.imglib2.realtransform.InvertibleRealTransform;
-import net.imglib2.realtransform.RealTransformRealRandomAccessible;
 import net.imglib2.realtransform.RealViews;
 import net.imglib2.transform.Transform;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.view.IntervalView;
 import net.imglib2.view.TransformView;
 import net.imglib2.view.Views;
 
@@ -124,8 +117,6 @@ public class ZPositionCorrection implements PlugIn {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		IJ.log( "After estimate " + estimatedSuccessfully );
-		IJ.log( options.toString() );
 		System.out.println( options.toString() );
 		
 		
@@ -168,20 +159,24 @@ public class ZPositionCorrection implements PlugIn {
 			
 			if ( renderTransformedStack ) {
 				ImagePlus stackImp = inputIsMatrix ? getFileFromOption( renderDialog.getNextString() ) : input;
-				stackImp.show();
 				new ImageConverter( stackImp ).convertToGray32();
 				RandomAccessibleInterval< FloatType > stack = ImageJFunctions.wrapFloat( stackImp ); 
 				
 				SingleDimensionPermutationTransform permutation1D = new SingleDimensionPermutationTransform( permutationArray, 3, 3, 2 );
 				SingleDimensionLUTRealTransform lut1D             = new SingleDimensionLUTRealTransform( sortedTransform, 3, 3, 2 );
 				
-				RealRandomAccessible<FloatType> transformedStack = generateTransformed( stack, permutation1D, lut1D, new FloatType( Float.NaN ) );
+				ImageStack transformedStack = 
+						generateStack( 
+								generateTransformed( stack, permutation1D, lut1D, new FloatType( Float.NaN ) ),
+								stackImp.getWidth(),
+								stackImp.getHeight(),
+								stackImp.getStackSize()
+								)
+								;
 				
-				IJ.log( "c " + transformedStack );
-				IJ.log( "d " + stack );
-				IJ.log( "e " + stackImp );
-				FinalInterval interval = new FinalInterval( stack.dimension( 0 ), stack.dimension( 1 ), stack.dimension( 2 ) );
-				ImageJFunctions.show( Views.interval( Views.raster( transformedStack ), interval ), "Warped image stack." );
+				ImagePlus resultImp = new ImagePlus( "Warped image stack", transformedStack );
+				resultImp.show();
+				
 				IJ.log( "Done." );
 			}
 			
@@ -320,11 +315,55 @@ public class ZPositionCorrection implements PlugIn {
 			T dummy
 			) {
 		dummy.setReal( Double.NaN );
-		TransformView< T > extendedAndPermuted = new TransformView<T>( Views.extendValue( input, dummy ), permutation );
-		IJ.log( "a " + extendedAndPermuted );
-		RealRandomAccessible< T > interpolated = Views.interpolate( extendedAndPermuted, new NLinearInterpolatorFactory< T >() );
-		IJ.log( "b " + interpolated );
+		IntervalView<T> permuted = Views.interval( new TransformView<T>( input, permutation ), input );
+		RealRandomAccessible< T > interpolated = Views.interpolate( Views.extendValue( permuted, dummy ), new NLinearInterpolatorFactory< T >() );
 		return RealViews.transformReal( interpolated, lut );
+	}
+	
+	
+	public static < T extends RealType< T > > ImageStack generateStack( 
+			RealRandomAccessible< T > input, 
+			final int width, 
+			final int height, 
+			final int size ) {
+		final ImageStack stack = new ImageStack( width, height, size);
+		int nThreads = Runtime.getRuntime().availableProcessors();
+		ExecutorService es = Executors.newFixedThreadPool( nThreads );
+		ArrayList<Callable<Void>> callables = new ArrayList< Callable< Void > >();
+		for ( int z = 0; z < size; ++z ) {
+			final int zeroBased = z;
+			final int oneBased  = z + 1;
+			final RandomAccess<T> access = Views.raster( input ).randomAccess();
+			
+			access.setPosition( zeroBased, 2 ); // set z
+			
+			
+			callables.add( new Callable<Void>() {
+
+				@Override
+				public Void call() throws Exception {
+					final FloatProcessor fp = new FloatProcessor( width, height );
+					for ( int x = 0; x < width; ++x ) {
+						access.setPosition( x, 0 );
+						for ( int y = 0; y < height; ++y ) {
+							access.setPosition( y, 1 );
+							fp.setf( x, y, access.get().getRealFloat() );
+						}
+					}
+					stack.setProcessor( fp, oneBased );
+					return null;
+				}
+			});
+		}
+		
+		try {
+			es.invokeAll( callables );
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return stack;
 	}
 
 }
