@@ -52,6 +52,10 @@ import org.janelia.thickness.lut.SingleDimensionPermutationTransform;
 import org.janelia.thickness.mediator.OpinionMediatorWeightedAverage;
 import org.janelia.utility.arrays.ArraySortedIndices;
 
+/**
+ * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>
+ *
+ */
 public class ZPositionCorrection implements PlugIn {
 
 	@Override
@@ -213,7 +217,7 @@ public class ZPositionCorrection implements PlugIn {
 	
 	public static FloatProcessor calculateSimilarityMatrix( ImagePlus input, int range ) {
 		GenericDialog dialog = new GenericDialog( "Choose similiarity calculation method" );
-		dialog.addChoice("Similarity_method :", new String[]{ "NCC (aligned)", "SIFT consensus (unaligned)" }, "NCC (aligned)" );
+		dialog.addChoice("Similarity_method :", new String[]{ "NCC (aligned)" }, "NCC (aligned)" );
 		dialog.showDialog();
 		
 		if ( dialog.wasCanceled() )
@@ -225,7 +229,7 @@ public class ZPositionCorrection implements PlugIn {
 		boolean similarityCalculationWasSuccessful = false;
 		switch ( method ) {
 		case 1:
-			similarityCalculationWasSuccessful = invokeSIFT( input, range, matrix );
+			similarityCalculationWasSuccessful = invokeSIFT( input, range, matrix ); // not implemented yet
 		default:
 			similarityCalculationWasSuccessful = invokeNCC( input, range, matrix );
 		}
