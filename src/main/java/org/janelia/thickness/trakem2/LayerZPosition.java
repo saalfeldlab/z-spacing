@@ -23,6 +23,7 @@ import ij.gui.Roi;
 import ij.measure.Calibration;
 import ij.process.ColorProcessor;
 import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
 import ini.trakem2.Project;
 import ini.trakem2.display.Display;
 import ini.trakem2.display.Displayable;
@@ -43,10 +44,22 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import mpicbg.ij.FeatureTransform;
+import mpicbg.ij.SIFT;
+import mpicbg.imagefeatures.Feature;
+import mpicbg.imagefeatures.FloatArray2DSIFT;
+import mpicbg.models.AbstractModel;
+import mpicbg.models.AffineModel2D;
+import mpicbg.models.HomographyModel2D;
 import mpicbg.models.IllDefinedDataPointsException;
 import mpicbg.models.NotEnoughDataPointsException;
+import mpicbg.models.PointMatch;
+import mpicbg.models.RigidModel2D;
+import mpicbg.models.SimilarityModel2D;
 import mpicbg.models.TranslationModel1D;
+import mpicbg.models.TranslationModel2D;
 import mpicbg.trakem2.align.Align;
 import mpicbg.trakem2.align.Align.Param;
 import net.imglib2.RandomAccessibleInterval;
@@ -152,7 +165,7 @@ public class LayerZPosition implements TPlugIn
 		return true;
 	}
 
-	static private int[] getPixels(
+	static private ColorProcessor getColorProcessor(
 			final Layer layer,
 			final Rectangle fov,
 			final double s )
@@ -175,10 +188,23 @@ public class LayerZPosition implements TPlugIn
 	                filteredPatches,
 	                true,
 	                new Color( 0x00ffffff, true ) );
-			return ( int[] )new ColorProcessor( imgi ).getPixels();
+			return new ColorProcessor( imgi );
 		}
 		else
 			return null;
+	}
+
+	static private int[] getPixels(
+			final Layer layer,
+			final Rectangle fov,
+			final double s )
+	{
+		final ColorProcessor ip = getColorProcessor( layer, fov, s );
+
+		if ( ip == null )
+			return null;
+		else
+			return ( int[] )ip.getPixels();
 	}
 
 	static public void optimize(
@@ -226,17 +252,24 @@ public class LayerZPosition implements TPlugIn
 			layers.get( i ).setZ( lutCorrected[ i ] / zScale + zMin );
 	}
 
+	static private FloatProcessor initMatrix( final int size )
+	{
+		final FloatProcessor ip = new FloatProcessor( size, size );
+		final float[] ipPixels = ( float[] )ip.getPixels();
+		for ( int i = 0; i < ipPixels.length; ++i )
+			ipPixels[ i ] = Float.NaN;
+		ip.setMinAndMax( -0.2, 1.0 );
+
+		return ip;
+	}
+
 	static public FloatProcessor calculateNCCSimilarity(
 			final List< Layer > layers,
 			final Rectangle fov,
 			final int r,
 			final double s ) throws InterruptedException, ExecutionException
 	{
-		final FloatProcessor ip = new FloatProcessor( layers.size(), layers.size() );
-		final float[] ipPixels = ( float[] )ip.getPixels();
-		for ( int i = 0; i < ipPixels.length; ++i )
-			ipPixels[ i ] = Float.NaN;
-		ip.setMinAndMax( -0.2, 1.0 );
+		final FloatProcessor ip = initMatrix( layers.size() );
 
 		final ImagePlus impMatrix;
 		if ( showMatrix )
@@ -366,13 +399,173 @@ public class LayerZPosition implements TPlugIn
 		runNCC( layers, fov, radius, scale, iterations, regularize, innerIterations, innerRegularize, reorder );
 	}
 
+	/* extract features */
+	static protected ArrayList< Feature > extract( final SIFT ijSIFT, final ImageProcessor ip )
+	{
+		final ArrayList< Feature > features = new ArrayList< Feature >();
+		ijSIFT.extractFeatures( ip, features );
+		return features;
+	}
+
+	/* match */
+	static private double match(
+			final Param param,
+			final ArrayList< Feature > features1,
+			final ArrayList< Feature > features2 )
+	{
+		final ArrayList< PointMatch > candidates = new ArrayList< PointMatch >();
+		final ArrayList< PointMatch > inliers = new ArrayList< PointMatch >();
+
+		if (features1.size() > 0 && features2.size() > 0)
+		{
+			FeatureTransform.matchFeatures( features1, features2, candidates, param.rod );
+
+            AbstractModel< ? > model;
+            switch ( param.expectedModelIndex )
+            {
+                case 0:
+                    model = new TranslationModel2D();
+                    break;
+                case 1:
+                    model = new RigidModel2D();
+                    break;
+                case 2:
+                    model = new SimilarityModel2D();
+                    break;
+                case 3:
+                    model = new AffineModel2D();
+                    break;
+                case 4:
+                    model = new HomographyModel2D();
+                    break;
+                default:
+                    return 0.0;
+            }
+
+			boolean modelFound = false;
+			try {
+				modelFound = model.filterRansac(
+					candidates,
+					inliers,
+					1000,
+					param.maxEpsilon,
+					param.minInlierRatio,
+					param.minNumInliers,
+					3 );
+			}
+			catch (final NotEnoughDataPointsException e) {
+				modelFound = false;
+			}
+
+			if (modelFound)
+				return ( double )inliers.size() / ( double )candidates.size();
+			else
+				return 0.0;
+		}
+		return 0.0;
+	}
+
+	/* extract features */
+	static private List< ArrayList< Feature > > extractFeatures(
+			final List< Layer > layers,
+			final Param param,
+			final Rectangle fov ) throws InterruptedException
+	{
+		final double s = Math.min( 1.0, Math.min( ( double )param.sift.maxOctaveSize / ( double )fov.getWidth(), ( double )param.sift.maxOctaveSize / ( double )fov.getHeight() ) );
+
+		final ArrayList< Feature >[] featuresArray = ( ArrayList< Feature >[] )new ArrayList[ layers.size() ];
+		final AtomicInteger i = new AtomicInteger( 0 );
+		final ArrayList< Thread > threads = new ArrayList< Thread >();
+		for ( int t = 0; t < Runtime.getRuntime().availableProcessors(); ++t )
+		{
+			final Thread thread = new Thread(
+				new Runnable(){
+					@Override
+					public void run(){
+						final FloatArray2DSIFT sift = new FloatArray2DSIFT( param.sift );
+						final SIFT ijSIFT = new SIFT( sift );
+						for ( int k = i.getAndIncrement(); k < layers.size(); k = i.getAndIncrement() )
+						{
+							final ArrayList< Feature > features = extract( ijSIFT, getColorProcessor( layers.get( k ), fov, s ) );
+							IJ.log( k + ": " + features.size() + " features extracted" );
+							featuresArray[ k ] = features;
+						}
+					}
+				}
+			);
+			threads.add(thread);
+			thread.start();
+		}
+		for ( final Thread t : threads )
+			t.join();
+
+		return Arrays.asList( featuresArray );
+	}
+
 	static public FloatProcessor calculateSIFTSimilarity(
 			final List< Layer > layers,
 			final Rectangle fov,
 			final int r,
 			final Param p ) throws InterruptedException, ExecutionException
 	{
-		return null;
+		final List< ArrayList< Feature > > featuresList = extractFeatures( layers, p, fov );
+
+		final FloatProcessor ip = initMatrix( layers.size() );
+
+		final ImagePlus impMatrix;
+		if ( showMatrix )
+		{
+			impMatrix = new ImagePlus( "Similarity matrix", ip );
+			impMatrix.show();
+		}
+		else
+			impMatrix = null;
+
+		/* match */
+		for ( int i = 0; i < layers.size(); ++i )
+		{
+			final int fi = i;
+			final ArrayList< Feature > f1 = featuresList.get( fi );
+			if ( f1 == null || f1.size() == 0 )
+				continue;
+
+			ip.setf( fi, fi, 1.0f );
+
+			final AtomicInteger j = new AtomicInteger( fi + 1 );
+			final ArrayList< Thread > threads = new ArrayList< Thread >();
+			for ( int t = 0; t < Runtime.getRuntime().availableProcessors(); ++t )
+			{
+				final Thread thread = new Thread(
+					new Runnable(){
+						@Override
+						public void run(){
+							for ( int k = j.getAndIncrement(); k < layers.size() && k < fi + radius; k = j.getAndIncrement() )
+							{
+								final ArrayList< Feature > f2 = featuresList.get( k );
+								if ( f2 == null || f2.size() == 0 )
+								{
+									if ( impMatrix != null )
+										impMatrix.updateAndDraw();
+									continue;
+								}
+
+								final float inlierRatio = ( float )match( p, f1, f2);
+								ip.setf( fi, k, inlierRatio );
+								ip.setf( k, fi, inlierRatio );
+								if ( impMatrix != null )
+									impMatrix.updateAndDraw();
+							}
+						}
+					}
+				);
+				threads.add(thread);
+				thread.start();
+			}
+			for ( final Thread t : threads )
+				t.join();
+		}
+
+		return ip;
 	}
 
 	static public void runSIFT(
@@ -381,11 +574,16 @@ public class LayerZPosition implements TPlugIn
 			final int r,
 			final Param p ) throws InterruptedException, ExecutionException
 	{
-		final FloatProcessor ip = calculateSIFTSimilarity( layers, fov, r, p );
+		final FloatProcessor matrix = calculateSIFTSimilarity( layers, fov, r, p );
 
-
-
-		new ImagePlus( "matrix", ip ).show();
+		try
+		{
+			optimize( layers, matrix, r, iterations, regularize, innerIterations, innerRegularize, reorder );
+		}
+		catch ( final Exception e )
+		{
+			throw new ExecutionException( e.getCause() );
+		}
 	}
 
 	/**
@@ -440,6 +638,7 @@ public class LayerZPosition implements TPlugIn
 		gd.addChoice(
 				"Similarity_method :",
 				new String[]{ "NCC (aligned)", "SIFT consensus (unaligned)" }, "NCC (aligned)" );
+//				new String[]{ "NCC (aligned)"}, "NCC (aligned)" );
 		gd.addCheckbox( "show_matrix", showMatrix );
 		gd.showDialog();
 		if ( gd.wasCanceled() )
