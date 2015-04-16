@@ -210,20 +210,20 @@ public class LayerZPosition implements TPlugIn
 	static public void optimize(
 			final List< Layer > layers,
 			final FloatProcessor matrix,
-			final int radius,
-			final int iterations,
-			final double regularize,
-			final int innerIterations,
-			final double innerRegularize,
-			final boolean reorder ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
+			final int rad,
+			final int iter,
+			final double reg,
+			final int innerIter,
+			final double innerReg,
+			final boolean reord ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
 	{
 		final Options options = Options.generateDefaultOptions();
-		options.comparisonRange = radius;
-		options.nIterations = iterations;
-		options.shiftProportion = regularize;
-		options.multiplierEstimationIterations = innerIterations;
-		options.multiplierGenerationRegularizerWeight = innerRegularize;
-		options.withReorder = reorder;
+		options.comparisonRange = rad;
+		options.nIterations = iter;
+		options.shiftProportion = reg;
+		options.multiplierEstimationIterations = innerIter;
+		options.multiplierGenerationRegularizerWeight = innerReg;
+		options.withReorder = reord;
 		options.withRegularization = true;
 		options.minimumSectionThickness = 0.0;
 
@@ -360,17 +360,17 @@ public class LayerZPosition implements TPlugIn
 			final Rectangle fov,
 			final int r,
 			final double s,
-			final int iterations,
-			final double regularize,
-			final int innerIterations,
-			final double innerRegularize,
-			final boolean reorder ) throws InterruptedException, ExecutionException
+			final int iter,
+			final double reg,
+			final int innerIter,
+			final double innerReg,
+			final boolean reord ) throws InterruptedException, ExecutionException
 	{
 		final FloatProcessor matrix = calculateNCCSimilarity( layers, fov, r, s );
 
 		try
 		{
-			optimize( layers, matrix, r, iterations, regularize, innerIterations, innerRegularize, reorder );
+			optimize( layers, matrix, r, iter, reg, innerIter, innerReg, reord );
 		}
 		catch ( final Exception e )
 		{
@@ -473,6 +473,7 @@ public class LayerZPosition implements TPlugIn
 	{
 		final double s = Math.min( 1.0, Math.min( ( double )param.sift.maxOctaveSize / ( double )fov.getWidth(), ( double )param.sift.maxOctaveSize / ( double )fov.getHeight() ) );
 
+		@SuppressWarnings( "unchecked" )
 		final ArrayList< Feature >[] featuresArray = ( ArrayList< Feature >[] )new ArrayList[ layers.size() ];
 		final AtomicInteger i = new AtomicInteger( 0 );
 		final ArrayList< Thread > threads = new ArrayList< Thread >();
@@ -563,6 +564,9 @@ public class LayerZPosition implements TPlugIn
 			}
 			for ( final Thread t : threads )
 				t.join();
+
+			if ( impMatrix != null )
+				impMatrix.updateAndDraw();
 		}
 
 		return ip;
@@ -582,7 +586,7 @@ public class LayerZPosition implements TPlugIn
 		}
 		catch ( final Exception e )
 		{
-			throw new ExecutionException( e.getCause() );
+			throw new ExecutionException( e );
 		}
 	}
 
