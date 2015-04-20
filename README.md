@@ -1,45 +1,27 @@
-em-thickness-estimation
+# Z-Spacing Correction for 
 
-Estimate thickness of slices (or at local points) of EM data. See http://arxiv.org/abs/1411.6970 for details of the algorithm.
+Estimate the positions and spacing between sections (or at local points) of three dimensional image data. This method may be applied to any imaging modality that acquires 3-dimensional data as a stack of 2-dimensional sections. We provide plugins for both Fiji and TrakEM2.
 
-In order to run this software, you will first need to download this repository and build from source. 
-The easiest way is to import the project as a maven project into eclipse. Eclipse and maven will then take care of the dependencies and build your project and place `em-thickness-estimation-0.0.1-SNAPSHOT.jar` into `<project-root>/target`. This jar needs to be placed in `<fiji-root>/jars` or `<fiji-root>/plugins`, e.g. on Linux:
-```bash
-ln -s <project-root>/target/em-thickness-estimation-0.0.1-SNAPSHOT.jar <fiji-root>/jars
-```
-Make sure that all your Fiji jars are up to date.
+## Citation
+Please note that the z-spacing correction plugin available through Fiji, is based on a publication. If you use it successfully for your research please cite our work:
 
-Then, for running thickness estimation, use the Fiji script editor to open
-```
-<project-root>/src/main/python/jython_estimate_thickness.py
-```
-if you like to both generate the similarity matrix for your data and run thickness estimation, or
-```
-<project-root>/src/main/python/estimate_from_correlation_matrix.py
-```
-if you have a similarity matrix at hand and would like to run thickness estimation based on that. You can start the
-Fiji script editor by pressing the `]`-key in the Fiji main window.
+P. Hanslovsky, J. Bogovic, S. Saalfeld (2015) Post-acquisition image based compensation for thickness variation in microscopy section series, In ''International Symposium on Biomedical Imaging (ISBI'15)'', New York [http://arxiv.org/abs/1411.6970]
 
-Before hitting the run button, you should consider adjusting the parameters and options to your needs:
-- root:  output directory for storing (intermediate) results
-- souceFile: path to image file containing similarity matrix ( `estimate_from_correlation_matrix.py` only ) - use current image if sourceFile is empty string
-- dataDir: directory containing image stack ( `jython_estimate_thickness.py` only ) - use current image if dataDir is empty string
-- matrixScale: if rendering matrix to image at each iteraiton, increase resolution by this factor
-- options.shiftProportion: only apply shifts by this fraction
-- options.nIterations: repeat this many times
-- options.withReorder: allow reordering if True
-- options.minimumSectionThickness: minimum distance between adjacent sections if withReorder == False
-- options.multiplierGenerationRegularizerWeight: regularize multipliers (quality measure for sections) to 1.0
-- options.multiplierEstimationIterations: run inner loop for multiplier estimation this many times
-- options.coordinateUpdateRegularizerWeight: regularize coordinates to initial coordinates at each update
-- xyScale: scale data in x and y by this before calculating similarity matrix ( jython_estimate_thickness.py only )
-- doXYScale: if true, scale data by xyScale ( jython_estimate_thickness.py only )
-- correlationsRange/r: maximum distance (based on their position in the stack) between two sections whose pairwise similarities are taken into account
+## Introduction
+Serial section Microscopy, using either optical or physical sectioning, is an established method for volumetric anatomy reconstruction.  Section series imaged with Electron Microscopy are currently vital for the reconstruction of the synaptic connectivity of entire animal brains such as that of *Drosophila melanogaster*.  The process of removing ultrathin layers from a solid block containing the specimen, however, is a fragile procedure and has limited precision with respect to section thickness.  Optical sectioning techniques often suffer from increasing distortion as sections deeper inside the tissue are imaged.  On summary, section thickness that is supposed to be constant, in practice is not and has to be corrected where precise measurement is desired.  We have developed a method to estimate the relative *z*-position of each individual section as a function of signal change across the section series.  The [Fiji](http://fiji.sc) plugin **Transform** > **Z-Spacing Correction** and the [TrakEM2](http://fiji.sc/TrakEM2) plugin **Plugins** > **LayerZPosition** implement this method.
 
-In our experience, `xyScale` (we used `1.0` for FIB-SEM and `0.1` for TEM) and `correlationsRange/r` are the most important parameters. All other parameters can be set to their default values in the repository.
-
-For rendering the similarity matrix at each iteraiton, uncomment
-```python
-# coordinateTracker.addVisitor( matrixTracker )
-# coordinateTracker.addVisitor( floorTracker )
-```
+## Parameters
+<dl>
+  <dt>Neighborhood range</dt>
+  <dd>Specifies the neighborhood around each section for which pairwise similarities are calculated.</dd>
+  <dt>Outer iterations</dt>
+  <dd>Specifies the number of iterations in the outer loop of the optimizer.</dd>
+  <dt>Outer regularization</dt>
+  <dd>Specifies the amount of regularization in the outer loop of the optimizer. 0 means no regularization, 1 means full regularization (no change).  The regularizer in the outer loop damps the updates during each iteration by the specified fraction.</dd>
+  <dt>Inner Iterations</dt>
+  <dd>Specifies the number of iterations in inner loops of the optimizer.</dd>
+  <dt>Inner Regularization</dt>
+  <dd>Specifies the amount of regularization in the outer loop of the optimizer. 0 means no regularization, 1 means full regularization (no change).  The per-section quality weight requires regularization to avoid trivial solutions.  We use a Tikhonov regularizer towards 1.0 weight.</dd>
+  <dt>Allow reordering</dt>
+  <dd>Specifies whether layers/ sections can change their relative order in the series.</dd>
+<dl>
