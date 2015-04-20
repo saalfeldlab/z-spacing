@@ -1,4 +1,4 @@
-# Z-Spacing Correction for 
+# Z-Spacing Correction
 
 Estimate the positions and spacing between sections (or at local points) of three dimensional image data. This method may be applied to any imaging modality that acquires 3-dimensional data as a stack of 2-dimensional sections. We provide plugins for both Fiji and TrakEM2.
 
