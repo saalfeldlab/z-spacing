@@ -101,7 +101,7 @@ public class MultiScaleEstimation {
 			
 			categorizer.setState( i );
 			
-			final ExecutorService es = Executors.newFixedThreadPool( options[i].nThreads );
+			final ExecutorService es = Executors.newFixedThreadPool( 1 ); // do not use es here?
 			
 			final int stepX = steps[i][0];
 			final int stepY = steps[i][1];

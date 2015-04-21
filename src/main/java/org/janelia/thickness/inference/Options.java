@@ -29,16 +29,9 @@ public class Options implements Serializable {
 	        result.coordinateUpdateRegularizerWeight = 0.0;
 	        result.shiftProportion = 0.6;
 	        result.nIterations = 100;
-	        result.nThreads = 1;
 	        result.comparisonRange = 10;
-	        result.neighborRegularizerWeight = 0.05;
 	        result.minimumSectionThickness = 0.01;
-	        result.windowRange = 100;
-	        result.shiftsSmoothingSigma = 4.0;
-	        result.shiftsSmoothingRange = 0;
 	        result.withRegularization = true;
-	        result.multiplierRegularizerDecaySpeed = 50.0;
-	        result.multiplierWeightsSigma = 0.04;
 	        result.multiplierEstimationIterations = 10;
 	        result.withReorder = true;
 	        return result;
@@ -48,16 +41,9 @@ public class Options implements Serializable {
 	public Double coordinateUpdateRegularizerWeight; // coordinate_regularized = predicted * ( 1 - w ) + original * w
 	public Double shiftProportion; // actual_shift = shift * shiftProportion
 	public Integer nIterations; // number of iterations
-	public Integer nThreads; // number of threads
 	public Integer comparisonRange; // range for cross correlations
-	public Double neighborRegularizerWeight;
 	public Double minimumSectionThickness;
-	public Integer windowRange;
-	public Double shiftsSmoothingSigma;
-	public Integer shiftsSmoothingRange;
 	public Boolean withRegularization;
-	public Double multiplierRegularizerDecaySpeed;
-	public Double multiplierWeightsSigma;
 	public Integer multiplierEstimationIterations;
 	public Boolean withReorder;
 	

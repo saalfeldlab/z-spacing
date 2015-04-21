@@ -190,7 +190,7 @@ public class InferFromMatrix< M extends Model<M> > {
 		
 		for ( int i = 0; i < multipliers.length; ++i ) {
 			final double diff = 1.0 - multipliers[ i ];
-			weights[ i ] = Math.exp( -0.5*diff*diff / ( options.multiplierWeightsSigma ) );
+			weights[ i ] = 1.0;//Math.exp( -0.5*diff*diff / ( options.multiplierWeightsSigma ) );
 		}
 		
 		final TreeMap< Long, ArrayList< ConstantPair< Double, Double > > > shifts =
@@ -217,11 +217,11 @@ public class InferFromMatrix< M extends Model<M> > {
     		final Options options ) 
     {
 		final double[] smoothedShifts = new double[ shifts.length ];
-		final double[] gaussKernel    = new double[ options.shiftsSmoothingRange + 1 ];
+		final double[] gaussKernel    = new double[ 1 ];
 		gaussKernel[0] = 1.0;
 		double normalizingConstant = gaussKernel[0];
 		for ( int i = 1; i < gaussKernel.length; ++i ) {
-			gaussKernel[ i ] = Math.exp( -0.5 * i * i / ( options.shiftsSmoothingSigma * options.shiftsSmoothingSigma ) );
+			gaussKernel[ i ] = Math.exp( -0.5 * i * i / ( 1 ) );
 			normalizingConstant += 2 * gaussKernel[ i ];
 		}
 		
@@ -234,7 +234,7 @@ public class InferFromMatrix< M extends Model<M> > {
 		for (int i = 0; i < smoothedShifts.length; i++) {
 			smoothedShifts[ i ] = 0.0;
 			double weightSum = 0.0;
-			for ( int k = -options.shiftsSmoothingRange; k <= options.shiftsSmoothingRange; ++k ) {
+			for ( int k = 0; k <= 0; ++k ) {
 				mediatedRA.setPosition( i + k, 0 );
 				weightsRA.setPosition( mediatedRA );
 				final double w = gaussKernel[ Math.abs( k ) ] * weightsRA.get().get();

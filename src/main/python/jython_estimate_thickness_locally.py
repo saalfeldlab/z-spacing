@@ -144,26 +144,17 @@ if __name__ == "__main__":
     options = Options.generateDefaultOptions()
     options.shiftProportion = 0.6
     options.nIterations = 100
-    options.nThreads = nThreads
-    options.windowRange = nImages
-    options.shiftsSmoothingSigma = 1.5
-    options.shiftsSmoothingRange = 0
     options.withRegularization = True
     options.minimumSectionThickness = 0.00000001 # Double.NaN # 0.1
     options.withReorder = False
-    options.multiplierRegularizerDecaySpeed = 50
-    options.multiplierWeightsSigma = 0.04 # weights[ i ] = exp( -0.5*(multiplier[i] - 1.0)^2 / multiplierWeightSigma^2 )
     options.multiplierGenerationRegularizerWeight = 0.1
     options.multiplierEstimationIterations = 10
-    options.coordinateUpdateRegularizerWeight = 0.0
     thickness_estimation_repo_dir = '/groups/saalfeld/home/hanslovskyp/workspace/em-thickness-estimation'
 
     options2 = options.clone()
     options2.shiftProportion = 0.5
     options2.nIterations = 10
-    options2.shiftsSmoothingRange = 0
     options2.withRegularization = False
-    # options2.minimumSectionThickness = 0.05 # Double.NaN
     options2.withReorder = False
     options2.multiplierGenerationRegularizerWeight = 0.1
     options2.multiplierEstimationIterations = 10

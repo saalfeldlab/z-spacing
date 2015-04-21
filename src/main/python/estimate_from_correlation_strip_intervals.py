@@ -134,14 +134,8 @@ if __name__ == "__main__":
     options = Options.generateDefaultOptions()
     options.shiftProportion = 0.6
     options.nIterations = 30
-    options.nThreads = nThreads
-    options.windowRange = 100
-    options.shiftsSmoothingSigma = 4
-    options.shiftsSmoothingRange = 0
     options.withRegularization = True
     options.minimumSectionThickness = 0.0001
-    options.multiplierRegularizerDecaySpeed = 50
-    options.multiplierWeightsSigma = 0.04 # weights[ i ] = exp( -0.5*(multiplier[i] - 1.0)^2 / multiplierWeightSigma^2 )
     options.multiplierGenerationRegularizerWeight = 0.1
     options.multiplierEstimationIterations = 10
     options.withReorder = False
