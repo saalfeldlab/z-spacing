@@ -157,11 +157,19 @@ public class MultiScaleEstimation {
 				
 			}
 			
-			try {
-				es.invokeAll(tasks);
-			} catch (final InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			
+			{
+				IJ.log( "before inference" );
+				final long t0 = System.currentTimeMillis();
+				try {
+					es.invokeAll(tasks);
+				} catch (final InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				final long t1 = System.currentTimeMillis();
+				final long diff = t1 - t0;
+				IJ.log( "after inference (t=" + diff + "ms)" );
 			}
 
 			
