@@ -34,6 +34,7 @@ public class Options implements Serializable {
 	        result.withRegularization = true;
 	        result.multiplierEstimationIterations = 10;
 	        result.withReorder = true;
+	        result.nThreads = Runtime.getRuntime().availableProcessors();
 	        return result;
 	}
 	
@@ -46,6 +47,7 @@ public class Options implements Serializable {
 	public Boolean withRegularization;
 	public Integer multiplierEstimationIterations;
 	public Boolean withReorder;
+	public Integer nThreads;
 	
 	public static Options read( final String filename ) {
 		final String defaultString = String.format( "Options.read( \"%s\" )", filename );
