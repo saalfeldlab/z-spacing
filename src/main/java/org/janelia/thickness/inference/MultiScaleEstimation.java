@@ -147,7 +147,7 @@ public class MultiScaleEstimation {
 								new OpinionMediatorModel<TranslationModel1D>( new TranslationModel1D() ) );
 						
 						final double[] lut = inference.estimateZCoordinates( currMat, arr, new LazyVisitor(), categorizer, currentOptions );
-						IJ.log( "Iterating at c=" + x + "x" + y + " " + Arrays.toString( lut ) );
+						// IJ.log( "Iterating at c=" + x + "x" + y + " " + Arrays.toString( lut ) );
 						final ListRandomAccess<double[]> rax = coordinateListImage.randomAccess();
 						rax.setPosition( new int[] { x, y } );
 						rax.set( lut );
