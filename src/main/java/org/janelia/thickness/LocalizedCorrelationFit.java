@@ -38,7 +38,8 @@ public class LocalizedCorrelationFit {
 
 	private static final double[] ONE_DIMENSION_ZERO_POSITION = new double[]{ 0.0 };
 
-	public static < T extends RealType< T >, M extends Model< M > > void estimateFromMatrix( final RandomAccessibleInterval< T > correlations,
+	public static < T extends RealType< T >, M extends Model< M > > void estimateFromMatrix(
+			final RandomAccessibleInterval< T > correlations,
 			final double[] coordinates,
 			final double[] weights,
 			final double[] multipliers,
@@ -46,14 +47,16 @@ public class LocalizedCorrelationFit {
 			final int range,
 			final int windowRange,
 			final M correlationFitModel,
-			final ListImg< double[] > localFits) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+			final ListImg< double[] > localFits,
+			final boolean forceMontonicity ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 
 		final RangedCategorizer categorizer = new RangedCategorizer( windowRange );
 		categorizer.generateLabels( windowRange );
-		estimateFromMatrix(correlations, coordinates, weights, multipliers, transform, range, correlationFitModel, categorizer, localFits);
+		estimateFromMatrix(correlations, coordinates, weights, multipliers, transform, range, correlationFitModel, categorizer, localFits, forceMontonicity);
 	}
 
-	public static < T extends RealType< T >, M extends Model< M > > void estimateFromMatrix( final RandomAccessibleInterval< T > correlations,
+	public static < T extends RealType< T >, M extends Model< M > > void estimateFromMatrix(
+			final RandomAccessibleInterval< T > correlations,
 			final double[] coordinates,
 			final double[] weights,
 			final double[] multipliers,
@@ -61,7 +64,8 @@ public class LocalizedCorrelationFit {
 			final int range,
 			final M correlationFitModel,
 			final Categorizer categorizer,
-			final ListImg< double[] > localFits) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+			final ListImg< double[] > localFits,
+			final boolean forceMontonicity) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 
 		assert localFits.numDimensions() == 2;
 		assert localFits.dimension( 1 )  == coordinates.length;
@@ -112,6 +116,9 @@ public class LocalizedCorrelationFit {
 
 			final double[] currentAssignment = assignments[i];
 
+			double currentMin1 = Double.MIN_VALUE;
+			double currentMin2 = Double.MIN_VALUE;
+
 			for ( int k = 0; k <= range; ++k, access.fwd( 0 ), access2.bck( 0 ), m1.fwd( 0 ), m2.bck( 0 ) ) {
 
 //				if ( i < coordinates.length - 1 && coordinates[i] + k < coordinates[ i + 1 ] )
@@ -123,9 +130,10 @@ public class LocalizedCorrelationFit {
 				final double a1 = access.get().getRealDouble();
 				final double a2 = access2.get().getRealDouble();
 
-				if ( ( ! Double.isNaN( a1 ) ) && ( a1 > 0.0 ) )
+				if ( ( ! Double.isNaN( a1 ) ) && ( a1 > 0.0 ) && ( forceMontonicity && a1 < currentMin1 ) )
 				{
 					final int index = i + k;
+					currentMin1 = a1;
 					if ( index < weights.length ) {
 						final double w1 = weights[ index ]; // replace 1.0 by real weight, as soon as weight calculation has become clear
 						for ( int modelIndex = 0; modelIndex < currentAssignment.length; ++modelIndex )
@@ -133,9 +141,10 @@ public class LocalizedCorrelationFit {
 					}
 				}
 
-				if ( ( ! Double.isNaN( a2 ) ) && ( a2 > 0.0 ) )
+				if ( ( ! Double.isNaN( a2 ) ) && ( a2 > 0.0 ) && ( forceMontonicity && a2 < currentMin2 ) )
 				{
 					final int index = i - k;
+					currentMin2 = a2;
 					if ( index > 0 ) {
 						final double w2 = weights[ index ]; // replace 1.0 by real weight, as soon as weight calculation has become clear
 						for ( int modelIndex = 0; modelIndex < currentAssignment.length; ++modelIndex )
@@ -178,16 +187,18 @@ public class LocalizedCorrelationFit {
 	}
 
 
-	public static < T extends RealType< T >, M extends Model< M > > void estimateFromMatrix( final RandomAccessibleInterval< T > correlations,
+	public static < T extends RealType< T >, M extends Model< M > > void estimateFromMatrix(
+			final RandomAccessibleInterval< T > correlations,
 			final double[] coordinates,
 			final double[] weights,
 			final double[] multipliers,
 			final AbstractLUTRealTransform transform,
 			final int range,
 			final M correlationFitModel,
-			final ListImg< double[] > localFits) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+			final ListImg< double[] > localFits,
+			final boolean forceMonotonicity ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
 		final int windowRange = coordinates.length;
-		estimateFromMatrix( correlations, coordinates, weights, multipliers, transform, range, windowRange, correlationFitModel, localFits );
+		estimateFromMatrix( correlations, coordinates, weights, multipliers, transform, range, windowRange, correlationFitModel, localFits, forceMonotonicity );
 	}
 
 

@@ -175,8 +175,8 @@ public class InferFromMatrix< M extends Model<M> > {
     	final int nMatrixDimensions      = matrix.numDimensions();
     	final LUTRealTransform transform = new LUTRealTransform( lut, nMatrixDimensions, nMatrixDimensions );
     	
-   
-    	LocalizedCorrelationFit.estimateFromMatrix( matrix, lut, weights, multipliers, transform, options.comparisonRange, correlationFitModel, localFits );
+
+		LocalizedCorrelationFit.estimateFromMatrix( matrix, lut, weights, multipliers, transform, options.comparisonRange, correlationFitModel, localFits, options.forceMontonicity );
 		
 		EstimateQualityOfSlice.estimateQuadraticFromMatrix( matrix, 
 				weights, 

@@ -24,18 +24,19 @@ public class Options implements Serializable {
 
 
 	public static Options generateDefaultOptions() {
-	        final Options result = new Options();
-	        result.multiplierGenerationRegularizerWeight = 0.1;
-	        result.coordinateUpdateRegularizerWeight = 0.0;
-	        result.shiftProportion = 0.6;
-	        result.nIterations = 100;
-	        result.comparisonRange = 10;
-	        result.minimumSectionThickness = 0.01;
-	        result.withRegularization = true;
-	        result.multiplierEstimationIterations = 10;
-	        result.withReorder = true;
-	        result.nThreads = Runtime.getRuntime().availableProcessors();
-	        return result;
+		final Options result = new Options();
+		result.multiplierGenerationRegularizerWeight = 0.1;
+		result.coordinateUpdateRegularizerWeight = 0.0;
+		result.shiftProportion = 0.6;
+		result.nIterations = 100;
+		result.comparisonRange = 10;
+		result.minimumSectionThickness = 0.01;
+		result.withRegularization = true;
+		result.multiplierEstimationIterations = 10;
+		result.withReorder = true;
+		result.nThreads = Runtime.getRuntime().availableProcessors();
+		result.forceMontonicity = false;
+		return result;
 	}
 	
 	public Double multiplierGenerationRegularizerWeight; // m_regularized = m * ( 1 - w ) + 1 * w
@@ -48,6 +49,7 @@ public class Options implements Serializable {
 	public Integer multiplierEstimationIterations;
 	public Boolean withReorder;
 	public Integer nThreads;
+	public Boolean forceMontonicity;
 	
 	public static Options read( final String filename ) {
 		final String defaultString = String.format( "Options.read( \"%s\" )", filename );
