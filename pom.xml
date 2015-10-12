@@ -13,7 +13,7 @@
 	<parent>
 		<groupId>sc.fiji</groupId>
 		<artifactId>pom-fiji</artifactId>
-		<version>9.0.0</version>
+		<version>16.0.0</version>
 		<relativePath />
 	</parent>
 	
