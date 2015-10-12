@@ -264,7 +264,7 @@ public class ZPositionCorrection implements PlugIn {
 		double xyScale = dialog.getNextNumber();
 		
 		final ImageStack stack = xyScale == 1.0 ? stackSource : downsampleStack( stackSource, xyScale );
-		final int height = input.getHeight();
+		final int height = input.getStackSize();
 		final int nThreads = Runtime.getRuntime().availableProcessors();
 		ArrayList<Callable<Void>> callables = new ArrayList< Callable< Void > >();
 		for ( int i = 0; i < height; ++i ) {
