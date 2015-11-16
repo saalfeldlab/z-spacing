@@ -1,15 +1,20 @@
 package org.janelia.thickness.inference;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.TreeMap;
 
+import ij.IJ;
 import mpicbg.models.AffineModel1D;
 import mpicbg.models.IllDefinedDataPointsException;
 import mpicbg.models.Model;
 import mpicbg.models.NotEnoughDataPointsException;
+import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.RealRandomAccessible;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.list.ListImg;
+import net.imglib2.img.list.ListRandomAccess;
 import net.imglib2.outofbounds.OutOfBounds;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
@@ -17,30 +22,33 @@ import net.imglib2.view.IntervalView;
 import net.imglib2.view.TransformView;
 import net.imglib2.view.Views;
 
+import net.imglib2.view.composite.RealComposite;
 import org.janelia.thickness.EstimateQualityOfSlice;
 import org.janelia.thickness.LocalizedCorrelationFit;
 import org.janelia.thickness.ShiftCoordinates;
 import org.janelia.thickness.cluster.Categorizer;
 import org.janelia.thickness.cluster.RangedCategorizer;
+import org.janelia.thickness.inference.fits.AbstractCorrelationFit;
 import org.janelia.thickness.inference.visitor.Visitor;
 import org.janelia.thickness.lut.LUTRealTransform;
 import org.janelia.thickness.lut.PermutationTransform;
 import org.janelia.thickness.mediator.OpinionMediator;
 import org.janelia.utility.arrays.ArraySortedIndices;
+import org.janelia.utility.arrays.ReplaceNaNs;
 import org.janelia.utility.tuple.ConstantPair;
 
-public class InferFromMatrix< M extends Model<M> > {
+public class InferFromMatrix {
 
-	private final M correlationFitModel;
+	private final AbstractCorrelationFit correlationFit;
     private final OpinionMediator shiftMediator;
 
 
     public InferFromMatrix(
-            final M correlationFitModel,
+            final AbstractCorrelationFit correlationFit,
             final OpinionMediator shiftMediator ) {
             super();
 
-            this.correlationFitModel = correlationFitModel;
+            this.correlationFit = correlationFit;
             this.shiftMediator = shiftMediator;
 
            
@@ -138,6 +146,8 @@ public class InferFromMatrix< M extends Model<M> > {
     				startingCoordinates,
     				permutation.copyToDimension( 1, 1 ), 
     				options);
+
+			ReplaceNaNs.replace( permutedLut );
     		
     		if ( !options.withReorder )
     			preventReorder( permutedLut, options ); // 
@@ -174,20 +184,21 @@ public class InferFromMatrix< M extends Model<M> > {
     	
     	final int nMatrixDimensions      = matrix.numDimensions();
     	final LUTRealTransform transform = new LUTRealTransform( lut, nMatrixDimensions, nMatrixDimensions );
-    	
 
-		LocalizedCorrelationFit.estimateFromMatrix( matrix, lut, weights, multipliers, transform, options.comparisonRange, correlationFitModel, localFits, options.forceMontonicity );
-		
-		EstimateQualityOfSlice.estimateQuadraticFromMatrix( matrix, 
-				weights, 
-				multipliers, 
-				lut, 
-				localFits, 
-				options.multiplierGenerationRegularizerWeight, 
-				options.comparisonRange, 
-				options.multiplierEstimationIterations );
-		
-		
+		RealRandomAccessible<RealComposite<DoubleType>> fits = correlationFit.estimateFromMatrix(matrix, lut, weights, multipliers, transform, options);
+		correlationFit.raster( fits, localFits );
+
+//		LocalizedCorrelationFit.estimateFromMatrix( matrix, lut, weights, multipliers, transform, options.comparisonRange, correlationFitModel, localFits, options.forceMonotonicity);
+
+		EstimateQualityOfSlice.estimateQuadraticFromMatrix(matrix,
+				weights,
+				multipliers,
+				lut,
+				localFits,
+				options.multiplierGenerationRegularizerWeight,
+				options.comparisonRange,
+				options.multiplierEstimationIterations);
+
 		for ( int i = 0; i < multipliers.length; ++i ) {
 			final double diff = 1.0 - multipliers[ i ];
 			weights[ i ] = 1.0;//Math.exp( -0.5*diff*diff / ( options.multiplierWeightsSigma ) );
@@ -199,7 +210,8 @@ public class InferFromMatrix< M extends Model<M> > {
 		                    matrix,
 		                    weights,
 		                    multipliers,
-		                    localFits );
+		                    localFits,
+							options );
 		
 		final double[] mediatedShifts = new double[ lut.length ];
 		this.shiftMediator.mediate( shifts, mediatedShifts );

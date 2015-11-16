@@ -2,6 +2,7 @@ package org.janelia.thickness.plugin;
 
 import fiji.util.gui.GenericDialogPlus;
 import ij.IJ;
+import ij.ImageJ;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.gui.GenericDialog;
@@ -44,6 +45,7 @@ import net.imglib2.view.Views;
 
 import org.janelia.thickness.inference.InferFromMatrix;
 import org.janelia.thickness.inference.Options;
+import org.janelia.thickness.inference.fits.CorrelationFitAverage;
 import org.janelia.thickness.inference.visitor.LazyVisitor;
 import org.janelia.thickness.lut.LUTRealTransform;
 import org.janelia.thickness.lut.PermutationTransform;
@@ -62,6 +64,8 @@ public class ZPositionCorrection implements PlugIn {
 	public void run(String arg0) {
 		
 		Options options = Options.generateDefaultOptions();
+		options.forceMonotonicity = true;
+		options.minimumCorrelationValue = 0.7;
 		
 		final GenericDialogPlus dialog = new GenericDialogPlus( "Correct layer z-positions" );
 		dialog.addMessage( "Data source settings : " );
@@ -112,7 +116,7 @@ public class ZPositionCorrection implements PlugIn {
 		for (int i = 0; i < startingCoordinates.length; i++)
 			startingCoordinates[i] = i;
 		
-		InferFromMatrix<TranslationModel1D> inf = new InferFromMatrix< TranslationModel1D >( new TranslationModel1D(), new OpinionMediatorWeightedAverage() );
+		InferFromMatrix inf = new InferFromMatrix( new CorrelationFitAverage(), new OpinionMediatorWeightedAverage() );
 		
 		boolean estimatedSuccessfully = false;
 		double[] transform = null;
@@ -241,6 +245,12 @@ public class ZPositionCorrection implements PlugIn {
 	
 	
 	public static void main(String[] args) {
+		new ImageJ();
+//		ImagePlus img = new ImagePlus("/home/hanslovskyp/workspace-idea/em-thickness-estimation/stack.tif");
+//		ImagePlus img = new ImagePlus("/nobackup/saalfeld/philipp/AL-Z0613-14/analysis/z-spacing/33/out/spark-test-2/04/matrices/(0,29).tif");
+//		ImagePlus img = new ImagePlus("/home/hanslovskyp/workspace-idea/em-thickness-estimation/(0,29)-1.tif");
+		ImagePlus img = new ImagePlus("/home/hanslovskyp/local/tmp/sigma-5.tif");
+		img.show();
 		new ZPositionCorrection().run( "" );
 	}
 	
@@ -268,7 +278,7 @@ public class ZPositionCorrection implements PlugIn {
 		final int nThreads = Runtime.getRuntime().availableProcessors();
 		ArrayList<Callable<Void>> callables = new ArrayList< Callable< Void > >();
 		for ( int i = 0; i < height; ++i ) {
-			final int finalI = i;  
+			final int finalI = i;
 			callables.add( new Callable<Void>() {
 
 				@Override

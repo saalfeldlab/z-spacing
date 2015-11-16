@@ -116,8 +116,8 @@ public class LocalizedCorrelationFit {
 
 			final double[] currentAssignment = assignments[i];
 
-			double currentMin1 = Double.MIN_VALUE;
-			double currentMin2 = Double.MIN_VALUE;
+			double currentMin1 = Double.MAX_VALUE;
+			double currentMin2 = Double.MAX_VALUE;
 
 			for ( int k = 0; k <= range; ++k, access.fwd( 0 ), access2.bck( 0 ), m1.fwd( 0 ), m2.bck( 0 ) ) {
 
@@ -130,7 +130,7 @@ public class LocalizedCorrelationFit {
 				final double a1 = access.get().getRealDouble();
 				final double a2 = access2.get().getRealDouble();
 
-				if ( ( ! Double.isNaN( a1 ) ) && ( a1 > 0.0 ) && ( forceMontonicity && a1 < currentMin1 ) )
+				if ( ( ! Double.isNaN( a1 ) ) && ( a1 > 0.0 ) && ( !forceMontonicity || ( a1 < currentMin1 ) ) )
 				{
 					final int index = i + k;
 					currentMin1 = a1;
@@ -141,7 +141,7 @@ public class LocalizedCorrelationFit {
 					}
 				}
 
-				if ( ( ! Double.isNaN( a2 ) ) && ( a2 > 0.0 ) && ( forceMontonicity && a2 < currentMin2 ) )
+				if ( ( ! Double.isNaN( a2 ) ) && ( a2 > 0.0 ) && ( !forceMontonicity || ( a2 < currentMin2 ) ) )
 				{
 					final int index = i - k;
 					currentMin2 = a2;

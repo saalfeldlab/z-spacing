@@ -3,6 +3,8 @@
  */
 package org.janelia.thickness.lut;
 
+import net.imglib2.RandomAccess;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayCursor;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
@@ -24,9 +26,9 @@ abstract public class AbstractLUTRealTransformField implements InvertibleRealTra
 	final protected int numSourceDimensions;
 	final protected int numTargetDimensions;
 	final protected int lutMaxIndex;
-	final protected ArrayImg< DoubleType, DoubleArray > luts;
+	final protected RandomAccessibleInterval< DoubleType > luts;
 	final protected int transformDimension;
-	final protected  ArrayRandomAccess<DoubleType> access;
+	final protected RandomAccess<DoubleType> access;
 	
 	
 	public AbstractLUTRealTransformField( final double[] lut, final int numSourceDimensions, final int numTargetDimensions, final long ... dimensions )
@@ -37,7 +39,7 @@ abstract public class AbstractLUTRealTransformField implements InvertibleRealTra
 		
 		this.luts = ArrayImgs.doubles( dimensions );
 
-		final ArrayCursor<DoubleType> cursor = this.luts.cursor();
+		final ArrayCursor<DoubleType> cursor = ( (ArrayImg< DoubleType, DoubleArray > )this.luts ).cursor();
 		
 		while ( cursor.hasNext() ) {
 			cursor.fwd();
@@ -54,7 +56,7 @@ abstract public class AbstractLUTRealTransformField implements InvertibleRealTra
 	
 	
 	public AbstractLUTRealTransformField(final int numSourceDimensions,
-			final int numTargetDimensions, final ArrayImg<DoubleType, DoubleArray> luts)
+			final int numTargetDimensions, final RandomAccessibleInterval< DoubleType > luts)
 	{
 		super();
 		this.numSourceDimensions = numSourceDimensions;

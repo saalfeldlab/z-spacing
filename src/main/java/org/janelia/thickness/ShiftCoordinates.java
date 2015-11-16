@@ -10,6 +10,7 @@ import net.imglib2.img.list.ListImg;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
 
+import org.janelia.thickness.inference.Options;
 import org.janelia.thickness.lut.LUTRealTransform;
 import org.janelia.utility.tuple.ConstantPair;
 
@@ -77,9 +78,11 @@ public class ShiftCoordinates {
 			final RandomAccessibleInterval< T > correlations, 
 			final double[] weights,
 			final double[] multipliers,
-			final ListImg< double[] > localFits ) {
+			final ListImg< double[] > localFits,
+			Options options ) {
 		
-		final RandomAccess< T > corrAccess = correlations.randomAccess();
+		final RandomAccess< T > corrAccess1 = correlations.randomAccess();
+		final RandomAccess< T > corrAccess2 = correlations.randomAccess();
 		
 		final TreeMap<Long, ArrayList<ConstantPair<Double, Double> > > weightedShifts = new TreeMap< Long, ArrayList< ConstantPair<Double, Double> > >();
 		
@@ -89,44 +92,103 @@ public class ShiftCoordinates {
 		
 		
 		// i is reference index, k is comparison index
-		for ( int i = 0; i < correlations.dimension( 1 ); ++i ) {
+		long width = correlations.dimension(0);
+		long height = correlations.dimension(1);
+		for ( int i = 0; i < height; ++i ) {
 			
-			corrAccess.setPosition( i, 1 );
+			corrAccess1.setPosition( i, 1 );
+			corrAccess2.setPosition( i, 1 );
 			final double[] localFit = cursor.next();
 			final LUTRealTransform lut = new LUTRealTransform( localFit, 1, 1 );
-			
-			for ( int k = 0; k < correlations.dimension( 0 ); ++k ) {
-				
-				corrAccess.setPosition( k, 0 );
-				
-				double measurement = corrAccess.get().getRealDouble();
-				if ( Double.isNaN( measurement ) || measurement <= 0.0 )
-					continue;
-				
-				ArrayList< ConstantPair< Double, Double > > localShifts = weightedShifts.get( ( long ) k );
-				if ( localShifts == null ) {
-					localShifts = new ArrayList<ConstantPair<Double,Double>>();
-					weightedShifts.put( (long) k, localShifts );
-				}
-				
-				final double m = ( k == i ) ? 1.0 : multipliers[ i ] * multipliers[ k ];
+
+			double minMeasurement1 = Double.MAX_VALUE;
+			double minMeasurement2 = Double.MAX_VALUE;
+
+			int startDist = 0; // TODO start at 1?
+			for ( int dist = startDist, up = i + startDist, down = i - startDist;
+				  dist <= options.comparisonRange;
+				  ++dist, ++up, --down )
+			{
+//			for ( int k = 0; k < width; ++k ) {
+
+				if ( up < width ) {
+					corrAccess1.setPosition(up, 0);
+
+					double measurement = corrAccess1.get().getRealDouble();
+					if ( Double.isNaN(measurement) || measurement <= options.minimumCorrelationValue || ( options.forceMonotonicity && measurement >= minMeasurement1 ) )
+					{
+
+					} else {
+
+						minMeasurement1 = measurement;
+						ArrayList<ConstantPair<Double, Double>> localShifts = weightedShifts.get((long) up);
+						if (localShifts == null) {
+							localShifts = new ArrayList<ConstantPair<Double, Double>>();
+							weightedShifts.put((long) up, localShifts);
+						}
+
+						final double m = (up == i) ? 1.0 : multipliers[i] * multipliers[up];
 				
 				/* TODO inverts because LUTRealTransform can only increasing */
-				reference[ 0 ] = -measurement * m;
-				
-				lut.applyInverse( reference, reference );
-				
-				if ( reference[ 0 ] == Double.MAX_VALUE || reference[ 0 ] == -Double.MAX_VALUE )
-					continue;
-				
-				// rel: negative coordinates of k wrt to local coordinate system of i
-				final double rel = coordinates[ i ] - coordinates[ k ];
+						reference[0] = -measurement * m;
+
+						lut.applyInverse(reference, reference);
+
+						if (reference[0] == Double.MAX_VALUE || reference[0] == -Double.MAX_VALUE)
+							continue;
+
+						// rel: negative coordinates of k wrt to local coordinate system of i
+						final double rel = coordinates[i] - coordinates[up];
 				
 				/* current location */
-				final double shift = ( k < i ) ? rel - reference[ 0 ] : rel + reference[ 0 ];
-				
+						// check is not necessary
+						final double shift = (up < i) ? rel - reference[0] : rel + reference[0];
+//						final double shift = rel + reference[0];
+
 //				localShifts.add( new ConstantPair<Double, Double>( shift, weights[ i ] * 1.0 / ( Math.abs( i - k ) + 1 ) ) );
-				localShifts.add( new ConstantPair<Double, Double>( shift, weights[ i ] * weights[ k ] ) );
+						localShifts.add(new ConstantPair<Double, Double>(shift, weights[i] * weights[up]));
+					}
+				}
+
+				if ( down >= 0 )
+				{
+					corrAccess2.setPosition(down, 0);
+
+					double measurement = corrAccess2.get().getRealDouble();
+					if ( Double.isNaN(measurement) || measurement < options.minimumCorrelationValue || ( options.forceMonotonicity && measurement >= minMeasurement2) )
+					{
+
+					} else {
+
+						minMeasurement2 = measurement;
+						ArrayList<ConstantPair<Double, Double>> localShifts = weightedShifts.get((long) down);
+						if (localShifts == null) {
+							localShifts = new ArrayList<ConstantPair<Double, Double>>();
+							weightedShifts.put((long) down, localShifts);
+						}
+
+						final double m = (down == i) ? 1.0 : multipliers[i] * multipliers[down];
+
+				/* TODO inverts because LUTRealTransform can only increasing */
+						reference[0] = -measurement * m;
+
+						lut.applyInverse(reference, reference);
+
+						if (reference[0] == Double.MAX_VALUE || reference[0] == -Double.MAX_VALUE)
+							continue;
+
+						// rel: negative coordinates of k wrt to local coordinate system of i
+						final double rel = coordinates[i] - coordinates[down];
+
+				/* current location */
+						// check is not necessary
+						final double shift = (down < i) ? rel - reference[0] : rel + reference[0];
+//						final double shift = rel - reference[0];
+
+//				localShifts.add( new ConstantPair<Double, Double>( shift, weights[ i ] * 1.0 / ( Math.abs( i - k ) + 1 ) ) );
+						localShifts.add(new ConstantPair<Double, Double>(shift, weights[i] * weights[down]));
+					}
+				}
 			}
 		}
 		return weightedShifts;

@@ -35,6 +35,7 @@ import org.janelia.correlations.AbstractIntegralCrossCorrelation.NotEnoughSpaceE
 import org.janelia.correlations.storage.DenseCorrelationMatricesWithRadius;
 import org.janelia.thickness.cluster.Categorizer;
 import org.janelia.thickness.cluster.RangedCategorizer;
+import org.janelia.thickness.inference.fits.CorrelationFitAverage;
 import org.janelia.thickness.inference.visitor.LazyVisitor;
 import org.janelia.thickness.inference.visitor.multiscale.LazyMultiScaleVisitor;
 import org.janelia.thickness.inference.visitor.multiscale.MultiScaleVisitor;
@@ -142,8 +143,8 @@ public class MultiScaleEstimation {
 
 					@Override
 					public Void call() throws Exception {
-						final InferFromMatrix<TranslationModel1D> inference = new InferFromMatrix<TranslationModel1D>( 
-								new TranslationModel1D(), 
+						final InferFromMatrix inference = new InferFromMatrix(
+								new CorrelationFitAverage(),
 								new OpinionMediatorModel<TranslationModel1D>( new TranslationModel1D() ) );
 						
 						final double[] lut = inference.estimateZCoordinates( currMat, arr, new LazyVisitor(), categorizer, currentOptions );

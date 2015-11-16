@@ -35,7 +35,9 @@ public class Options implements Serializable {
 		result.multiplierEstimationIterations = 10;
 		result.withReorder = true;
 		result.nThreads = Runtime.getRuntime().availableProcessors();
-		result.forceMontonicity = false;
+		result.forceMonotonicity = false;
+		result.estimateWindowRadius = -1;
+		result.minimumCorrelationValue = 0.0;
 		return result;
 	}
 	
@@ -49,7 +51,9 @@ public class Options implements Serializable {
 	public Integer multiplierEstimationIterations;
 	public Boolean withReorder;
 	public Integer nThreads;
-	public Boolean forceMontonicity;
+	public Boolean forceMonotonicity;
+	public Integer estimateWindowRadius;
+	public Double minimumCorrelationValue;
 	
 	public static Options read( final String filename ) {
 		final String defaultString = String.format( "Options.read( \"%s\" )", filename );
