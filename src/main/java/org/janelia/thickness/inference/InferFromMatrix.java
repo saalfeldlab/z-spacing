@@ -7,10 +7,16 @@ import mpicbg.models.AffineModel1D;
 import mpicbg.models.IllDefinedDataPointsException;
 import mpicbg.models.Model;
 import mpicbg.models.NotEnoughDataPointsException;
+import net.imglib2.Cursor;
+import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.array.ArrayImg;
+import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.img.list.ListImg;
 import net.imglib2.outofbounds.OutOfBounds;
+import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.IntervalView;
@@ -47,7 +53,7 @@ public class InferFromMatrix< M extends Model<M> > {
     }
 
 
-    public < T extends RealType< T > > double[] estimateZCoordinates(  
+    public < T extends RealType< T >  & NativeType< T > > double[] estimateZCoordinates(
     		final RandomAccessibleInterval< T > matrix,
     		final double[] startingCoordinates,
     		final Options options
@@ -70,7 +76,7 @@ public class InferFromMatrix< M extends Model<M> > {
 		        options );
     }
     
-    public < T extends RealType< T > > double[] estimateZCoordinates(
+    public < T extends RealType< T > & NativeType< T > > double[] estimateZCoordinates(
             final RandomAccessibleInterval< T > input,
             final double[] startingCoordinates,
             final Visitor visitor,
@@ -80,7 +86,7 @@ public class InferFromMatrix< M extends Model<M> > {
     }
 
 
-    public < T extends RealType< T > > double[] estimateZCoordinates(
+    public < T extends RealType< T > & NativeType< T >> double[] estimateZCoordinates(
             final RandomAccessibleInterval< T > inputMatrix,
             final double[] startingCoordinates,
             final Visitor visitor,
@@ -109,20 +115,28 @@ public class InferFromMatrix< M extends Model<M> > {
 		final double[] multipliersPrevious = multipliers.clone();
 		final double[] weightsPrevious     = weights.clone();
 		ArraySortedIndices.sort( permutedLut, permutationLut, inverse );
-    	
-    	
+
+		ArrayImg<T, ?> inputMultipliedMatrix = new ArrayImgFactory<T>().create(new long[]{n, n}, inputMatrix.randomAccess().get());
+		for( Cursor< T > source = Views.flatIterable( inputMatrix ).cursor(), target = Views.flatIterable( inputMultipliedMatrix ).cursor(); source.hasNext(); )
+			target.next().set( source.next() );
+
+		ImageJFunctions.show( inputMultipliedMatrix );
     	
     	for ( int iteration = 0; iteration < options.nIterations; ++iteration ) {
+
+			// multipliers always in permuted order
     		
     		final PermutationTransform permutation       = new PermutationTransform( inverse, nMatrixDim, nMatrixDim ); // need to create Transform into source?
     		final IntervalView<T> matrix                 = Views.interval( new TransformView< T >( inputMatrix, permutation ), inputMatrix );
+			IntervalView<T> multipliedMatrix             = Views.interval(new TransformView<T>(inputMultipliedMatrix, permutation), inputMultipliedMatrix);
 //    		final IntervalView<DoubleType> currentLutImg = Views.interval( new TransformView< DoubleType >( ArrayImgs.doubles( lut, n ), permutation ), new FinalInterval( n ) ); // use this?
     		
     		if ( iteration == 0 )
     			visitor.act( iteration, matrix, lut, permutationLut, inverse, multipliers, weights, null );
     		
     		final double[] shifts = this.getMediatedShifts(
-    				matrix, 
+					matrix,
+    				multipliedMatrix,
     				permutedLut, 
     				multipliers, 
     				weights, 
@@ -161,8 +175,9 @@ public class InferFromMatrix< M extends Model<M> > {
     }
         	
 
-    public < T extends RealType< T > > double[] getMediatedShifts ( 
-    		final RandomAccessibleInterval< T > matrix,
+    public < T extends RealType< T > > double[] getMediatedShifts (
+			final RandomAccessibleInterval< T > matrix,
+    		final RandomAccessibleInterval< T > multipliedMatrix,
     		final double[] lut,
     		final double[] multipliers,
             final double[] weights,
@@ -171,32 +186,52 @@ public class InferFromMatrix< M extends Model<M> > {
             final ListImg< double[] > localFits,
             final Options options
             ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
-    	
-    	final int nMatrixDimensions      = matrix.numDimensions();
-    	final LUTRealTransform transform = new LUTRealTransform( lut, nMatrixDimensions, nMatrixDimensions );
-    	
 
-		LocalizedCorrelationFit.estimateFromMatrix( matrix, lut, weights, multipliers, transform, options.comparisonRange, correlationFitModel, localFits, options.forceMontonicity );
-		
-		EstimateQualityOfSlice.estimateQuadraticFromMatrix( matrix, 
-				weights, 
-				multipliers, 
-				lut, 
-				localFits, 
-				options.multiplierGenerationRegularizerWeight, 
-				options.comparisonRange, 
+    	final int nMatrixDimensions      = multipliedMatrix.numDimensions();
+    	final LUTRealTransform transform = new LUTRealTransform( lut, nMatrixDimensions, nMatrixDimensions );
+
+		// use multiplied matrix before warping!
+		LocalizedCorrelationFit.estimateFromMatrix( multipliedMatrix, lut, weights, multipliers, transform, options.comparisonRange, correlationFitModel, localFits, options.forceMontonicity );
+
+		// use original matrix to estimate multipliers
+		EstimateQualityOfSlice.estimateQuadraticFromMatrix( matrix,
+				weights,
+				multipliers,
+				lut,
+				localFits,
+				options.multiplierGenerationRegularizerWeight,
+				options.comparisonRange,
 				options.multiplierEstimationIterations );
-		
-		
-		for ( int i = 0; i < multipliers.length; ++i ) {
-			final double diff = 1.0 - multipliers[ i ];
-			weights[ i ] = 1.0;//Math.exp( -0.5*diff*diff / ( options.multiplierWeightsSigma ) );
+
+		// write multiplied matrix to multipliedMatrix
+		RandomAccess<T> matrixRA = matrix.randomAccess();
+		RandomAccess<T> multipliedMatrixRA = multipliedMatrix.randomAccess();
+		for( int z = 0; z < lut.length; ++z )
+		{
+			matrixRA.setPosition( z, 0 );
+			multipliedMatrixRA.setPosition( z, 0 );
+			int max = Math.min(lut.length, z + options.comparisonRange + 1);
+			for ( int k = Math.max( 0, z - options.comparisonRange ); k < max; ++k )
+			{
+				matrixRA.setPosition( k, 1 );
+				multipliedMatrixRA.setPosition( k, 1 );
+				multipliedMatrixRA.get().set( matrixRA.get() );
+				multipliedMatrixRA.get().mul( multipliers[z]*multipliers[k] );
+			}
 		}
-		
+
+
+		// delete this?
+//		for ( int i = 0; i < multipliers.length; ++i ) {
+//			final double diff = 1.0 - multipliers[ i ];
+//			weights[ i ] = 1.0;//Math.exp( -0.5*diff*diff / ( options.multiplierWeightsSigma ) );
+//		}
+
+		// use multiplied matrix to collect shifts
 		final TreeMap< Long, ArrayList< ConstantPair< Double, Double > > > shifts =
 		            ShiftCoordinates.collectShiftsFromMatrix(
 		                    lut,
-		                    matrix,
+		                    multipliedMatrix,
 		                    weights,
 		                    multipliers,
 		                    localFits );

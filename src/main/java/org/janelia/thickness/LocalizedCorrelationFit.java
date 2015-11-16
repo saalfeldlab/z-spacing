@@ -88,18 +88,9 @@ public class LocalizedCorrelationFit {
 		final RealRandomAccessible< T > source = Views.interpolate( Views.extendValue( correlations, dummy ), new NLinearInterpolatorFactory< T >() );
 
 		final RealTransformRealRandomAccessible< T, InverseRealTransform> source2 = RealViews.transformReal(source, transform);
-		final LUTRealTransform tf1d = new LUTRealTransform( coordinates, 1, 1);
-		final RealTransformRealRandomAccessible<DoubleType, InverseRealTransform> multipliersInterpolatedTransformed =
-				RealViews.transformReal( Views.interpolate( Views.extendValue( ArrayImgs.doubles( multipliers, multipliers.length ), new DoubleType( Double.NaN ) ), new NLinearInterpolatorFactory<DoubleType>()),
-				tf1d );
 
 		final RealRandomAccess< T > access  = source2.realRandomAccess();
 		final RealRandomAccess< T > access2 = source2.realRandomAccess();
-
-		final RealRandomAccess< DoubleType > m1 = multipliersInterpolatedTransformed.realRandomAccess();
-		final RealRandomAccess< DoubleType > m2 = multipliersInterpolatedTransformed.realRandomAccess();
-
-
 
 		for ( int i = 0; i < correlations.dimension( 1 ); ++i ) {
 
@@ -109,17 +100,12 @@ public class LocalizedCorrelationFit {
 			transform.apply(access, access);
 			access2.setPosition(access);
 
-			m1.setPosition( i, 0 );
-			tf1d.apply( m1, m1 );
-			m2.setPosition( m1 );
-			final double mref = m1.get().get();
-
 			final double[] currentAssignment = assignments[i];
 
 			double currentMin1 = Double.MIN_VALUE;
 			double currentMin2 = Double.MIN_VALUE;
 
-			for ( int k = 0; k <= range; ++k, access.fwd( 0 ), access2.bck( 0 ), m1.fwd( 0 ), m2.bck( 0 ) ) {
+			for ( int k = 0; k <= range; ++k, access.fwd( 0 ), access2.bck( 0 ) ) {
 
 //				if ( i < coordinates.length - 1 && coordinates[i] + k < coordinates[ i + 1 ] )
 //					continue;
@@ -130,25 +116,25 @@ public class LocalizedCorrelationFit {
 				final double a1 = access.get().getRealDouble();
 				final double a2 = access2.get().getRealDouble();
 
-				if ( ( ! Double.isNaN( a1 ) ) && ( a1 > 0.0 ) && ( forceMontonicity && a1 < currentMin1 ) )
+				if ( ( ! Double.isNaN( a1 ) ) && ( a1 > 0.0 ) && !( forceMontonicity && a1 < currentMin1 ) )
 				{
 					final int index = i + k;
 					currentMin1 = a1;
 					if ( index < weights.length ) {
 						final double w1 = weights[ index ]; // replace 1.0 by real weight, as soon as weight calculation has become clear
 						for ( int modelIndex = 0; modelIndex < currentAssignment.length; ++modelIndex )
-							samples.get( modelIndex ).get( k ).add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new double[]{ a1*mref*m1.get().get() } ), w1 ) );
+							samples.get( modelIndex ).get( k ).add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new double[]{ a1 } ), w1 ) );
 					}
 				}
 
-				if ( ( ! Double.isNaN( a2 ) ) && ( a2 > 0.0 ) && ( forceMontonicity && a2 < currentMin2 ) )
+				if ( ( ! Double.isNaN( a2 ) ) && ( a2 > 0.0 ) && !( forceMontonicity && a2 < currentMin2 ) )
 				{
 					final int index = i - k;
 					currentMin2 = a2;
 					if ( index > 0 ) {
 						final double w2 = weights[ index ]; // replace 1.0 by real weight, as soon as weight calculation has become clear
 						for ( int modelIndex = 0; modelIndex < currentAssignment.length; ++modelIndex )
-							samples.get( modelIndex ).get( k ).add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new double[]{ a2*mref*m2.get().get() } ), w2 ) );
+							samples.get( modelIndex ).get( k ).add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new double[]{ a2 } ), w2 ) );
 					}
 				}
 			}

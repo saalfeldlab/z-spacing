@@ -108,11 +108,10 @@ public class ShiftCoordinates {
 					localShifts = new ArrayList<ConstantPair<Double,Double>>();
 					weightedShifts.put( (long) k, localShifts );
 				}
-				
-				final double m = ( k == i ) ? 1.0 : multipliers[ i ] * multipliers[ k ];
+
 				
 				/* TODO inverts because LUTRealTransform can only increasing */
-				reference[ 0 ] = -measurement * m;
+				reference[ 0 ] = -measurement;
 				
 				lut.applyInverse( reference, reference );
 				

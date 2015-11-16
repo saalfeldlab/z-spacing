@@ -2,6 +2,7 @@ package org.janelia.thickness.plugin;
 
 import fiji.util.gui.GenericDialogPlus;
 import ij.IJ;
+import ij.ImageJ;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.gui.GenericDialog;
@@ -93,6 +94,7 @@ public class ZPositionCorrection implements PlugIn {
 		options.multiplierEstimationIterations        = (int) dialog.getNextNumber();
 		options.multiplierGenerationRegularizerWeight = dialog.getNextNumber();
 		options.withReorder                           = dialog.getNextBoolean();
+		options.forceMontonicity                      = !options.withReorder;
 		options.minimumSectionThickness               = 0.0;
 		
 		FloatProcessor matrixFp = inputIsMatrix ? 
@@ -241,6 +243,9 @@ public class ZPositionCorrection implements PlugIn {
 	
 	
 	public static void main(String[] args) {
+		new ImageJ();
+//		ImagePlus imp = new ImagePlus("/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/data/data.tif");
+//		imp.show();
 		new ZPositionCorrection().run( "" );
 	}
 	
@@ -256,7 +261,7 @@ public class ZPositionCorrection implements PlugIn {
 		ImageStack stackSource = input.getStack();
 		
 		GenericDialog dialog = new GenericDialog( "NCC options" );
-		dialog.addNumericField( "Scale xy before similarity calculation", 1.0, 4 );
+		dialog.addNumericField( "Scale xy before similarity calculation", 1.0, 3 );
 		dialog.showDialog();
 		if ( dialog.wasCanceled() )
 			return false;
