@@ -23,6 +23,7 @@ import net.imglib2.realtransform.RealTransformRealRandomAccessible;
 import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
+import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
 import org.janelia.thickness.cluster.Categorizer;
@@ -298,6 +299,12 @@ public class LocalizedCorrelationFit {
 				/* TODO inverts because LUTRealTransform can only increasing */
 				cursor.next().set( -correlationFitModel.apply( ONE_DIMENSION_ZERO_POSITION )[0] );
 			}
+			Cursor<DoubleType> c = Views.hyperSlice(fits, 0, m).cursor();
+			DoubleType zero = c.next();
+			DoubleType one = c.next();
+			DoubleType two = c.next();
+			zero.set( 0.5*(3.0*one.get() - two.get() ) );
+
 		}
 
 		final ListCursor<double[]> c = localFits.cursor();

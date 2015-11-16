@@ -1,6 +1,7 @@
 package org.janelia.thickness.inference;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.TreeMap;
 
 import mpicbg.models.AffineModel1D;
@@ -15,7 +16,10 @@ import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.img.list.ListImg;
+import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
+import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory;
 import net.imglib2.outofbounds.OutOfBounds;
+import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
@@ -120,7 +124,7 @@ public class InferFromMatrix< M extends Model<M> > {
 		for( Cursor< T > source = Views.flatIterable( inputMatrix ).cursor(), target = Views.flatIterable( inputMultipliedMatrix ).cursor(); source.hasNext(); )
 			target.next().set( source.next() );
 
-		ImageJFunctions.show( inputMultipliedMatrix );
+//		ImageJFunctions.show( inputMultipliedMatrix );
     	
     	for ( int iteration = 0; iteration < options.nIterations; ++iteration ) {
 
@@ -166,9 +170,7 @@ public class InferFromMatrix< M extends Model<M> > {
     		ArraySortedIndices.sort( permutedLut, permutationLut, inverse );
     		updateArray( multipliersPrevious, multipliers, permutationLut );
     		updateArray( weightsPrevious, weights, permutationLut );
-    		
-        	visitor.act( iteration + 1, matrix, lut, permutationLut, inverse, multipliers, weights, localFits );
-    		
+
     	}
     	
     	return lut;

@@ -244,8 +244,8 @@ public class ZPositionCorrection implements PlugIn {
 	
 	public static void main(String[] args) {
 		new ImageJ();
-//		ImagePlus imp = new ImagePlus("/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/data/data.tif");
-//		imp.show();
+		ImagePlus imp = new ImagePlus("/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/data/data.tif");
+		imp.show();
 		new ZPositionCorrection().run( "" );
 	}
 	
