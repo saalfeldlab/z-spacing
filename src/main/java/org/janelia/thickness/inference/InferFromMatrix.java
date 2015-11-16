@@ -216,7 +216,8 @@ public class InferFromMatrix< M extends Model<M> > {
 				matrixRA.setPosition( k, 1 );
 				multipliedMatrixRA.setPosition( k, 1 );
 				multipliedMatrixRA.get().set( matrixRA.get() );
-				multipliedMatrixRA.get().mul( multipliers[z]*multipliers[k] );
+				if ( z != k )
+					multipliedMatrixRA.get().mul( multipliers[z]*multipliers[k] );
 			}
 		}
 
