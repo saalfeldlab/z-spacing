@@ -193,7 +193,7 @@ public class InferFromMatrix< M extends Model<M> > {
     	final LUTRealTransform transform = new LUTRealTransform( lut, nMatrixDimensions, nMatrixDimensions );
 
 		// use multiplied matrix before warping!
-		LocalizedCorrelationFit.estimateFromMatrix( multipliedMatrix, lut, weights, multipliers, transform, options.comparisonRange, correlationFitModel, localFits, options.forceMontonicity );
+		LocalizedCorrelationFit.estimateFromMatrix( multipliedMatrix, lut, transform, options.comparisonRange, correlationFitModel, localFits, options.forceMontonicity );
 
 		// use original matrix to estimate multipliers
 		EstimateQualityOfSlice.estimateQuadraticFromMatrix( matrix,
