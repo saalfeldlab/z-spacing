@@ -78,72 +78,73 @@ public abstract class AbstractCorrelationFit {
 
             ArrayList<ArrayList<PointMatch>> samples = new ArrayList<ArrayList<PointMatch>>();
 
-            for ( int i = 0; i <= range; ++i )
+            for ( int r = 0; r <= range; ++r )
                 samples.add( new ArrayList<PointMatch>() );
 
             for ( int i = min; i < max; ++i ) {
 
-                access.setPosition( i, 1 );
-                access.setPosition( i, 0 );
+                access.setPosition(i, 1);
+                access.setPosition(i, 0);
 
                 transform.apply(access, access);
                 access2.setPosition(access);
 
-                m1.setPosition( i, 0 );
-                transform1d.apply( m1, m1 );
-                m2.setPosition( m1 );
+                m1.setPosition(i, 0);
+                transform1d.apply(m1, m1);
+                m2.setPosition(m1);
                 final double mref = m1.get().get();
 
                 double currentMin1 = Double.MAX_VALUE;
                 double currentMin2 = Double.MAX_VALUE;
 
-                for ( int k = 0; k <= range; ++k, access.fwd( 0 ), access2.bck( 0 ), m1.fwd( 0 ), m2.bck( 0 ) ) {
+                for (int k = 0; k <= range; ++k, access.fwd(0), access2.bck(0), m1.fwd(0), m2.bck(0)) {
 
                     final double a1 = access.get().getRealDouble();
                     final double a2 = access2.get().getRealDouble();
 
-                    if ( ( ! Double.isNaN( a1 ) ) && ( a1 > 0.0 ) && ( !forceMonotonicity || ( a1 < currentMin1 ) ) )
-                    {
+                    if ((!Double.isNaN(a1)) && (a1 > 0.0) && (!forceMonotonicity || (a1 < currentMin1))) {
                         final int index = i + k;
                         currentMin1 = a1;
-                        if ( index < weights.length ) {
+                        if (index < weights.length) {
                             final double w1 = 1.0; // weights[ index ]; // replace 1.0 by real weight, as soon as weight calculation has become clear
-                            samples.get( k ).add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new double[]{ a1*mref*m1.get().get() } ), w1 ) );
+                            samples.get(k).add(new PointMatch(new Point(ONE_DIMENSION_ZERO_POSITION), new Point(new double[]{a1 * mref * m1.get().get()}), w1));
                         }
                     }
 
-                    if ( ( ! Double.isNaN( a2 ) ) && ( a2 > 0.0 ) && ( !forceMonotonicity || ( a2 < currentMin2 ) ) )
-                    {
+                    if ((!Double.isNaN(a2)) && (a2 > 0.0) && (!forceMonotonicity || (a2 < currentMin2))) {
                         final int index = i - k;
                         currentMin2 = a2;
-                        if ( index > 0 ) {
+                        if (index > 0) {
                             final double w2 = 1.0; // weights[ index ]; // replace 1.0 by real weight, as soon as weight calculation has become clear
-                                samples.get( k ).add( new PointMatch( new Point( ONE_DIMENSION_ZERO_POSITION ), new Point( new double[]{ a2*mref*m2.get().get() } ), w2 ) );
+                            samples.get(k).add(new PointMatch(new Point(ONE_DIMENSION_ZERO_POSITION), new Point(new double[]{a2 * mref * m2.get().get()}), w2));
                         }
                     }
                 }
-
-                {
-                    Cursor<DoubleType> fitCursor = Views.flatIterable(Views.hyperSlice(fits, 0, zIndex)).cursor();
-                    fitCursor.next().set(-1.0); // do not measure for delta z == 0
-                    for (int index = 1; fitCursor.hasNext(); ++index)
-                        fitCursor.next().set(-estimate(samples.get(index)));
-                }
-
-                {
-                    Cursor<DoubleType> fitCursor1 = Views.hyperSlice(fits, 0, zIndex).cursor();
-                    Cursor<DoubleType> fitCursor2 = Views.hyperSlice(fits, 0, zIndex).cursor();
-                    fitCursor1.fwd();
-                    fitCursor2.fwd();
-                    double val = 0.5 * (3.0 * fitCursor1.next().get() - fitCursor1.next().get() );
-                    double reciprocal = -1.0 / val;
-                    while ( fitCursor2.hasNext() )
-                        fitCursor2.next().mul( reciprocal );
-                }
-
-
-
             }
+
+            {
+                Cursor<DoubleType> fitCursor = Views.flatIterable(Views.hyperSlice(fits, 0, zIndex)).cursor();
+                fitCursor.next().set(-1.0); // do not measure for delta z == 0
+                for (int index = 1; fitCursor.hasNext(); ++index)
+                    fitCursor.next().set(-estimate(samples.get(index)));
+            }
+
+            {
+                Cursor<DoubleType> fitCursor1 = Views.hyperSlice(fits, 0, zIndex).cursor();
+                Cursor<DoubleType> fitCursor2 = Views.hyperSlice(fits, 0, zIndex).cursor();
+                fitCursor1.fwd();
+                fitCursor2.fwd();
+                double val = 0.5 * (3.0 * fitCursor1.next().get() - fitCursor1.next().get() );
+                double reciprocal = -1.0 / val;
+                while ( fitCursor2.hasNext() )
+                    fitCursor2.next().mul( reciprocal );
+            }
+
+            System.out.print( "FIT " + zIndex + ": " );
+            for ( DoubleType val : Views.hyperSlice( fits, 0, zIndex ) )
+                System.out.print( val.get() + ", " );
+            System.out.println();
+
 
         }
 
