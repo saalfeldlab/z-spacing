@@ -95,7 +95,7 @@ public class ZPositionCorrection implements PlugIn {
 		options.multiplierGenerationRegularizerWeight = dialog.getNextNumber();
 		options.withReorder                           = dialog.getNextBoolean();
 		options.forceMontonicity                      = !options.withReorder;
-		options.minimumSectionThickness               = 0.0;
+		options.minimumSectionThickness               = 1e-9;
 		
 		FloatProcessor matrixFp = inputIsMatrix ? 
 				normalize( input ).getProcessor().convertToFloatProcessor() : 
@@ -244,8 +244,8 @@ public class ZPositionCorrection implements PlugIn {
 	
 	public static void main(String[] args) {
 		new ImageJ();
-		ImagePlus imp = new ImagePlus("/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/data/data.tif");
-//		ImagePlus imp = new FolderOpener().openFolder("/data/hanslovskyp/forPhilipp/substacks/03/data/");
+//		ImagePlus imp = new ImagePlus("/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/data/data.tif");
+		ImagePlus imp = new FolderOpener().openFolder("/data/hanslovskyp/forPhilipp/substacks/03/data/");
 		imp.show();
 		new ZPositionCorrection().run( "" );
 	}
