@@ -123,11 +123,24 @@ public abstract class AbstractCorrelationFit {
                     }
                 }
 
+                {
+                    Cursor<DoubleType> fitCursor = Views.flatIterable(Views.hyperSlice(fits, 0, zIndex)).cursor();
+                    fitCursor.next().set(-1.0); // do not measure for delta z == 0
+                    for (int index = 1; fitCursor.hasNext(); ++index)
+                        fitCursor.next().set(-estimate(samples.get(index)));
+                }
 
-                Cursor<DoubleType> fitCursor = Views.flatIterable(Views.hyperSlice(fits, 0, zIndex)).cursor();
-                fitCursor.next().set( -1.0 ); // do not measure for delta z == 0
-                for( int index = 1; fitCursor.hasNext(); ++index )
-                    fitCursor.next().set( -estimate( samples.get(index) ));
+                {
+                    Cursor<DoubleType> fitCursor1 = Views.hyperSlice(fits, 0, zIndex).cursor();
+                    Cursor<DoubleType> fitCursor2 = Views.hyperSlice(fits, 0, zIndex).cursor();
+                    fitCursor1.fwd();
+                    fitCursor2.fwd();
+                    double val = 0.5 * (3.0 * fitCursor1.next().get() - fitCursor1.next().get() );
+                    double reciprocal = -1.0 / val;
+                    while ( fitCursor2.hasNext() )
+                        fitCursor2.next().mul( reciprocal );
+                }
+
 
 
             }
