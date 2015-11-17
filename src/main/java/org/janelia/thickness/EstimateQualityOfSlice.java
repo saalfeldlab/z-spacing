@@ -240,6 +240,7 @@ public class EstimateQualityOfSlice {
 
 			for ( int n = 0; fitCursor.hasNext(); ++n ) {
 
+				// is this allocation expensive?
 				final double[] oldMultipliers = multipliers.clone();
 
 				corrAccess.setPosition( n, 0 );

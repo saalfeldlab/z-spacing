@@ -64,8 +64,6 @@ public class ZPositionCorrection implements PlugIn {
 	public void run(String arg0) {
 		
 		Options options = Options.generateDefaultOptions();
-		options.forceMonotonicity = true;
-		options.minimumCorrelationValue = 0.7;
 		
 		final GenericDialogPlus dialog = new GenericDialogPlus( "Correct layer z-positions" );
 		dialog.addMessage( "Data source settings : " );
@@ -97,6 +95,7 @@ public class ZPositionCorrection implements PlugIn {
 		options.multiplierEstimationIterations        = (int) dialog.getNextNumber();
 		options.multiplierGenerationRegularizerWeight = dialog.getNextNumber();
 		options.withReorder                           = dialog.getNextBoolean();
+		options.forceMonotonicity                     = !options.withReorder;
 		options.minimumSectionThickness               = 0.0;
 		
 		FloatProcessor matrixFp = inputIsMatrix ? 
@@ -246,11 +245,8 @@ public class ZPositionCorrection implements PlugIn {
 	
 	public static void main(String[] args) {
 		new ImageJ();
-//		ImagePlus img = new ImagePlus("/home/hanslovskyp/workspace-idea/em-thickness-estimation/stack.tif");
-//		ImagePlus img = new ImagePlus("/nobackup/saalfeld/philipp/AL-Z0613-14/analysis/z-spacing/33/out/spark-test-2/04/matrices/(0,29).tif");
-//		ImagePlus img = new ImagePlus("/home/hanslovskyp/workspace-idea/em-thickness-estimation/(0,29)-1.tif");
-		ImagePlus img = new ImagePlus("/home/hanslovskyp/local/tmp/sigma-5.tif");
-		img.show();
+		ImagePlus imp = new ImagePlus("/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/data/data.tif");
+		imp.show();
 		new ZPositionCorrection().run( "" );
 	}
 	
@@ -266,7 +262,7 @@ public class ZPositionCorrection implements PlugIn {
 		ImageStack stackSource = input.getStack();
 		
 		GenericDialog dialog = new GenericDialog( "NCC options" );
-		dialog.addNumericField( "Scale xy before similarity calculation", 1.0, 4 );
+		dialog.addNumericField( "Scale xy before similarity calculation", 1.0, 3 );
 		dialog.showDialog();
 		if ( dialog.wasCanceled() )
 			return false;
