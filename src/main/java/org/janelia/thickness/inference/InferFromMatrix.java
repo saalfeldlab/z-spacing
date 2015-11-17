@@ -20,6 +20,7 @@ import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.img.list.ListImg;
 import net.imglib2.img.list.ListRandomAccess;
 import net.imglib2.outofbounds.OutOfBounds;
+import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
@@ -127,7 +128,7 @@ public class InferFromMatrix {
 		for( Cursor< T > source = Views.flatIterable( inputMatrix ).cursor(), target = Views.flatIterable( inputMultipliedMatrix ).cursor(); source.hasNext(); )
 			target.next().set( source.next() );
 
-		ImageJFunctions.show( inputMultipliedMatrix );
+//		ImageJFunctions.show( inputMultipliedMatrix );
     	
     	for ( int iteration = 0; iteration < options.nIterations; ++iteration ) {
 
@@ -176,9 +177,7 @@ public class InferFromMatrix {
     		ArraySortedIndices.sort( permutedLut, permutationLut, inverse );
     		updateArray( multipliersPrevious, multipliers, permutationLut );
     		updateArray( weightsPrevious, weights, permutationLut );
-    		
-        	visitor.act( iteration + 1, matrix, lut, permutationLut, inverse, multipliers, weights, localFits );
-    		
+
     	}
     	
     	return lut;
