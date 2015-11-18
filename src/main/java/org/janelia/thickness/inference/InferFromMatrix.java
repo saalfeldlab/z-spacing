@@ -1,13 +1,7 @@
 package org.janelia.thickness.inference;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.TreeMap;
-
-import ij.IJ;
 import mpicbg.models.AffineModel1D;
 import mpicbg.models.IllDefinedDataPointsException;
-import mpicbg.models.Model;
 import mpicbg.models.NotEnoughDataPointsException;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccess;
@@ -15,22 +9,15 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgFactory;
-import net.imglib2.img.array.ArrayImgs;
-import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.img.list.ListImg;
-import net.imglib2.img.list.ListRandomAccess;
-import net.imglib2.outofbounds.OutOfBounds;
-import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.TransformView;
 import net.imglib2.view.Views;
-
 import net.imglib2.view.composite.RealComposite;
 import org.janelia.thickness.EstimateQualityOfSlice;
-import org.janelia.thickness.LocalizedCorrelationFit;
 import org.janelia.thickness.ShiftCoordinates;
 import org.janelia.thickness.cluster.Categorizer;
 import org.janelia.thickness.cluster.RangedCategorizer;
@@ -42,6 +29,9 @@ import org.janelia.thickness.mediator.OpinionMediator;
 import org.janelia.utility.arrays.ArraySortedIndices;
 import org.janelia.utility.arrays.ReplaceNaNs;
 import org.janelia.utility.tuple.ConstantPair;
+
+import java.util.ArrayList;
+import java.util.TreeMap;
 
 public class InferFromMatrix {
 
@@ -128,8 +118,6 @@ public class InferFromMatrix {
 		for( Cursor< T > source = Views.flatIterable( inputMatrix ).cursor(), target = Views.flatIterable( inputMultipliedMatrix ).cursor(); source.hasNext(); )
 			target.next().set( source.next() );
 
-//		ImageJFunctions.show( inputMultipliedMatrix );
-    	
     	for ( int iteration = 0; iteration < options.nIterations; ++iteration ) {
 
 			// multipliers always in permuted order
@@ -137,7 +125,7 @@ public class InferFromMatrix {
     		final PermutationTransform permutation       = new PermutationTransform( inverse, nMatrixDim, nMatrixDim ); // need to create Transform into source?
     		final IntervalView<T> matrix                 = Views.interval( new TransformView< T >( inputMatrix, permutation ), inputMatrix );
 			IntervalView<T> multipliedMatrix             = Views.interval( new TransformView<T>(inputMultipliedMatrix, permutation), inputMultipliedMatrix );
-//    		final IntervalView<DoubleType> currentLutImg = Views.interval( new TransformView< DoubleType >( ArrayImgs.doubles( lut, n ), permutation ), new FinalInterval( n ) ); // use this?
+
     		
     		if ( iteration == 0 )
     			visitor.act( iteration, matrix, lut, permutationLut, inverse, multipliers, weights, null );
@@ -152,7 +140,7 @@ public class InferFromMatrix {
     				categorizer, 
     				localFits,
     				options);
-    		System.out.println( Arrays.toString( shifts ) );
+
     		this.applyShifts( 
     				permutedLut, // rewrite interface to use view on permuted lut? probably not
     				shifts, 
@@ -160,10 +148,9 @@ public class InferFromMatrix {
     				startingCoordinates,
     				permutation.copyToDimension( 1, 1 ), 
     				options);
-			System.out.println( Arrays.toString( permutedLut ) );
+
 			ReplaceNaNs.replace( permutedLut );
-			System.out.println( Arrays.toString( inverse ) );
-			System.out.println( Arrays.toString( permutedLut ) +"\n");
+
     		if ( !options.withReorder )
     			preventReorder( permutedLut, options ); // 
     		
@@ -200,7 +187,9 @@ public class InferFromMatrix {
     	final LUTRealTransform transform = new LUTRealTransform( lut, nMatrixDimensions, nMatrixDimensions );
 
         // use multiplied matrix
-		RealRandomAccessible<RealComposite<DoubleType>> fits = correlationFit.estimateFromMatrix( multipliedMatrix, lut, weights, multipliers, transform, options);
+		RealRandomAccessible<RealComposite<DoubleType>> fits =
+				correlationFit.estimateFromMatrix(
+						multipliedMatrix, lut, weights, multipliers, transform, options);
 		correlationFit.raster( fits, localFits );
 
 		// use original matrix to estimate multipliers
@@ -231,15 +220,6 @@ public class InferFromMatrix {
 			}
 		}
 
-//		ImageJFunctions.show( multipliedMatrix );
-
-
-		// delete this?
-//		for ( int i = 0; i < multipliers.length; ++i ) {
-//			final double diff = 1.0 - multipliers[ i ];
-//			weights[ i ] = 1.0;//Math.exp( -0.5*diff*diff / ( options.multiplierWeightsSigma ) );
-//		}
-
 		// use multiplied matrix to collect shifts
 		final TreeMap< Long, ArrayList< ConstantPair< Double, Double > > > shifts =
 		            ShiftCoordinates.collectShiftsFromMatrix(
@@ -252,7 +232,6 @@ public class InferFromMatrix {
 		
 		final double[] mediatedShifts = new double[ lut.length ];
 		this.shiftMediator.mediate( shifts, mediatedShifts );
-		System.out.println( " BLAB " + Arrays.toString( mediatedShifts ) );
 		
 		return mediatedShifts;
     }
@@ -266,34 +245,7 @@ public class InferFromMatrix {
     		final PermutationTransform permutation, 
     		final Options options ) 
     {
-		final double[] smoothedShifts = new double[ shifts.length ];
-		final double[] gaussKernel    = new double[ 1 ];
-		gaussKernel[0] = 1.0;
-		double normalizingConstant = gaussKernel[0];
-		for ( int i = 1; i < gaussKernel.length; ++i ) {
-			gaussKernel[ i ] = Math.exp( -0.5 * i * i / ( 1 ) );
-			normalizingConstant += 2 * gaussKernel[ i ];
-		}
-		
-		for (int i = 0; i < gaussKernel.length; i++) {
-			gaussKernel[ i ] /= normalizingConstant;
-		}
-		
-		final OutOfBounds<DoubleType> mediatedRA = Views.extendMirrorSingle( ArrayImgs.doubles( shifts, shifts.length ) ).randomAccess();
-		final OutOfBounds<DoubleType> weightsRA  = Views.extendMirrorSingle( ArrayImgs.doubles( multipliers, multipliers.length ) ).randomAccess();
-		for (int i = 0; i < smoothedShifts.length; i++) {
-			smoothedShifts[ i ] = 0.0;
-			double weightSum = 0.0;
-			for ( int k = 0; k <= 0; ++k ) {
-				mediatedRA.setPosition( i + k, 0 );
-				weightsRA.setPosition( mediatedRA );
-				final double w = gaussKernel[ Math.abs( k ) ] * weightsRA.get().get();
-				final double val = mediatedRA.get().get() * w;
-				smoothedShifts[ i ] += val;
-				weightSum += w;
-			}
-			smoothedShifts[ i ] /= weightSum;
-		}
+		final double[] smoothedShifts = shifts;//new double[ shifts.length ];
 		
 		final double inverseCoordinateUpdateRegularizerWeight = 1 - options.coordinateUpdateRegularizerWeight;
 		

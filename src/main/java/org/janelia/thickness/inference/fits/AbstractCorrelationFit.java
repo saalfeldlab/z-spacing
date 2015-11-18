@@ -61,15 +61,11 @@ public abstract class AbstractCorrelationFit {
                                 new NLinearInterpolatorFactory<DoubleType>()),
                         transform1d );
 
-        final RealRandomAccess< T > access  = transformedCorrelations.realRandomAccess();
+        final RealRandomAccess< T > access1  = transformedCorrelations.realRandomAccess();
         final RealRandomAccess< T > access2 = transformedCorrelations.realRandomAccess();
-
-        final RealRandomAccess< DoubleType > m1 = multipliersInterpolatedTransformed.realRandomAccess();
-        final RealRandomAccess< DoubleType > m2 = multipliersInterpolatedTransformed.realRandomAccess();
 
         ArrayImg<DoubleType, DoubleArray> fits = ArrayImgs.doubles(nFits, range + 1);
         CompositeIntervalView<DoubleType, RealComposite<DoubleType>> result = Views.collapseReal(fits);
-//        a = Views.extend( Views.interpolate( result, new NLinearInterpolatorFactory<RealComposite<DoubleType>>()));
 
         for( int z = estimateWindowRadius, zIndex = 0; z < coordinates.length; z += estimateWindowRadius, ++zIndex )
         {
@@ -83,41 +79,30 @@ public abstract class AbstractCorrelationFit {
 
             for ( int i = min; i < max; ++i ) {
 
-                access.setPosition(i, 1);
-                access.setPosition(i, 0);
+                access1.setPosition(i, 1);
+                access1.setPosition(i, 0);
 
-                transform.apply(access, access);
-                access2.setPosition(access);
-
-                m1.setPosition(i, 0);
-                transform1d.apply(m1, m1);
-                m2.setPosition(m1);
-                final double mref = m1.get().get();
+                transform.apply(access1, access1);
+                access2.setPosition(access1);
 
                 double currentMin1 = Double.MAX_VALUE;
                 double currentMin2 = Double.MAX_VALUE;
 
-                for (int k = 0; k <= range; ++k, access.fwd(0), access2.bck(0), m1.fwd(0), m2.bck(0)) {
+                for (int k = 0; k <= range; ++k, access1.fwd(0), access2.bck(0) ) {
 
-                    final double a1 = access.get().getRealDouble();
+                    final double a1 = access1.get().getRealDouble();
                     final double a2 = access2.get().getRealDouble();
 
                     if ((!Double.isNaN(a1)) && (a1 > 0.0) && (!forceMonotonicity || (a1 < currentMin1))) {
-                        final int index = i + k;
                         currentMin1 = a1;
-                        if (index < weights.length) {
-                            final double w1 = 1.0; // weights[ index ]; // replace 1.0 by real weight, as soon as weight calculation has become clear
-                            samples.get(k).add(new PointMatch(new Point(ONE_DIMENSION_ZERO_POSITION), new Point(new double[]{a1 * mref * m1.get().get()}), w1));
-                        }
+                        final double w1 = 1.0;
+                        samples.get(k).add(new PointMatch(new Point(ONE_DIMENSION_ZERO_POSITION), new Point(new double[]{ a1 }), w1));
                     }
 
                     if ((!Double.isNaN(a2)) && (a2 > 0.0) && (!forceMonotonicity || (a2 < currentMin2))) {
-                        final int index = i - k;
                         currentMin2 = a2;
-                        if (index > 0) {
-                            final double w2 = 1.0; // weights[ index ]; // replace 1.0 by real weight, as soon as weight calculation has become clear
-                            samples.get(k).add(new PointMatch(new Point(ONE_DIMENSION_ZERO_POSITION), new Point(new double[]{a2 * mref * m2.get().get()}), w2));
-                        }
+                        final double w2 = 1.0;
+                        samples.get(k).add(new PointMatch(new Point(ONE_DIMENSION_ZERO_POSITION), new Point(new double[]{ a2 }), w2));
                     }
                 }
             }
@@ -139,13 +124,6 @@ public abstract class AbstractCorrelationFit {
                 while ( fitCursor2.hasNext() )
                     fitCursor2.next().mul( reciprocal );
             }
-
-            System.out.print( "FIT " + zIndex + ": " );
-            for ( DoubleType val : Views.hyperSlice( fits, 0, zIndex ) )
-                System.out.print( val.get() + ", " );
-            System.out.println();
-
-
         }
 
         CompositeIntervalView<DoubleType, RealComposite<DoubleType>> collapsed = Views.collapseReal(fits);

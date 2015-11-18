@@ -11,18 +11,9 @@ import ij.plugin.PlugIn;
 import ij.process.FloatProcessor;
 import ij.process.FloatStatistics;
 import ij.process.ImageConverter;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 import mpicbg.ij.util.Filter;
 import mpicbg.models.IllDefinedDataPointsException;
 import mpicbg.models.NotEnoughDataPointsException;
-import mpicbg.models.TranslationModel1D;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
@@ -30,11 +21,7 @@ import net.imglib2.converter.RealDoubleConverter;
 import net.imglib2.converter.read.ConvertedRandomAccessibleInterval;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
-import net.imglib2.realtransform.InverseRealTransform;
-import net.imglib2.realtransform.InvertibleRealTransform;
-import net.imglib2.realtransform.RealTransformRealRandomAccessible;
-import net.imglib2.realtransform.RealViews;
-import net.imglib2.realtransform.Scale3D;
+import net.imglib2.realtransform.*;
 import net.imglib2.transform.Transform;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
@@ -42,7 +29,6 @@ import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.TransformView;
 import net.imglib2.view.Views;
-
 import org.janelia.thickness.inference.InferFromMatrix;
 import org.janelia.thickness.inference.Options;
 import org.janelia.thickness.inference.fits.CorrelationFitAverage;
@@ -53,6 +39,13 @@ import org.janelia.thickness.lut.SingleDimensionLUTRealTransform;
 import org.janelia.thickness.lut.SingleDimensionPermutationTransform;
 import org.janelia.thickness.mediator.OpinionMediatorWeightedAverage;
 import org.janelia.utility.arrays.ArraySortedIndices;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>
@@ -96,7 +89,8 @@ public class ZPositionCorrection implements PlugIn {
 		options.multiplierGenerationRegularizerWeight = dialog.getNextNumber();
 		options.withReorder                           = dialog.getNextBoolean();
 		options.forceMonotonicity                     = !options.withReorder;
-		options.minimumSectionThickness               = 0.0;
+		options.minimumSectionThickness               = 1e-9;
+		options.withRegularization                    = true;
 		
 		FloatProcessor matrixFp = inputIsMatrix ? 
 				normalize( input ).getProcessor().convertToFloatProcessor() : 
@@ -245,8 +239,8 @@ public class ZPositionCorrection implements PlugIn {
 	
 	public static void main(String[] args) {
 		new ImageJ();
-		ImagePlus imp = new ImagePlus("/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/data/data.tif");
-//		ImagePlus imp = new FolderOpener().openFolder("/data/hanslovskyp/forPhilipp/substacks/03/data/");
+//		ImagePlus imp = new ImagePlus("/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/data/data.tif");
+		ImagePlus imp = new FolderOpener().openFolder("/data/hanslovskyp/forPhilipp/substacks/03/data/");
 		imp.show();
 		new ZPositionCorrection().run( "" );
 	}
