@@ -11,8 +11,6 @@ import net.imglib2.util.ValuePair;
 
 public interface OpinionMediator {
 	
-	public ArrayImg< DoubleType, DoubleArray > mediate(TreeMap<Long, ArrayList<ValuePair<Double, Double>>> shifts );
-	
 	public void mediate(TreeMap<Long, ArrayList<ValuePair<Double, Double>>> shifts, double[] result );
 	
 	public OpinionMediator copy();

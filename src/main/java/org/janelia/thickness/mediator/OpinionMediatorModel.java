@@ -25,17 +25,6 @@ public class OpinionMediatorModel< M extends Model<M> > implements OpinionMediat
 	}
 
 	@Override
-	public ArrayImg<DoubleType, DoubleArray> mediate(
-			final TreeMap<Long, ArrayList<ValuePair<Double, Double>>> shifts) {
-
-		final double[] result = new double[ shifts.size() ];
-
-
-		mediate( shifts, result );
-		return ArrayImgs.doubles( result, result.length );
-	}
-
-	@Override
 	public void mediate(
 			final TreeMap<Long, ArrayList<ValuePair<Double, Double>>> shifts,
 			final double[]result) {
