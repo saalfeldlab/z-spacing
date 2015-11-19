@@ -20,8 +20,6 @@ import net.imglib2.view.Views;
 import net.imglib2.view.composite.RealComposite;
 import org.janelia.thickness.EstimateQualityOfSlice;
 import org.janelia.thickness.ShiftCoordinates;
-import org.janelia.thickness.cluster.Categorizer;
-import org.janelia.thickness.cluster.RangedCategorizer;
 import org.janelia.thickness.inference.fits.AbstractCorrelationFit;
 import org.janelia.thickness.inference.visitor.Visitor;
 import org.janelia.thickness.lut.LUTRealTransform;
@@ -69,26 +67,15 @@ public class InferFromMatrix {
 							final RandomAccessibleInterval< double[] > estimatedFit) {
 						// don't do anything
 					}
-		        	
+
 		        },
 		        options );
     }
-    
-    public < T extends RealType< T > & NativeType< T > > double[] estimateZCoordinates(
-            final RandomAccessibleInterval< T > input,
-            final double[] startingCoordinates,
-            final Visitor visitor,
-            final Options options) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
-    	final RangedCategorizer categorizer = new RangedCategorizer( startingCoordinates.length );
-    	return estimateZCoordinates( input, startingCoordinates, visitor, categorizer, options );
-    }
-
 
     public < T extends RealType< T > & NativeType< T >> double[] estimateZCoordinates(
             final RandomAccessibleInterval< T > inputMatrix,
             final double[] startingCoordinates,
             final Visitor visitor,
-            final Categorizer categorizer,
             final Options options) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
     	
     	final double[] lut         = startingCoordinates.clone();
@@ -136,8 +123,7 @@ public class InferFromMatrix {
     				permutedLut, 
     				multipliers, 
     				weights, 
-    				iteration, 
-    				categorizer, 
+    				iteration,
     				localFits,
     				options);
 
@@ -178,7 +164,6 @@ public class InferFromMatrix {
     		final double[] multipliers,
             final double[] weights,
             final int iteration,
-            final Categorizer categorizer,
             final ListImg< double[] > localFits,
             final Options options
             ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
