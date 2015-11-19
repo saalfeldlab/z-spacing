@@ -33,9 +33,6 @@ public class WeightsTrackerVisitor extends AbstractMultiVisitor {
 		this.separator = separator;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.janelia.thickness.inference.visitor.AbstractMultiVisitor#actSelf(int, net.imglib2.img.array.ArrayImg, double[], org.janelia.thickness.LUTRealTransform, net.imglib2.img.array.ArrayImg, net.imglib2.img.array.ArrayImg, org.janelia.thickness.FitWithGradient)
-	 */
 	@Override
 	< T extends RealType< T > > void actSelf( 
 			final int iteration, 
