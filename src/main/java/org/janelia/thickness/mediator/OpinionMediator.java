@@ -7,13 +7,13 @@ import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.type.numeric.real.DoubleType;
 
-import org.janelia.utility.tuple.ConstantPair;
+import net.imglib2.util.ValuePair;
 
 public interface OpinionMediator {
 	
-	public ArrayImg< DoubleType, DoubleArray > mediate( TreeMap< Long, ArrayList< ConstantPair<Double, Double> > > shifts );
+	public ArrayImg< DoubleType, DoubleArray > mediate(TreeMap<Long, ArrayList<ValuePair<Double, Double>>> shifts );
 	
-	public void mediate( TreeMap< Long, ArrayList< ConstantPair<Double, Double> > > shifts, double[] result );
+	public void mediate(TreeMap<Long, ArrayList<ValuePair<Double, Double>>> shifts, double[] result );
 	
 	public OpinionMediator copy();
 

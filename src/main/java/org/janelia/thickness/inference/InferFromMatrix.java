@@ -13,6 +13,7 @@ import net.imglib2.img.list.ListImg;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
+import net.imglib2.util.ValuePair;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.TransformView;
 import net.imglib2.view.Views;
@@ -28,7 +29,6 @@ import org.janelia.thickness.lut.PermutationTransform;
 import org.janelia.thickness.mediator.OpinionMediator;
 import org.janelia.utility.arrays.ArraySortedIndices;
 import org.janelia.utility.arrays.ReplaceNaNs;
-import org.janelia.utility.tuple.ConstantPair;
 
 import java.util.ArrayList;
 import java.util.TreeMap;
@@ -221,7 +221,7 @@ public class InferFromMatrix {
 		}
 
 		// use multiplied matrix to collect shifts
-		final TreeMap< Long, ArrayList< ConstantPair< Double, Double > > > shifts =
+		final TreeMap< Long, ArrayList<ValuePair< Double, Double >> > shifts =
 		            ShiftCoordinates.collectShiftsFromMatrix(
 		                    lut,
 		                    multipliedMatrix,

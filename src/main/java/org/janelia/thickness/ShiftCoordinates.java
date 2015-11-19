@@ -6,16 +6,16 @@ import net.imglib2.img.list.ListCursor;
 import net.imglib2.img.list.ListImg;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
+import net.imglib2.util.ValuePair;
 import org.janelia.thickness.inference.Options;
 import org.janelia.thickness.lut.LUTRealTransform;
-import org.janelia.utility.tuple.ConstantPair;
 
 import java.util.ArrayList;
 import java.util.TreeMap;
 
 public class ShiftCoordinates {
 	
-	public static TreeMap< Long, ArrayList< ConstantPair<Double, Double> > > collectShiftsFromMatrix(
+	public static TreeMap< Long, ArrayList< ValuePair<Double, Double> > > collectShiftsFromMatrix(
 			final double[] coordinates, 
 			final RandomAccessibleInterval< DoubleType > correlations, 
 			final double[] weights,
@@ -24,7 +24,7 @@ public class ShiftCoordinates {
 		
 		final RandomAccess<DoubleType> corrAccess = correlations.randomAccess();
 		
-		final TreeMap<Long, ArrayList<ConstantPair<Double, Double> > > weightedShifts = new TreeMap< Long, ArrayList< ConstantPair<Double, Double> > >();
+		final TreeMap<Long, ArrayList<ValuePair<Double, Double> > > weightedShifts = new TreeMap< Long, ArrayList< ValuePair<Double, Double> > >();
 		
 		final double[] reference = new double[ 1 ];
 		
@@ -40,9 +40,9 @@ public class ShiftCoordinates {
 				if ( Double.isNaN( corrAccess.get().getRealDouble() ) )
 					continue;
 				
-				ArrayList< ConstantPair< Double, Double > > localShifts = weightedShifts.get( ( long ) k );
+				ArrayList< ValuePair< Double, Double > > localShifts = weightedShifts.get( ( long ) k );
 				if ( localShifts == null ) {
-					localShifts = new ArrayList<ConstantPair<Double,Double>>();
+					localShifts = new ArrayList<ValuePair<Double,Double>>();
 					weightedShifts.put( (long) k, localShifts );
 				}
 				
@@ -62,13 +62,13 @@ public class ShiftCoordinates {
 				/* current location */
 				final double shift = ( k < i ) ? rel - reference[ 0 ] : rel + reference[ 0 ];
 				
-				localShifts.add( new ConstantPair<Double, Double>( shift, weights[ i ] ) );
+				localShifts.add( new ValuePair<Double, Double>( shift, weights[ i ] ) );
 			}
 		}
 		return weightedShifts;
 	}
 	
-	public static < T extends RealType< T > > TreeMap< Long, ArrayList< ConstantPair<Double, Double> > > collectShiftsFromMatrix(
+	public static < T extends RealType< T > > TreeMap< Long, ArrayList<ValuePair<Double, Double>> > collectShiftsFromMatrix(
 			final double[] coordinates, 
 			final RandomAccessibleInterval< T > correlations, 
 			final double[] weights,
@@ -79,7 +79,7 @@ public class ShiftCoordinates {
 		final RandomAccess< T > corrAccess1 = correlations.randomAccess();
 		final RandomAccess< T > corrAccess2 = correlations.randomAccess();
 		
-		final TreeMap<Long, ArrayList<ConstantPair<Double, Double> > > weightedShifts = new TreeMap< Long, ArrayList< ConstantPair<Double, Double> > >();
+		final TreeMap<Long, ArrayList<ValuePair<Double, Double> > > weightedShifts = new TreeMap< Long, ArrayList< ValuePair<Double, Double> > >();
 		
 		final double[] reference = new double[ 1 ];
 		
@@ -116,9 +116,9 @@ public class ShiftCoordinates {
 					} else {
 
 						minMeasurement1 = measurement;
-						ArrayList<ConstantPair<Double, Double>> localShifts = weightedShifts.get((long) up);
+						ArrayList<ValuePair<Double, Double>> localShifts = weightedShifts.get((long) up);
 						if (localShifts == null) {
-							localShifts = new ArrayList<ConstantPair<Double, Double>>();
+							localShifts = new ArrayList<ValuePair<Double, Double>>();
 							weightedShifts.put((long) up, localShifts);
 						}
 
@@ -134,7 +134,7 @@ public class ShiftCoordinates {
 
 							/* current location */
 							final double shift = (up < i) ? rel - reference[0] : rel + reference[0];
-							localShifts.add(new ConstantPair<Double, Double>(shift, weights[i] * weights[up]));
+							localShifts.add(new ValuePair<Double, Double>(shift, weights[i] * weights[up]));
 						}
 					}
 				}
@@ -150,9 +150,9 @@ public class ShiftCoordinates {
 					} else {
 
 						minMeasurement2 = measurement;
-						ArrayList<ConstantPair<Double, Double>> localShifts = weightedShifts.get((long) down);
+						ArrayList<ValuePair<Double, Double>> localShifts = weightedShifts.get((long) down);
 						if (localShifts == null) {
-							localShifts = new ArrayList<ConstantPair<Double, Double>>();
+							localShifts = new ArrayList<ValuePair<Double, Double>>();
 							weightedShifts.put((long) down, localShifts);
 						}
 
@@ -167,7 +167,7 @@ public class ShiftCoordinates {
 							final double rel = coordinates[i] - coordinates[down];
 							/* current location */
 							final double shift = (down < i) ? rel - reference[0] : rel + reference[0];
-							localShifts.add(new ConstantPair<Double, Double>(shift, weights[i] * weights[down]));
+							localShifts.add(new ValuePair<Double, Double>(shift, weights[i] * weights[down]));
 						}
 					}
 				}
@@ -177,7 +177,7 @@ public class ShiftCoordinates {
 	}
 	
 	
-	public static TreeMap< Long, ArrayList< ConstantPair< Double, Double > > > collectShiftsFromMatrix(
+	public static TreeMap< Long, ArrayList< ValuePair< Double, Double > > > collectShiftsFromMatrix(
 			final RandomAccessibleInterval< DoubleType > localCoordinates,
 			final RandomAccessibleInterval< DoubleType > localMatrices,
 			final RandomAccessibleInterval< DoubleType > localWeights,
@@ -191,8 +191,8 @@ public class ShiftCoordinates {
 		final RandomAccess<DoubleType> coordinateAccess = localCoordinates.randomAccess();
 		final RandomAccess<DoubleType> weightAccess     = localWeights.randomAccess();
 		
-		final TreeMap<Long, ArrayList<ConstantPair<Double, Double> > > weightedShifts = 
-				new TreeMap< Long, ArrayList< ConstantPair<Double, Double> > >();
+		final TreeMap<Long, ArrayList<ValuePair<Double, Double> > > weightedShifts =
+				new TreeMap< Long, ArrayList< ValuePair<Double, Double> > >();
 		final double[] reference = new double[ 1 ];
 		
 		for ( int i = 0; i < localMatrices.dimension( 1 ); ++i ) {
@@ -214,9 +214,9 @@ public class ShiftCoordinates {
 				if ( Double.isNaN( mValue) )
 					continue;
 				
-				ArrayList< ConstantPair< Double, Double > > localShifts = weightedShifts.get( ( long ) k );
+				ArrayList< ValuePair< Double, Double > > localShifts = weightedShifts.get( ( long ) k );
 				if ( localShifts == null ) {
-					localShifts = new ArrayList<ConstantPair<Double,Double>>();
+					localShifts = new ArrayList<ValuePair<Double,Double>>();
 					weightedShifts.put( (long) k, localShifts );
 				}
 				
@@ -236,7 +236,7 @@ public class ShiftCoordinates {
 				/* current location */
 				final double shift = ( k < i ) ? rel - reference[ 0 ] : rel + reference[ 0 ];
 				
-				localShifts.add( new ConstantPair<Double, Double>( shift, weightAccess.get().get() ) );
+				localShifts.add( new ValuePair<Double, Double>( shift, weightAccess.get().get() ) );
 			}
 			
 		}
