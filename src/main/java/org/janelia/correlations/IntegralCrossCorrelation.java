@@ -4,13 +4,11 @@
 package org.janelia.correlations;
 
 import ij.process.FloatProcessor;
-
-import java.util.Random;
-
 import mpicbg.ij.integral.BlockPMCC;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.converter.Converter;
+import net.imglib2.converter.TypeIdentity;
 import net.imglib2.img.array.ArrayCursor;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgFactory;
@@ -21,7 +19,7 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
-import org.janelia.utility.converter.SameTypeConverter;
+import java.util.Random;
 
 
 /**
@@ -104,9 +102,9 @@ public class IntegralCrossCorrelation< T extends RealType< T >, U extends RealTy
 		
 		sums1  = generateIntegralImageFromSource( img1, converterT, iiDummy.copy() );
 		sums2  = generateIntegralImageFromSource( img2, converterU, iiDummy.copy() );
-		sums11 = generateIntegralImageFromSource( squares1, new SameTypeConverter< I >(), iiDummy.copy() );
-		sums22 = generateIntegralImageFromSource( squares2, new SameTypeConverter< I >(), iiDummy.copy() );
-		sums12 = generateIntegralImageFromSource( mult12, new SameTypeConverter< I >(), iiDummy.copy() );
+		sums11 = generateIntegralImageFromSource( squares1, new TypeIdentity<I>(), iiDummy.copy() );
+		sums22 = generateIntegralImageFromSource( squares2, new TypeIdentity<I>(), iiDummy.copy() );
+		sums12 = generateIntegralImageFromSource( mult12, new TypeIdentity<I>(), iiDummy.copy() );
 	}
 	
 	
@@ -149,8 +147,8 @@ public class IntegralCrossCorrelation< T extends RealType< T >, U extends RealTy
 				new IntegralCrossCorrelation< FloatType, FloatType, FloatType, FloatType >(img1, 
 						img2,  
 						new long[] { rad[0], rad[1] }, 
-						new SameTypeConverter<FloatType>(),
-						new SameTypeConverter<FloatType>(),
+						new TypeIdentity<FloatType>(),
+						new TypeIdentity<FloatType>(),
 						new FloatType( 0.0f ),
 						new FloatType( 0.0f ) );
 		final BlockPMCC cc = new BlockPMCC(fpR, fpS, 0, 0);
