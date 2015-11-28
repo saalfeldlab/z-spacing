@@ -1,5 +1,6 @@
 package org.janelia.thickness.lut;
 
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealLocalizable;
 import net.imglib2.RealPositionable;
 import net.imglib2.img.array.ArrayImg;
@@ -15,8 +16,7 @@ public class LUTRealTransformField extends AbstractLUTRealTransformField {
 	public LUTRealTransformField(
 			final int numSourceDimensions,
 			final int numTargetDimensions, 
-			final ArrayImg<DoubleType, 
-			DoubleArray> luts) {
+			final RandomAccessibleInterval<DoubleType> luts) {
 		super(numSourceDimensions, numTargetDimensions, luts);
 	}
 	

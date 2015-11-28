@@ -1,56 +1,48 @@
 package org.janelia.thickness.inference;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.TreeMap;
-
 import mpicbg.models.AffineModel1D;
 import mpicbg.models.IllDefinedDataPointsException;
-import mpicbg.models.Model;
 import mpicbg.models.NotEnoughDataPointsException;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.RealRandomAccessible;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgFactory;
-import net.imglib2.img.array.ArrayImgs;
-import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.img.list.ListImg;
-import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
-import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory;
-import net.imglib2.outofbounds.OutOfBounds;
-import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
+import net.imglib2.util.ValuePair;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.TransformView;
 import net.imglib2.view.Views;
-
+import net.imglib2.view.composite.RealComposite;
 import org.janelia.thickness.EstimateQualityOfSlice;
-import org.janelia.thickness.LocalizedCorrelationFit;
 import org.janelia.thickness.ShiftCoordinates;
-import org.janelia.thickness.cluster.Categorizer;
-import org.janelia.thickness.cluster.RangedCategorizer;
+import org.janelia.thickness.inference.fits.AbstractCorrelationFit;
 import org.janelia.thickness.inference.visitor.Visitor;
 import org.janelia.thickness.lut.LUTRealTransform;
 import org.janelia.thickness.lut.PermutationTransform;
 import org.janelia.thickness.mediator.OpinionMediator;
 import org.janelia.utility.arrays.ArraySortedIndices;
-import org.janelia.utility.tuple.ConstantPair;
+import org.janelia.utility.arrays.ReplaceNaNs;
 
-public class InferFromMatrix< M extends Model<M> > {
+import java.util.ArrayList;
+import java.util.TreeMap;
 
-	private final M correlationFitModel;
+public class InferFromMatrix {
+
+	private final AbstractCorrelationFit correlationFit;
     private final OpinionMediator shiftMediator;
 
 
     public InferFromMatrix(
-            final M correlationFitModel,
+            final AbstractCorrelationFit correlationFit,
             final OpinionMediator shiftMediator ) {
             super();
 
-            this.correlationFitModel = correlationFitModel;
+            this.correlationFit = correlationFit;
             this.shiftMediator = shiftMediator;
 
            
@@ -75,26 +67,15 @@ public class InferFromMatrix< M extends Model<M> > {
 							final RandomAccessibleInterval< double[] > estimatedFit) {
 						// don't do anything
 					}
-		        	
+
 		        },
 		        options );
     }
-    
-    public < T extends RealType< T > & NativeType< T > > double[] estimateZCoordinates(
-            final RandomAccessibleInterval< T > input,
-            final double[] startingCoordinates,
-            final Visitor visitor,
-            final Options options) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
-    	final RangedCategorizer categorizer = new RangedCategorizer( startingCoordinates.length );
-    	return estimateZCoordinates( input, startingCoordinates, visitor, categorizer, options );
-    }
-
 
     public < T extends RealType< T > & NativeType< T >> double[] estimateZCoordinates(
             final RandomAccessibleInterval< T > inputMatrix,
             final double[] startingCoordinates,
             final Visitor visitor,
-            final Categorizer categorizer,
             final Options options) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
     	
     	final double[] lut         = startingCoordinates.clone();
@@ -124,16 +105,14 @@ public class InferFromMatrix< M extends Model<M> > {
 		for( Cursor< T > source = Views.flatIterable( inputMatrix ).cursor(), target = Views.flatIterable( inputMultipliedMatrix ).cursor(); source.hasNext(); )
 			target.next().set( source.next() );
 
-//		ImageJFunctions.show( inputMultipliedMatrix );
-    	
     	for ( int iteration = 0; iteration < options.nIterations; ++iteration ) {
 
 			// multipliers always in permuted order
     		
     		final PermutationTransform permutation       = new PermutationTransform( inverse, nMatrixDim, nMatrixDim ); // need to create Transform into source?
     		final IntervalView<T> matrix                 = Views.interval( new TransformView< T >( inputMatrix, permutation ), inputMatrix );
-			IntervalView<T> multipliedMatrix             = Views.interval(new TransformView<T>(inputMultipliedMatrix, permutation), inputMultipliedMatrix);
-//    		final IntervalView<DoubleType> currentLutImg = Views.interval( new TransformView< DoubleType >( ArrayImgs.doubles( lut, n ), permutation ), new FinalInterval( n ) ); // use this?
+			IntervalView<T> multipliedMatrix             = Views.interval( new TransformView<T>(inputMultipliedMatrix, permutation), inputMultipliedMatrix );
+
     		
     		if ( iteration == 0 )
     			visitor.act( iteration, matrix, lut, permutationLut, inverse, multipliers, weights, null );
@@ -144,11 +123,10 @@ public class InferFromMatrix< M extends Model<M> > {
     				permutedLut, 
     				multipliers, 
     				weights, 
-    				iteration, 
-    				categorizer, 
+    				iteration,
     				localFits,
     				options);
-    		
+
     		this.applyShifts( 
     				permutedLut, // rewrite interface to use view on permuted lut? probably not
     				shifts, 
@@ -156,7 +134,9 @@ public class InferFromMatrix< M extends Model<M> > {
     				startingCoordinates,
     				permutation.copyToDimension( 1, 1 ), 
     				options);
-    		
+
+			ReplaceNaNs.replace( permutedLut );
+
     		if ( !options.withReorder )
     			preventReorder( permutedLut, options ); // 
     		
@@ -184,7 +164,6 @@ public class InferFromMatrix< M extends Model<M> > {
     		final double[] multipliers,
             final double[] weights,
             final int iteration,
-            final Categorizer categorizer,
             final ListImg< double[] > localFits,
             final Options options
             ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
@@ -192,8 +171,11 @@ public class InferFromMatrix< M extends Model<M> > {
     	final int nMatrixDimensions      = multipliedMatrix.numDimensions();
     	final LUTRealTransform transform = new LUTRealTransform( lut, nMatrixDimensions, nMatrixDimensions );
 
-		// use multiplied matrix before warping!
-		LocalizedCorrelationFit.estimateFromMatrix( multipliedMatrix, lut, transform, options.comparisonRange, correlationFitModel, localFits, options.forceMontonicity );
+        // use multiplied matrix
+		RealRandomAccessible<RealComposite<DoubleType>> fits =
+				correlationFit.estimateFromMatrix(
+						multipliedMatrix, lut, weights, multipliers, transform, options);
+		correlationFit.raster( fits, localFits );
 
 		// use original matrix to estimate multipliers
 		EstimateQualityOfSlice.estimateQuadraticFromMatrix( matrix,
@@ -218,19 +200,20 @@ public class InferFromMatrix< M extends Model<M> > {
 				matrixRA.setPosition( k, 1 );
 				multipliedMatrixRA.setPosition( k, 1 );
 				multipliedMatrixRA.get().set( matrixRA.get() );
-				if ( z != k )
+				if ( k != z )
 					multipliedMatrixRA.get().mul( multipliers[z]*multipliers[k] );
 			}
 		}
 
 		// use multiplied matrix to collect shifts
-		final TreeMap< Long, ArrayList< ConstantPair< Double, Double > > > shifts =
+		final TreeMap< Long, ArrayList<ValuePair< Double, Double >> > shifts =
 		            ShiftCoordinates.collectShiftsFromMatrix(
 		                    lut,
 		                    multipliedMatrix,
 		                    weights,
 		                    multipliers,
-		                    localFits );
+		                    localFits,
+							options );
 		
 		final double[] mediatedShifts = new double[ lut.length ];
 		this.shiftMediator.mediate( shifts, mediatedShifts );

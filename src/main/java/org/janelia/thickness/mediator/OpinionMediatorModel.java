@@ -13,7 +13,7 @@ import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.type.numeric.real.DoubleType;
 
-import org.janelia.utility.tuple.ConstantPair;
+import net.imglib2.util.ValuePair;
 
 public class OpinionMediatorModel< M extends Model<M> > implements OpinionMediator {
 
@@ -25,30 +25,19 @@ public class OpinionMediatorModel< M extends Model<M> > implements OpinionMediat
 	}
 
 	@Override
-	public ArrayImg<DoubleType, DoubleArray> mediate(
-			final TreeMap<Long, ArrayList<ConstantPair<Double, Double>>> shifts) {
-
-		final double[] result = new double[ shifts.size() ];
-
-
-		mediate( shifts, result );
-		return ArrayImgs.doubles( result, result.length );
-	}
-
-	@Override
 	public void mediate(
-			final TreeMap<Long, ArrayList<ConstantPair<Double, Double>>> shifts,
+			final TreeMap<Long, ArrayList<ValuePair<Double, Double>>> shifts,
 			final double[]result) {
 
 		{
 			for ( int i = 0; i < result.length; ++i ) {
-				final ArrayList<ConstantPair<Double, Double>> localShifts = shifts.get( (long) i );
+				final ArrayList<ValuePair<Double, Double>> localShifts = shifts.get( (long) i );
 				final ArrayList<PointMatch> pointMatches = new ArrayList< PointMatch >();
 
 				if ( localShifts == null || localShifts.size() == 0 )
 					result[ i ] = 0.0;
 				else {
-					for ( final ConstantPair<Double, Double> l : localShifts ) {
+					for ( final ValuePair<Double, Double> l : localShifts ) {
 						if ( Double.isInfinite( l.getA() ) || Double.isNaN( l.getA() ) ) {
 							continue;
 						}

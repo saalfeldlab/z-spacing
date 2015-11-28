@@ -68,6 +68,7 @@ import net.imglib2.type.numeric.real.FloatType;
 
 import org.janelia.thickness.inference.InferFromMatrix;
 import org.janelia.thickness.inference.Options;
+import org.janelia.thickness.inference.fits.CorrelationFitAverage;
 import org.janelia.thickness.mediator.OpinionMediatorWeightedAverage;
 
 /**
@@ -239,9 +240,9 @@ public class LayerZPosition implements TPlugIn
 
 		IJ.log( Arrays.toString( lut ) );
 
-		final InferFromMatrix< TranslationModel1D > inference =
-				new InferFromMatrix< TranslationModel1D >(
-						new TranslationModel1D(),
+		final InferFromMatrix inference =
+				new InferFromMatrix(
+						new CorrelationFitAverage(),
 						new OpinionMediatorWeightedAverage() );
 
 		final RandomAccessibleInterval< FloatType > raMatrix = ImagePlusImgs.from( new ImagePlus( "", matrix ) );

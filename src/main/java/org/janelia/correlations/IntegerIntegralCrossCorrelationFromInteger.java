@@ -89,25 +89,12 @@ public class IntegerIntegralCrossCorrelationFromInteger< T extends IntegerType< 
 		}
 		
 		final ArrayImg<FloatType, FloatArray> imgr = ArrayImgs.floats( range, 5, 3 );
-		
-//		new ImageJ();
-		
-//		final IntegralCrossCorrelation< FloatType, FloatType, FloatType, FloatType > ii = 
-//				new IntegralCrossCorrelation< FloatType, FloatType, FloatType, FloatType >(img1, 
-//						img2,  
-//						new long[] { rad[0], rad[1] }, 
-//						new SameTypeConverter<FloatType>(),
-//						new SameTypeConverter<FloatType>(),
-//						new FloatType( 0.0f ),
-//						new FloatType( 0.0f ) );
+
 		final IntegerIntegralCrossCorrelationFromInteger< LongType	, LongType, FloatType > ii = 
 				new IntegerIntegralCrossCorrelationFromInteger< LongType, LongType, FloatType >( img1, img2, new long[] { rad[0], rad[1] }, new FloatType() );
 		final BlockPMCC cc = new BlockPMCC(fpR, fpS, 0, 0);
 		cc.r( rad[0], rad[1] );
 		final FloatProcessor fp = cc.getTargetProcessor();
-		
-//		ImageJFunctions.show( ii );
-//		new ImagePlus( "deprecated", fp ).show();
 		
 		final float tolerance = 1e-7f;
 		final Cursor< FloatType > i = Views.flatIterable( ii ).cursor();
