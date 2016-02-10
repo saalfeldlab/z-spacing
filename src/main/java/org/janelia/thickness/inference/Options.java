@@ -31,7 +31,7 @@ public class Options implements Serializable {
 		result.nIterations = 100;
 		result.comparisonRange = 10;
 		result.minimumSectionThickness = 0.01;
-		result.withRegularization = true;
+		result.regularizationType = InferFromMatrix.RegularizationType.BORDER;
 		result.multiplierEstimationIterations = 10;
 		result.withReorder = true;
 		result.nThreads = Runtime.getRuntime().availableProcessors();
@@ -47,7 +47,7 @@ public class Options implements Serializable {
 	public Integer nIterations; // number of iterations
 	public Integer comparisonRange; // range for cross correlations
 	public Double minimumSectionThickness;
-	public Boolean withRegularization;
+	public InferFromMatrix.RegularizationType regularizationType;
 	public Integer multiplierEstimationIterations;
 	public Boolean withReorder;
 	public Integer nThreads;

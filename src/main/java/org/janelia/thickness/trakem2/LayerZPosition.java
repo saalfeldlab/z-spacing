@@ -218,8 +218,7 @@ public class LayerZPosition implements TPlugIn
 			final double reg,
 			final int innerIter,
 			final double innerReg,
-			final boolean reord ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
-	{
+			final boolean reord ) throws Exception {
 		final Options options = Options.generateDefaultOptions();
 		options.comparisonRange = rad;
 		options.nIterations = iter;
@@ -227,7 +226,7 @@ public class LayerZPosition implements TPlugIn
 		options.multiplierEstimationIterations = innerIter;
 		options.multiplierGenerationRegularizerWeight = innerReg;
 		options.withReorder = reord;
-		options.withRegularization = true;
+		options.regularizationType = InferFromMatrix.RegularizationType.BORDER;
 		options.minimumSectionThickness = 0.0;
 
 		/* estimate reasonable integer step size */

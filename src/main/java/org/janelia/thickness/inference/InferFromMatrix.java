@@ -2,6 +2,7 @@ package org.janelia.thickness.inference;
 
 import mpicbg.models.AffineModel1D;
 import mpicbg.models.IllDefinedDataPointsException;
+import mpicbg.models.Model;
 import mpicbg.models.NotEnoughDataPointsException;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccess;
@@ -36,6 +37,101 @@ public class InferFromMatrix {
 	private final AbstractCorrelationFit correlationFit;
     private final OpinionMediator shiftMediator;
 
+	public enum RegularizationType
+	{
+		NONE,
+		IDENTITY,
+		BORDER
+	}
+
+	public static interface Regularizer
+	{
+		public void regularize( double[] coordinates, Options options ) throws Exception;
+	}
+
+	public static class NoRegularization implements Regularizer
+	{
+
+		@Override
+		public void regularize(double[] coordinates, Options options) {
+			// do not do anything
+		}
+	}
+
+	public static abstract class ModelRegularization implements Regularizer{
+		private final Model< ? > m;
+		private final double[] regularizationValues;
+		private final double[] weights;
+		private final double[] dummy;
+
+		protected ModelRegularization(Model<?> m, double[] regularizationValues, double[] weights) {
+			this.m = m;
+			this.regularizationValues = regularizationValues;
+			this.weights = weights;
+			this.dummy = new double[ 1 ];
+		}
+
+		protected abstract double[] extractRelevantCoordinates( double[] coordinates );
+
+		@Override
+		public void regularize( double[] coordinates, Options options ) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+			double[] relevantCoordinates = extractRelevantCoordinates(coordinates);
+			m.fit( new double[][] { relevantCoordinates }, new double[][] { regularizationValues }, weights );
+
+
+			for ( int i = 0; i < relevantCoordinates.length; ++i ) {
+				dummy[0] = coordinates[i];
+				m.applyInPlace( dummy );
+				coordinates[i] = dummy[0];
+			}
+		}
+	}
+
+	public static class BorderRegularization extends ModelRegularization
+	{
+		private final double[] relevantCoordinates;
+
+		public BorderRegularization(Model<?> m, int length) {
+			super( m, new double[] { 0, length - 1 }, new double[] { 1.0, 1.0 } );
+			this.relevantCoordinates = new double[ 2 ];
+		}
+
+		@Override
+		protected double[] extractRelevantCoordinates(double[] coordinates) {
+			relevantCoordinates[ 0 ] = coordinates[ 0 ];
+			relevantCoordinates[ 1 ] = coordinates[ coordinates.length - 1 ];
+			return relevantCoordinates;
+		}
+	}
+
+	public static class IdentityRegularization extends ModelRegularization
+	{
+		public IdentityRegularization(Model<?> m, int length) {
+			super( m, range( 0, length, 1 ), constVals( length, 1.0 ) );
+		}
+
+		@Override
+		protected double[] extractRelevantCoordinates(double[] coordinates) {
+			return coordinates;
+		}
+
+		public static double[] range( int start, int stop, int step )
+		{
+			double[] result = new double[]{(stop - start) / step};
+			for ( int i = start; i < stop; stop += step )
+				result[ i ] = start;
+			return result;
+		}
+
+		public static double[] constVals( int length, double val )
+		{
+			double[] result = new double[]{length};
+			for ( int i = 0; i < result.length; ++i )
+				result[i] = val;
+			return result;
+		}
+	}
+
 
     public InferFromMatrix(
             final AbstractCorrelationFit correlationFit,
@@ -53,7 +149,7 @@ public class InferFromMatrix {
     		final RandomAccessibleInterval< T > matrix,
     		final double[] startingCoordinates,
     		final Options options
-    		) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+    		) throws Exception {
             return estimateZCoordinates( 
         		matrix, 
         		startingCoordinates, 
@@ -76,7 +172,7 @@ public class InferFromMatrix {
             final RandomAccessibleInterval< T > inputMatrix,
             final double[] startingCoordinates,
             final Visitor visitor,
-            final Options options) throws NotEnoughDataPointsException, IllDefinedDataPointsException {
+            final Options options) throws Exception {
     	
     	final double[] lut         = startingCoordinates.clone();
     	final int n                = (int) inputMatrix.dimension( 0 );
@@ -104,6 +200,27 @@ public class InferFromMatrix {
 		ArrayImg<T, ?> inputMultipliedMatrix = new ArrayImgFactory<T>().create(new long[]{n, n}, inputMatrix.randomAccess().get());
 		for( Cursor< T > source = Views.flatIterable( inputMatrix ).cursor(), target = Views.flatIterable( inputMultipliedMatrix ).cursor(); source.hasNext(); )
 			target.next().set( source.next() );
+
+		final Regularizer regularizer;
+		switch ( options.regularizationType )
+		{
+			case BORDER: {
+				regularizer = new BorderRegularization(new AffineModel1D(), n);
+				break;
+			}
+			case IDENTITY: {
+				regularizer = new IdentityRegularization(new AffineModel1D(), n);
+				break;
+			}
+			case NONE: {
+				regularizer = new NoRegularization();
+				break;
+			}
+			default: {
+				regularizer = new NoRegularization();
+				break;
+			}
+		}
 
     	for ( int iteration = 0; iteration < options.nIterations; ++iteration ) {
 
@@ -140,8 +257,8 @@ public class InferFromMatrix {
     		if ( !options.withReorder )
     			preventReorder( permutedLut, options ); // 
     		
-    		if ( options.withRegularization )
-    			regularize( permutedLut, options );
+//    		if ( options.withRegularization )
+			regularizer.regularize( permutedLut, options );
 
     		updateArray( permutedLut, lut, inverse );
     		updateArray( multipliers, multipliersPrevious, inverse );
@@ -256,47 +373,6 @@ public class InferFromMatrix {
 		}
     }
 			
-			
-    public void regularize( 
-		final double[] coordinates,
-		final Options options ) 
-    {
-		final float[] floatLut = new float[ 2 ]; final float[] arange = new float[ 2 ];
-		final float[] floatWeights = new float[ 2 ];
-		for (int i = 0; i < arange.length; i++) {
-			arange[i] = i;
-			floatWeights[i] = 1.0f;
-		}
-		final int maxIndex = coordinates.length - 1;
-		floatLut[ 0 ]       = (float) coordinates[ 0 ];
-		arange[ 0 ]         = 0f;
-		floatWeights[ 0 ]   = 1.0f;
-		floatLut[ 1 ]       = (float) coordinates[ maxIndex ];
-		arange[ 1 ]         = maxIndex;
-		floatWeights[ 1 ] = 1.0f;
-		
-		final AffineModel1D coordinatesFitModel = new AffineModel1D();
-		
-		
-		try {
-			coordinatesFitModel.fit( new float[][]{floatLut}, new float[][]{arange}, floatWeights );
-			final double[] affineArray = new double[ 2 ];
-			coordinatesFitModel.toArray( affineArray );
-			
-			for ( int i = 0; i < coordinates.length; ++i ) {
-				coordinates[i] = affineArray[0] * coordinates[i] + affineArray[1];
-			}
-		} catch (final NotEnoughDataPointsException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (final IllDefinedDataPointsException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-	}
-    
-    
     public void updateArray( final double[] source, final double[] target, final int[] permutation ) {
     	for (int i = 0; i < target.length; i++) {
 			target[ permutation[ i ] ] = source[ i ];

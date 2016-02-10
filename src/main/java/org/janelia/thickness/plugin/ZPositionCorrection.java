@@ -90,7 +90,7 @@ public class ZPositionCorrection implements PlugIn {
 		options.withReorder                           = dialog.getNextBoolean();
 		options.forceMonotonicity                     = !options.withReorder;
 		options.minimumSectionThickness               = 1e-9;
-		options.withRegularization                    = true;
+		options.regularizationType                    = InferFromMatrix.RegularizationType.BORDER;
 		
 		FloatProcessor matrixFp = inputIsMatrix ? 
 				normalize( input ).getProcessor().convertToFloatProcessor() : 
@@ -121,6 +121,8 @@ public class ZPositionCorrection implements PlugIn {
 			e.printStackTrace();
 		} catch (IllDefinedDataPointsException e) {
 			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		System.out.println( options.toString() );
