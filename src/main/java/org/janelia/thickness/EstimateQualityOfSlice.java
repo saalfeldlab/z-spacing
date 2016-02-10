@@ -60,7 +60,7 @@ public class EstimateQualityOfSlice {
 					enumeratorSum  += prod * fitVal;
 					denominatorSum += prod * prod;
 				}
-				final double result = enumeratorSum / denominatorSum; //  * inverseRegularizerWeight + regularizerWeight;
+				final double result = enumeratorSum / denominatorSum * inverseRegularizerWeight + regularizerWeight;
 				if ( ! Double.isNaN( result ) )
 					multipliers[ n ] = result;
 			}
