@@ -29,10 +29,10 @@ public class ShiftCoordinates {
 		final TreeMap<Long, ArrayList<ValuePair<Double, Double> > > weightedShifts = new TreeMap< Long, ArrayList< ValuePair<Double, Double> > >();
 		
 		final double[] reference = new double[ 1 ];
-		
+
 		final ListCursor<double[]> cursor = localFits.cursor();
-		
-		
+
+
 		// i is reference index, k is comparison index
 		long width = correlations.dimension(0);
 		long height = correlations.dimension(1);
@@ -74,7 +74,8 @@ public class ShiftCoordinates {
 
 						lut.applyInverse(reference, reference);
 
-						if (!(reference[0] == Double.MAX_VALUE || reference[0] == -Double.MAX_VALUE)) {
+						// reference[0] > halfRange ||  ??
+						if ( !(reference[0] == Double.MAX_VALUE || reference[0] == -Double.MAX_VALUE) ) {
 
 							// rel: negative coordinates of k wrt to local coordinate system of i
 							final double rel = coordinates[i] - coordinates[up];
@@ -108,7 +109,8 @@ public class ShiftCoordinates {
 
 						lut.applyInverse(reference, reference);
 
-						if (!(reference[0] == Double.MAX_VALUE || reference[0] == -Double.MAX_VALUE)) {
+						// reference[0] > halfRange || ??
+						if ( !(reference[0] == Double.MAX_VALUE || reference[0] == -Double.MAX_VALUE) ) {
 
 							// rel: negative coordinates of k wrt to local coordinate system of i
 							final double rel = coordinates[i] - coordinates[down];
