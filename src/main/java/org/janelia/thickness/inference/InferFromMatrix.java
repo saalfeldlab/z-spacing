@@ -79,7 +79,7 @@ public class InferFromMatrix {
 			m.fit( new double[][] { relevantCoordinates }, new double[][] { regularizationValues }, weights );
 
 
-			for ( int i = 0; i < relevantCoordinates.length; ++i ) {
+			for ( int i = 0; i < coordinates.length; ++i ) {
 				dummy[0] = coordinates[i];
 				m.applyInPlace( dummy );
 				coordinates[i] = dummy[0];
@@ -117,15 +117,15 @@ public class InferFromMatrix {
 
 		public static double[] range( int start, int stop, int step )
 		{
-			double[] result = new double[]{(stop - start) / step};
-			for ( int i = start; i < stop; stop += step )
+			double[] result = new double[(stop - start) / step];
+			for ( int i = 0; i < result.length; ++i, start += step )
 				result[ i ] = start;
 			return result;
 		}
 
 		public static double[] constVals( int length, double val )
 		{
-			double[] result = new double[]{length};
+			double[] result = new double[length];
 			for ( int i = 0; i < result.length; ++i )
 				result[i] = val;
 			return result;
