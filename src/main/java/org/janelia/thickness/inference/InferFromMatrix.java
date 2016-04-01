@@ -232,7 +232,7 @@ public class InferFromMatrix {
 
     		
     		if ( iteration == 0 )
-    			visitor.act( iteration, matrix, lut, permutationLut, inverse, multipliers, weights, null );
+				visitor.act( iteration, matrix, lut, permutationLut, inverse, multipliers, weights, null );
     		
     		final double[] shifts = this.getMediatedShifts(
 					matrix,
@@ -267,6 +267,8 @@ public class InferFromMatrix {
     		ArraySortedIndices.sort( permutedLut, permutationLut, inverse );
     		updateArray( multipliersPrevious, multipliers, permutationLut );
     		updateArray( weightsPrevious, weights, permutationLut );
+
+			visitor.act( iteration+1, matrix, lut, permutationLut, inverse, multipliers, weights, null );
 
     	}
     	
