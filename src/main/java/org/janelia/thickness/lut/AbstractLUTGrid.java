@@ -11,13 +11,12 @@ import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.realtransform.InvertibleRealTransform;
 import net.imglib2.realtransform.RealViews;
+import net.imglib2.realtransform.ScaleAndTranslation;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.ExtendedRandomAccessibleInterval;
 import net.imglib2.view.Views;
 import net.imglib2.view.composite.CompositeIntervalView;
 import net.imglib2.view.composite.RealComposite;
-
-import org.janelia.utility.realtransform.ScaleAndShift;
 
 public abstract class AbstractLUTGrid implements InvertibleRealTransform {
 
@@ -64,7 +63,7 @@ public abstract class AbstractLUTGrid implements InvertibleRealTransform {
 		copyAndFillIfNecessary( scale, this.scale );
 		copyAndFillIfNecessary( shift, this.shift );
 
-		final ScaleAndShift scaleAndShift = new ScaleAndShift( this.scale, this.shift);
+		final ScaleAndTranslation scaleAndShift = new ScaleAndTranslation( this.scale, this.shift);
 		final ExtendedRandomAccessibleInterval<RealComposite<DoubleType>, CompositeIntervalView<DoubleType, RealComposite<DoubleType>>> extendedCollapsedSource =
 				Views.extendBorder( collapsedSource );
 		this.coefficients = RealViews.transform( Views.interpolate( extendedCollapsedSource, this.interpolatorFactory ), scaleAndShift );

@@ -11,6 +11,7 @@ import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.realtransform.InverseRealTransform;
 import net.imglib2.realtransform.RealTransformRealRandomAccessible;
 import net.imglib2.realtransform.RealViews;
+import net.imglib2.realtransform.ScaleAndTranslation;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.ExtendedRandomAccessibleInterval;
@@ -20,7 +21,6 @@ import net.imglib2.view.composite.RealComposite;
 import org.janelia.thickness.inference.Options;
 import org.janelia.thickness.lut.AbstractLUTRealTransform;
 import org.janelia.thickness.lut.LUTRealTransform;
-import org.janelia.utility.realtransform.ScaleAndShift;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -136,7 +136,7 @@ public abstract class AbstractCorrelationFit {
 
         return RealViews.transform(
                 interpolated,
-                new ScaleAndShift( new double[] { estimateWindowRadius }, new double[] { estimateWindowRadius }  ) );
+                new ScaleAndTranslation( new double[] { estimateWindowRadius }, new double[] { estimateWindowRadius }  ) );
     }
 
     public void raster( RealRandomAccessible<RealComposite<DoubleType>> source, RandomAccessibleInterval<double[]> target )
