@@ -11,6 +11,7 @@ import org.janelia.thickness.inference.visitor.LazyVisitor;
 import org.janelia.thickness.inference.visitor.Visitor;
 import org.janelia.thickness.lut.LUTRealTransform;
 import org.janelia.thickness.lut.PermutationTransform;
+import org.janelia.utility.MatrixStripConversion;
 import org.janelia.utility.arrays.ArraySortedIndices;
 import org.janelia.utility.arrays.ReplaceNaNs;
 
@@ -199,7 +200,9 @@ public class InferFromMatrix
 		final double[] multipliersPrevious = multipliers.clone();
 		ArraySortedIndices.sort( permutedLut, permutationLut, inverse );
 
-		ArrayImg< T, ? > inputMultipliedMatrix = new ArrayImgFactory< T >().create( new long[] { n, n }, inputMatrix.randomAccess().get() );
+		ArrayImg< T, ? > inputMultipliedStrip = new ArrayImgFactory< T >().create( new long[] { 2 * options.comparisonRange + 1, n }, inputMatrix.randomAccess().get() );
+
+		RandomAccessibleInterval< T > inputMultipliedMatrix = MatrixStripConversion.stripToMatrix( inputMultipliedStrip, inputMatrix.randomAccess().get() );
 		for ( Cursor< T > source = Views.flatIterable( inputMatrix ).cursor(), target = Views.flatIterable( inputMultipliedMatrix ).cursor(); source.hasNext(); )
 			target.next().set( source.next() );
 

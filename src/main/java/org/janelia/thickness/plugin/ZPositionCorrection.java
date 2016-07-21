@@ -258,7 +258,8 @@ public class ZPositionCorrection implements PlugIn
 	{
 		new ImageJ();
 //		ImagePlus imp = new ImagePlus("/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/data/data.tif");
-		ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/forPhilipp/substacks/03/data/" );
+//		ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/forPhilipp/substacks/03/data/" );
+		ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/davi_toy_set/data/seq" );
 		imp.show();
 		new ZPositionCorrection().run( "" );
 	}
