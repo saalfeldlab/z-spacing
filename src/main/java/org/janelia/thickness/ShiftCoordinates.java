@@ -51,9 +51,9 @@ public class ShiftCoordinates
 			double minMeasurement1 = Double.MAX_VALUE;
 			double minMeasurement2 = Double.MAX_VALUE;
 
-			int startDist = 0; // TODO start at 1?
-			// start up at i + startDist + 1 to avoid using diagonal twice
-			for ( int dist = startDist, up = i + startDist + 1, down = i - startDist; dist <= options.comparisonRange; ++dist, ++up, --down )
+			// start at 1 to avoid using values on diagonal
+			int startDist = 1;
+			for ( int dist = startDist, up = i + startDist, down = i - startDist; dist <= options.comparisonRange; ++dist, ++up, --down )
 			{
 
 				if ( up < width )
