@@ -39,7 +39,6 @@ public abstract class AbstractCorrelationFit
 	public < T extends RealType< T > > RealRandomAccessible< RealComposite< DoubleType > > estimateFromMatrix(
 			final RandomAccessibleInterval< T > correlations,
 			final double[] coordinates,
-			final double[] multipliers,
 			final AbstractLUTRealTransform transform,
 			Options options )
 	{

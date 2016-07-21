@@ -302,7 +302,7 @@ public class InferFromMatrix
 		// use multiplied matrix
 		RealRandomAccessible< RealComposite< DoubleType > > fits =
 				correlationFit.estimateFromMatrix(
-						multipliedMatrix, lut, multipliers, transform, options );
+						multipliedMatrix, lut, transform, options );
 		correlationFit.raster( fits, localFits );
 
 		// use original matrix to estimate multipliers
