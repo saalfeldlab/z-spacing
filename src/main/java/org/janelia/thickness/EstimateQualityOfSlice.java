@@ -22,7 +22,6 @@ public class EstimateQualityOfSlice
 
 	public static < T extends RealType< T > > void estimateQuadraticFromMatrix(
 			final RandomAccessibleInterval< T > correlations,
-			final double[] weights,
 			final double[] multipliers,
 			final double[] coordinates,
 			final ListImg< double[] > localFits,

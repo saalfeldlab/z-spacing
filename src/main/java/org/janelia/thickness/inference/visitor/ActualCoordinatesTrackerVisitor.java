@@ -53,7 +53,6 @@ public class ActualCoordinatesTrackerVisitor extends AbstractMultiVisitor
 			final int[] permutation,
 			final int[] inversePermutation,
 			final double[] multipliers,
-			final double[] weights,
 			final RandomAccessibleInterval< double[] > estimatedFit )
 	{
 

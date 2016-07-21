@@ -177,7 +177,7 @@ public class InferFromMatrix
 					public < U extends RealType< U > > void act( final int iteration,
 							final RandomAccessibleInterval< U > matrix, final double[] lut,
 							final int[] permutation, final int[] inversePermutation,
-							final double[] multipliers, final double[] weights,
+							final double[] multipliers,
 							final RandomAccessibleInterval< double[] > estimatedFit )
 					{
 						// don't do anything
@@ -199,12 +199,11 @@ public class InferFromMatrix
 		final int[] permutationLut = new int[ n ];
 		final int[] inverse = permutationLut.clone();
 		final int nMatrixDim = inputMatrix.numDimensions();
-		final double[] weights = new double[ n ];
-		for ( int i = 0; i < weights.length; i++ )
+		final double[] multipliers = new double[ n ];
+		for ( int i = 0; i < multipliers.length; i++ )
 		{
-			weights[ i ] = 1.0;
+			multipliers[ i ] = 1.0;
 		}
-		final double multipliers[] = weights.clone();
 
 		final ArrayList< double[] > fitList = new ArrayList< double[] >();
 		for ( int i = 0; i < lut.length; ++i )
@@ -216,7 +215,6 @@ public class InferFromMatrix
 
 		double[] permutedLut = lut.clone(); // sorted lut
 		final double[] multipliersPrevious = multipliers.clone();
-		final double[] weightsPrevious = weights.clone();
 		ArraySortedIndices.sort( permutedLut, permutationLut, inverse );
 
 		ArrayImg< T, ? > inputMultipliedMatrix = new ArrayImgFactory< T >().create( new long[] { n, n }, inputMatrix.randomAccess().get() );
@@ -263,14 +261,13 @@ public class InferFromMatrix
 			IntervalView< T > multipliedMatrix = Views.interval( new TransformView< T >( inputMultipliedMatrix, permutation ), inputMultipliedMatrix );
 
 			if ( iteration == 0 )
-				visitor.act( iteration, matrix, lut, permutationLut, inverse, multipliers, weights, null );
+				visitor.act( iteration, matrix, lut, permutationLut, inverse, multipliers, null );
 
 			final double[] shifts = this.getMediatedShifts(
 					matrix,
 					multipliedMatrix,
 					permutedLut,
 					multipliers,
-					weights,
 					iteration,
 					localFits,
 					options );
@@ -294,13 +291,11 @@ public class InferFromMatrix
 
 			updateArray( permutedLut, lut, inverse );
 			updateArray( multipliers, multipliersPrevious, inverse );
-			updateArray( weights, weightsPrevious, inverse );
 			permutedLut = lut.clone();
 			ArraySortedIndices.sort( permutedLut, permutationLut, inverse );
 			updateArray( multipliersPrevious, multipliers, permutationLut );
-			updateArray( weightsPrevious, weights, permutationLut );
 
-			visitor.act( iteration + 1, matrix, lut, permutationLut, inverse, multipliers, weights, null );
+			visitor.act( iteration + 1, matrix, lut, permutationLut, inverse, multipliers, null );
 
 		}
 
@@ -312,7 +307,6 @@ public class InferFromMatrix
 			final RandomAccessibleInterval< T > multipliedMatrix,
 			final double[] lut,
 			final double[] multipliers,
-			final double[] weights,
 			final int iteration,
 			final ListImg< double[] > localFits,
 			final Options options ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
@@ -324,12 +318,11 @@ public class InferFromMatrix
 		// use multiplied matrix
 		RealRandomAccessible< RealComposite< DoubleType > > fits =
 				correlationFit.estimateFromMatrix(
-						multipliedMatrix, lut, weights, multipliers, transform, options );
+						multipliedMatrix, lut, multipliers, transform, options );
 		correlationFit.raster( fits, localFits );
 
 		// use original matrix to estimate multipliers
 		EstimateQualityOfSlice.estimateQuadraticFromMatrix( matrix,
-				weights,
 				multipliers,
 				lut,
 				localFits,
@@ -360,7 +353,6 @@ public class InferFromMatrix
 				ShiftCoordinates.collectShiftsFromMatrix(
 						lut,
 						multipliedMatrix,
-						weights,
 						multipliers,
 						localFits,
 						options );

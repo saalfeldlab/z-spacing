@@ -24,7 +24,6 @@ public class ShiftCoordinates
 	public static < T extends RealType< T > > TreeMap< Long, ArrayList< ValuePair< Double, Double > > > collectShiftsFromMatrix(
 			final double[] coordinates,
 			final RandomAccessibleInterval< T > correlations,
-			final double[] weights,
 			final double[] multipliers,
 			final ListImg< double[] > localFits,
 			Options options )
@@ -96,7 +95,7 @@ public class ShiftCoordinates
 
 							/* current location */
 							final double shift = ( up < i ) ? rel - reference[ 0 ] : rel + reference[ 0 ];
-							localShifts.add( new ValuePair< Double, Double >( shift, weights[ i ] * weights[ up ] ) );
+							localShifts.add( new ValuePair< Double, Double >( shift, 1.0 ) );
 						}
 					}
 				}
@@ -138,7 +137,7 @@ public class ShiftCoordinates
 							final double rel = coordinates[ i ] - coordinates[ down ];
 							/* current location */
 							final double shift = ( down < i ) ? rel - reference[ 0 ] : rel + reference[ 0 ];
-							localShifts.add( new ValuePair< Double, Double >( shift, weights[ i ] * weights[ down ] ) );
+							localShifts.add( new ValuePair< Double, Double >( shift, 1.0 ) );
 						}
 					}
 				}
