@@ -1,12 +1,11 @@
 package org.janelia.thickness;
 
+import net.imglib2.Cursor;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.img.array.ArrayImgs;
-import net.imglib2.img.list.ListCursor;
-import net.imglib2.img.list.ListImg;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
@@ -24,7 +23,7 @@ public class EstimateQualityOfSlice
 			final RandomAccessibleInterval< T > correlations,
 			final double[] multipliers,
 			final double[] coordinates,
-			final ListImg< double[] > localFits,
+			final RandomAccessibleInterval< double[] > localFits,
 			final double regularizerWeight,
 			final int comparisonRange,
 			final int nIterations )
@@ -37,7 +36,7 @@ public class EstimateQualityOfSlice
 		for ( int iter = 0; iter < nIterations; ++iter )
 		{
 
-			final ListCursor< double[] > fitCursor = localFits.cursor();
+			final Cursor< double[] > fitCursor = Views.iterable( localFits ).cursor();
 
 			for ( int n = 0; fitCursor.hasNext(); ++n )
 			{

@@ -6,11 +6,11 @@ import java.util.TreeMap;
 import org.janelia.thickness.inference.Options;
 import org.janelia.thickness.lut.LUTRealTransform;
 
+import net.imglib2.Cursor;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.list.ListCursor;
-import net.imglib2.img.list.ListImg;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.view.Views;
 
 /**
  * 
@@ -24,7 +24,7 @@ public class ShiftCoordinates
 			final double[] coordinates,
 			final RandomAccessibleInterval< T > correlations,
 			final double[] multipliers,
-			final ListImg< double[] > localFits,
+			final RandomAccessibleInterval< double[] > localFits,
 			Options options )
 	{
 
@@ -35,7 +35,7 @@ public class ShiftCoordinates
 
 		final double[] reference = new double[ 1 ];
 
-		final ListCursor< double[] > cursor = localFits.cursor();
+		final Cursor< double[] > cursor = Views.iterable( localFits ).cursor();
 
 		// i is reference index, k is comparison index
 		long width = correlations.dimension( 0 );

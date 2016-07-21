@@ -22,17 +22,13 @@ import mpicbg.models.NotEnoughDataPointsException;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.RealRandomAccessible;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgFactory;
-import net.imglib2.img.list.ListImg;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.TransformView;
 import net.imglib2.view.Views;
-import net.imglib2.view.composite.RealComposite;
 
 /**
  * 
@@ -187,14 +183,6 @@ public class InferFromMatrix
 			multipliers[ i ] = 1.0;
 		}
 
-		final ArrayList< double[] > fitList = new ArrayList< double[] >();
-		for ( int i = 0; i < lut.length; ++i )
-		{
-			fitList.add( new double[ options.comparisonRange ] );
-		}
-
-		final ListImg< double[] > localFits = new ListImg< double[] >( fitList, fitList.size() );
-
 		double[] permutedLut = lut.clone(); // sorted lut
 		final double[] multipliersPrevious = multipliers.clone();
 		ArraySortedIndices.sort( permutedLut, permutationLut, inverse );
@@ -253,7 +241,6 @@ public class InferFromMatrix
 					permutedLut,
 					multipliers,
 					iteration,
-					localFits,
 					options );
 
 			this.applyShifts(
@@ -292,7 +279,6 @@ public class InferFromMatrix
 			final double[] lut,
 			final double[] multipliers,
 			final int iteration,
-			final ListImg< double[] > localFits,
 			final Options options ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
 	{
 
@@ -300,16 +286,13 @@ public class InferFromMatrix
 		final LUTRealTransform transform = new LUTRealTransform( lut, nMatrixDimensions, nMatrixDimensions );
 
 		// use multiplied matrix
-		RealRandomAccessible< RealComposite< DoubleType > > fits =
-				correlationFit.estimateFromMatrix(
-						multipliedMatrix, lut, transform, options );
-		correlationFit.raster( fits, localFits );
+		RandomAccessibleInterval< double[] > fits = correlationFit.estimateFromMatrix( multipliedMatrix, lut, transform, options );
 
 		// use original matrix to estimate multipliers
 		EstimateQualityOfSlice.estimateQuadraticFromMatrix( matrix,
 				multipliers,
 				lut,
-				localFits,
+				fits,
 				options.multiplierGenerationRegularizerWeight,
 				options.comparisonRange,
 				options.multiplierEstimationIterations );
@@ -338,7 +321,7 @@ public class InferFromMatrix
 						lut,
 						multipliedMatrix,
 						multipliers,
-						localFits,
+						fits,
 						options );
 
 		final double[] mediatedShifts = new double[ lut.length ];

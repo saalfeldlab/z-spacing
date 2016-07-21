@@ -9,7 +9,7 @@ import java.util.concurrent.Executors;
 
 import org.janelia.thickness.inference.InferFromMatrix;
 import org.janelia.thickness.inference.Options;
-import org.janelia.thickness.inference.fits.CorrelationFitAverage;
+import org.janelia.thickness.inference.fits.GlobalCorrelationFitAverage;
 import org.janelia.thickness.inference.visitor.LazyVisitor;
 import org.janelia.thickness.lut.LUTRealTransform;
 import org.janelia.thickness.lut.PermutationTransform;
@@ -111,7 +111,7 @@ public class ZPositionCorrection implements PlugIn
 		for ( int i = 0; i < startingCoordinates.length; i++ )
 			startingCoordinates[ i ] = i;
 
-		InferFromMatrix inf = new InferFromMatrix( new CorrelationFitAverage() );
+		InferFromMatrix inf = new InferFromMatrix( new GlobalCorrelationFitAverage() );
 
 		boolean estimatedSuccessfully = false;
 		double[] transform = null;
