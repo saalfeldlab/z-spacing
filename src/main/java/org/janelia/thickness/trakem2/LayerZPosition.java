@@ -32,7 +32,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.janelia.thickness.inference.InferFromMatrix;
 import org.janelia.thickness.inference.Options;
 import org.janelia.thickness.inference.fits.CorrelationFitAverage;
-import org.janelia.thickness.mediator.OpinionMediatorWeightedAverage;
 
 import ij.IJ;
 import ij.ImagePlus;
@@ -250,9 +249,7 @@ public class LayerZPosition implements TPlugIn
 		IJ.log( Arrays.toString( lut ) );
 
 		final InferFromMatrix inference =
-				new InferFromMatrix(
-						new CorrelationFitAverage(),
-						new OpinionMediatorWeightedAverage() );
+				new InferFromMatrix( new CorrelationFitAverage() );
 
 		final RandomAccessibleInterval< FloatType > raMatrix = ImagePlusImgs.from( new ImagePlus( "", matrix ) );
 

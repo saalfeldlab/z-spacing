@@ -1,6 +1,7 @@
 package org.janelia.thickness.inference;
 
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.TreeMap;
 
 import org.janelia.thickness.EstimateQualityOfSlice;
@@ -10,7 +11,6 @@ import org.janelia.thickness.inference.visitor.LazyVisitor;
 import org.janelia.thickness.inference.visitor.Visitor;
 import org.janelia.thickness.lut.LUTRealTransform;
 import org.janelia.thickness.lut.PermutationTransform;
-import org.janelia.thickness.mediator.OpinionMediator;
 import org.janelia.utility.arrays.ArraySortedIndices;
 import org.janelia.utility.arrays.ReplaceNaNs;
 
@@ -43,8 +43,6 @@ public class InferFromMatrix
 {
 
 	private final AbstractCorrelationFit correlationFit;
-
-	private final OpinionMediator shiftMediator;
 
 	public enum RegularizationType
 	{
@@ -152,15 +150,11 @@ public class InferFromMatrix
 		}
 	}
 
-	public InferFromMatrix(
-			final AbstractCorrelationFit correlationFit,
-			final OpinionMediator shiftMediator )
+	public InferFromMatrix( final AbstractCorrelationFit correlationFit )
 	{
 		super();
 
 		this.correlationFit = correlationFit;
-		this.shiftMediator = shiftMediator;
-
 	}
 
 	public < T extends RealType< T > & NativeType< T > > double[] estimateZCoordinates(
@@ -346,7 +340,8 @@ public class InferFromMatrix
 						options );
 
 		final double[] mediatedShifts = new double[ lut.length ];
-		this.shiftMediator.mediate( shifts, mediatedShifts );
+		mediateShifts( shifts, mediatedShifts );
+		// this.shiftMediator.mediate( shifts, mediatedShifts );
 
 		return mediatedShifts;
 	}
@@ -391,6 +386,34 @@ public class InferFromMatrix
 		for ( int i = 0; i < target.length; i++ )
 		{
 			target[ permutation[ i ] ] = source[ i ];
+		}
+	}
+
+	public static void mediateShifts(
+			Map< Long, ArrayList< ValuePair< Double, Double > > > shifts,
+			double[] mediatedShifts )
+	{
+		for ( int i = 0; i < mediatedShifts.length; ++i )
+		{
+
+			final ArrayList< ValuePair< Double, Double > > localShifts = shifts.get( ( long ) i );
+
+			double shift = 0.0;
+			double weightSum = 0.0;
+
+			if ( localShifts != null )
+			{
+				for ( final ValuePair< Double, Double > l : localShifts )
+				{
+					final Double v = l.getA();
+					final Double w = l.getB();
+					shift += w * v;
+					weightSum += w;
+				}
+			}
+
+			shift /= weightSum;
+			mediatedShifts[ i ] = shift;
 		}
 	}
 

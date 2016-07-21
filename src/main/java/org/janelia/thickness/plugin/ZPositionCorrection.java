@@ -15,7 +15,6 @@ import org.janelia.thickness.lut.LUTRealTransform;
 import org.janelia.thickness.lut.PermutationTransform;
 import org.janelia.thickness.lut.SingleDimensionLUTRealTransform;
 import org.janelia.thickness.lut.SingleDimensionPermutationTransform;
-import org.janelia.thickness.mediator.OpinionMediatorWeightedAverage;
 import org.janelia.utility.arrays.ArraySortedIndices;
 
 import fiji.util.gui.GenericDialogPlus;
@@ -112,7 +111,7 @@ public class ZPositionCorrection implements PlugIn
 		for ( int i = 0; i < startingCoordinates.length; i++ )
 			startingCoordinates[ i ] = i;
 
-		InferFromMatrix inf = new InferFromMatrix( new CorrelationFitAverage(), new OpinionMediatorWeightedAverage() );
+		InferFromMatrix inf = new InferFromMatrix( new CorrelationFitAverage() );
 
 		boolean estimatedSuccessfully = false;
 		double[] transform = null;
