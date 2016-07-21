@@ -29,7 +29,6 @@ import net.imglib2.img.list.ListImg;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
-import net.imglib2.util.ValuePair;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.TransformView;
 import net.imglib2.view.Views;
@@ -334,7 +333,7 @@ public class InferFromMatrix
 		}
 
 		// use multiplied matrix to collect shifts
-		final TreeMap< Long, ArrayList< ValuePair< Double, Double > > > shifts =
+		final TreeMap< Long, ArrayList< Double > > shifts =
 				ShiftCoordinates.collectShiftsFromMatrix(
 						lut,
 						multipliedMatrix,
@@ -391,29 +390,23 @@ public class InferFromMatrix
 	}
 
 	public static void mediateShifts(
-			Map< Long, ArrayList< ValuePair< Double, Double > > > shifts,
+			Map< Long, ArrayList< Double > > shifts,
 			double[] mediatedShifts )
 	{
 		for ( int i = 0; i < mediatedShifts.length; ++i )
 		{
 
-			final ArrayList< ValuePair< Double, Double > > localShifts = shifts.get( ( long ) i );
+			final ArrayList< Double > localShifts = shifts.get( ( long ) i );
 
 			double shift = 0.0;
-			double weightSum = 0.0;
 
 			if ( localShifts != null )
 			{
-				for ( final ValuePair< Double, Double > l : localShifts )
-				{
-					final Double v = l.getA();
-					final Double w = l.getB();
-					shift += w * v;
-					weightSum += w;
-				}
+				for ( final Double l : localShifts )
+					shift += l;
 			}
 
-			shift /= weightSum;
+			shift /= localShifts.size();
 			mediatedShifts[ i ] = shift;
 		}
 	}

@@ -11,7 +11,6 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.list.ListCursor;
 import net.imglib2.img.list.ListImg;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.util.ValuePair;
 
 /**
  * 
@@ -21,7 +20,7 @@ import net.imglib2.util.ValuePair;
 public class ShiftCoordinates
 {
 
-	public static < T extends RealType< T > > TreeMap< Long, ArrayList< ValuePair< Double, Double > > > collectShiftsFromMatrix(
+	public static < T extends RealType< T > > TreeMap< Long, ArrayList< Double > > collectShiftsFromMatrix(
 			final double[] coordinates,
 			final RandomAccessibleInterval< T > correlations,
 			final double[] multipliers,
@@ -32,7 +31,7 @@ public class ShiftCoordinates
 		final RandomAccess< T > corrAccess1 = correlations.randomAccess();
 		final RandomAccess< T > corrAccess2 = correlations.randomAccess();
 
-		final TreeMap< Long, ArrayList< ValuePair< Double, Double > > > weightedShifts = new TreeMap< Long, ArrayList< ValuePair< Double, Double > > >();
+		final TreeMap< Long, ArrayList< Double > > weightedShifts = new TreeMap< Long, ArrayList< Double > >();
 
 		final double[] reference = new double[ 1 ];
 
@@ -70,10 +69,10 @@ public class ShiftCoordinates
 					{
 
 						minMeasurement1 = measurement;
-						ArrayList< ValuePair< Double, Double > > localShifts = weightedShifts.get( ( long ) up );
+						ArrayList< Double > localShifts = weightedShifts.get( ( long ) up );
 						if ( localShifts == null )
 						{
-							localShifts = new ArrayList< ValuePair< Double, Double > >();
+							localShifts = new ArrayList< Double >();
 							weightedShifts.put( ( long ) up, localShifts );
 						}
 
@@ -95,7 +94,7 @@ public class ShiftCoordinates
 
 							/* current location */
 							final double shift = ( up < i ) ? rel - reference[ 0 ] : rel + reference[ 0 ];
-							localShifts.add( new ValuePair< Double, Double >( shift, 1.0 ) );
+							localShifts.add( shift );
 						}
 					}
 				}
@@ -113,10 +112,10 @@ public class ShiftCoordinates
 					{
 
 						minMeasurement2 = measurement;
-						ArrayList< ValuePair< Double, Double > > localShifts = weightedShifts.get( ( long ) down );
+						ArrayList< Double > localShifts = weightedShifts.get( ( long ) down );
 						if ( localShifts == null )
 						{
-							localShifts = new ArrayList< ValuePair< Double, Double > >();
+							localShifts = new ArrayList< Double >();
 							weightedShifts.put( ( long ) down, localShifts );
 						}
 
@@ -137,7 +136,7 @@ public class ShiftCoordinates
 							final double rel = coordinates[ i ] - coordinates[ down ];
 							/* current location */
 							final double shift = ( down < i ) ? rel - reference[ 0 ] : rel + reference[ 0 ];
-							localShifts.add( new ValuePair< Double, Double >( shift, 1.0 ) );
+							localShifts.add( shift );
 						}
 					}
 				}
