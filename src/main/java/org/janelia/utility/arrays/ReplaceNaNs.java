@@ -3,7 +3,7 @@ package org.janelia.utility.arrays;
 import java.util.Arrays;
 
 /**
- * Created by hanslovskyp on 10/24/15.
+ * Created by Philipp Hanslovsky &lt;hanslovskyp@janelia.hhmi.org&gt;
  */
 public class ReplaceNaNs
 {

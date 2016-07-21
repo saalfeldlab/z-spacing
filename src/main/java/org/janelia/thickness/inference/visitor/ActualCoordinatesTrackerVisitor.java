@@ -23,7 +23,7 @@ import net.imglib2.view.TransformView;
 import net.imglib2.view.Views;
 
 /**
- * @author hanslovskyp
+ * @author Philipp Hanslovsky &lt;hanslovskyp@janelia.hhmi.org&gt;
  *
  */
 public class ActualCoordinatesTrackerVisitor extends AbstractMultiVisitor

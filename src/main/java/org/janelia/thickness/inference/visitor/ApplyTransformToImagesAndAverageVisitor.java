@@ -29,6 +29,11 @@ import net.imglib2.view.IntervalView;
 import net.imglib2.view.TransformView;
 import net.imglib2.view.Views;
 
+/**
+ * 
+ * @author Philipp Hanslovsky &lt;hanslovskyp@janelia.hhmi.org&gt;
+ *
+ */
 public class ApplyTransformToImagesAndAverageVisitor extends AbstractMultiVisitor
 {
 

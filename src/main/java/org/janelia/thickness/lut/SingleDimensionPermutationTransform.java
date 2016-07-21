@@ -7,7 +7,7 @@ import net.imglib2.Localizable;
 import net.imglib2.Positionable;
 
 /**
- * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>
+ * @author Philipp Hanslovsky &lt;hanslovskyp@janelia.hhmi.org&gt;
  *
  *         Apply bijective permutation to one coordinate axis only.
  *

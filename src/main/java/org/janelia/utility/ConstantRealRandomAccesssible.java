@@ -6,6 +6,12 @@ import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.type.numeric.RealType;
 
+/**
+ * 
+ * @author Philipp Hanslovsky &lt;hanslovskyp@janelia.hhmi.org&gt;
+ *
+ * @param <T>
+ */
 public class ConstantRealRandomAccesssible< T extends RealType< T > > implements RealRandomAccessible< T >
 {
 

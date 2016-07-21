@@ -8,7 +8,7 @@ import net.imglib2.realtransform.InvertibleRealTransform;
 /**
  * Abstract base class for LUT based transforms.
  * 
- * @author Stephan Saalfeld <saalfelds@janelia.hhmi.org>
+ * @author Stephan Saalfeld &lt;saalfelds@janelia.hhmi.org&gt;
  */
 abstract public class AbstractLUTRealTransform implements InvertibleRealTransform
 {

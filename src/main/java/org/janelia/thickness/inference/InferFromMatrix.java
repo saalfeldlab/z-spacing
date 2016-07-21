@@ -33,6 +33,11 @@ import net.imglib2.view.TransformView;
 import net.imglib2.view.Views;
 import net.imglib2.view.composite.RealComposite;
 
+/**
+ * 
+ * @author Philipp Hanslovsky &lt;hanslovskyp@janelia.hhmi.org&gt;
+ *
+ */
 public class InferFromMatrix
 {
 

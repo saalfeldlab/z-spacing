@@ -12,7 +12,7 @@ import java.io.Serializable;
 import java.lang.reflect.Field;
 
 /**
- * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>
+ * @author Philipp Hanslovsky &lt;hanslovskyp@janelia.hhmi.org&gt;
  *
  */
 public class Options implements Serializable

@@ -11,7 +11,7 @@ import net.imglib2.realtransform.InvertibleRealTransform;
 import net.imglib2.type.numeric.real.DoubleType;
 
 /**
- * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>
+ * @author Philipp Hanslovsky &lt;hanslovskyp@janelia.hhmi.org&gt;
  *
  */
 public class SingleDimensionLUTRealTransformField extends

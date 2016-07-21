@@ -5,7 +5,7 @@ import java.util.concurrent.Callable;
 import net.imglib2.util.RealSum;
 
 /**
- * @author Stephan Saalfeld <saalfelds@janelia.hhmi.org>
+ * @author Stephan Saalfeld &lt;saalfelds@janelia.hhmi.org&gt;
  *
  */
 public class RealSumARGBNCC implements Callable< Double >

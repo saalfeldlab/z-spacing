@@ -15,8 +15,8 @@ import net.imglib2.type.numeric.real.DoubleType;
 /**
  * Abstract base class for LUT based transforms in 2D fields.
  * 
- * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>
- * @author Stephan Saalfeld <saalfelds@janelia.hhmi.org>
+ * @author Philipp Hanslovsky &lt;hanslovskyp@janelia.hhmi.org&gt;
+ * @author Stephan Saalfeld &lt;saalfelds@janelia.hhmi.org&gt;
  */
 abstract public class AbstractLUTRealTransformField implements InvertibleRealTransform
 {

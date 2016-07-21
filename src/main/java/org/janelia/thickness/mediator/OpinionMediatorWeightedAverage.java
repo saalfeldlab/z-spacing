@@ -9,7 +9,7 @@ import java.util.TreeMap;
 import net.imglib2.util.ValuePair;
 
 /**
- * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>
+ * @author Philipp Hanslovsky &lt;hanslovskyp@janelia.hhmi.org&gt;
  *
  */
 public class OpinionMediatorWeightedAverage implements OpinionMediator

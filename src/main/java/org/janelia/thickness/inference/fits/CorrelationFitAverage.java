@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import mpicbg.models.PointMatch;
 
 /**
- * Created by hanslovskyp on 10/7/15.
+ * @author Philipp Hanslovsky &lt;hanslovskyp@janelia.hhmi.org&gt;
  */
 public class CorrelationFitAverage extends AbstractCorrelationFit
 {

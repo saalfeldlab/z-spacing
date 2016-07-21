@@ -13,7 +13,7 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.numeric.RealType;
 
 /**
- * @author hanslovskyp
+ * @author Philipp Hanslovsky &lt;hanslovskyp@janelia.hhmi.org&gt;
  *
  */
 public class MultipliersTrackerVisitor extends AbstractMultiVisitor

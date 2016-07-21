@@ -5,8 +5,8 @@ import java.util.concurrent.Callable;
 import net.imglib2.util.RealSum;
 
 /**
- * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>
- * @author Stephan Saalfeld <saalfelds@janelia.hhmi.org>
+ * @author Philipp Hanslovsky &lt;hanslovskyp@janelia.hhmi.org&gt;
+ * @author Stephan Saalfeld &lt;saalfelds@janelia.hhmi.org&gt;
  *
  */
 public class RealSumFloatNCC implements Callable< Double >

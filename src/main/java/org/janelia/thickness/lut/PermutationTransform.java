@@ -10,8 +10,8 @@ import net.imglib2.transform.InvertibleTransform;
 /**
  * Bijective integer transform mapping between integer coordinates in [0,n-1].
  *
- * @author Stephan Saalfeld <saalfelds@janelia.hhmi.org>
- * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>
+ * @author Stephan Saalfeld &lt;saalfelds@janelia.hhmi.org&gt;
+ * @author Philipp Hanslovsky &lt;hanslovskyp@janelia.hhmi.org&gt;
  */
 public class PermutationTransform extends AbstractPerumtationTransform
 {

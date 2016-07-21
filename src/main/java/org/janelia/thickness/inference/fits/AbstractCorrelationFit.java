@@ -30,7 +30,7 @@ import net.imglib2.view.composite.CompositeIntervalView;
 import net.imglib2.view.composite.RealComposite;
 
 /**
- * Created by hanslovskyp on 10/7/15.
+ * @author Philipp Hanslovsky &lt;hanslovskyp@janelia.hhmi.org&gt;
  */
 public abstract class AbstractCorrelationFit
 {

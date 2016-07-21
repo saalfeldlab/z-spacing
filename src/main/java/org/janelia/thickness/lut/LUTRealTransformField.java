@@ -7,6 +7,11 @@ import net.imglib2.realtransform.InverseRealTransform;
 import net.imglib2.realtransform.InvertibleRealTransform;
 import net.imglib2.type.numeric.real.DoubleType;
 
+/**
+ * 
+ * @author Philipp Hanslovsky &lt;hanslovskyp@janelia.hhmi.org&gt;
+ *
+ */
 public class LUTRealTransformField extends AbstractLUTRealTransformField
 {
 

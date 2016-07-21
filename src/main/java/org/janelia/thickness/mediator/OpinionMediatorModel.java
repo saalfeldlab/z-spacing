@@ -10,6 +10,12 @@ import mpicbg.models.Point;
 import mpicbg.models.PointMatch;
 import net.imglib2.util.ValuePair;
 
+/**
+ * 
+ * @author Philipp Hanslovsky &lt;hanslovskyp@janelia.hhmi.org&gt;
+ *
+ * @param <M>
+ */
 public class OpinionMediatorModel< M extends Model< M > > implements OpinionMediator
 {
 

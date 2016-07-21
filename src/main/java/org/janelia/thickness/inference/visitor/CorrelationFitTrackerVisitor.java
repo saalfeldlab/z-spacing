@@ -14,7 +14,7 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.view.Views;
 
 /**
- * @author hanslovskyp
+ * @author Philipp Hanslovsky &lt;hanslovskyp@janelia.hhmi.org&gt;
  *
  */
 public class CorrelationFitTrackerVisitor extends AbstractMultiVisitor

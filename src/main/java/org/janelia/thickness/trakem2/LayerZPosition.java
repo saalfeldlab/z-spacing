@@ -71,7 +71,7 @@ import net.imglib2.type.numeric.real.FloatType;
 /**
  *
  *
- * @author Stephan Saalfeld <saalfelds@janelia.hhmi.org>
+ * @author Stephan Saalfeld &lt;saalfelds@janelia.hhmi.org&gt;
  */
 public class LayerZPosition implements TPlugIn
 {

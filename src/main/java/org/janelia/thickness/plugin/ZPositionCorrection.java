@@ -53,7 +53,7 @@ import net.imglib2.view.TransformView;
 import net.imglib2.view.Views;
 
 /**
- * @author Philipp Hanslovsky <hanslovskyp@janelia.hhmi.org>
+ * @author Philipp Hanslovsky &lt;hanslovskyp@janelia.hhmi.org&gt;
  *
  */
 public class ZPositionCorrection implements PlugIn
