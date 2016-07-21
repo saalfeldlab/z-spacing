@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.janelia.thickness.inference.Options;
 import org.janelia.thickness.lut.AbstractLUTRealTransform;
-import org.janelia.thickness.lut.LUTRealTransform;
 
 import mpicbg.models.Point;
 import mpicbg.models.PointMatch;
@@ -56,20 +55,11 @@ public abstract class AbstractCorrelationFit
 
 		final RealTransformRealRandomAccessible< T, InverseRealTransform > transformedCorrelations =
 				RealViews.transformReal( extendedInterpolatedCorrelations, transform );
-		final LUTRealTransform transform1d = new LUTRealTransform( coordinates, 1, 1 );
-		final RealTransformRealRandomAccessible< DoubleType, InverseRealTransform > multipliersInterpolatedTransformed =
-				RealViews.transformReal(
-						Views.interpolate(
-								Views.extendValue( ArrayImgs.doubles( multipliers, multipliers.length ),
-										new DoubleType( Double.NaN ) ),
-								new NLinearInterpolatorFactory< DoubleType >() ),
-						transform1d );
 
 		final RealRandomAccess< T > access1 = transformedCorrelations.realRandomAccess();
 		final RealRandomAccess< T > access2 = transformedCorrelations.realRandomAccess();
 
 		ArrayImg< DoubleType, DoubleArray > fits = ArrayImgs.doubles( nFits, range + 1 );
-		CompositeIntervalView< DoubleType, RealComposite< DoubleType > > result = Views.collapseReal( fits );
 
 		for ( int z = estimateWindowRadius, zIndex = 0; z < coordinates.length; z += estimateWindowRadius, ++zIndex )
 		{
