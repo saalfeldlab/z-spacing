@@ -354,17 +354,15 @@ public class InferFromMatrix
 			final PermutationTransform permutation,
 			final Options options )
 	{
-		final double[] smoothedShifts = shifts;// new double[ shifts.length ];
 
 		final double inverseCoordinateUpdateRegularizerWeight = 1 - options.coordinateUpdateRegularizerWeight;
 
-		final double accumulatedCorrections = 0.0;
-		for ( int ijk = 0; ijk < coordinates.length; ++ijk )
+		for ( int i = 0; i < coordinates.length; ++i )
 		{
-			double val = coordinates[ ijk ];
-			val += accumulatedCorrections + options.shiftProportion * smoothedShifts[ ijk ];
-			val = options.coordinateUpdateRegularizerWeight * regularizerCoordinates[ permutation.applyInverse( ijk ) ] + inverseCoordinateUpdateRegularizerWeight * val;
-			coordinates[ ijk ] = val;
+			double val = coordinates[ i ];
+			val += options.shiftProportion * shifts[ i ];
+			val = options.coordinateUpdateRegularizerWeight * regularizerCoordinates[ permutation.applyInverse( i ) ] + inverseCoordinateUpdateRegularizerWeight * val;
+			coordinates[ i ] = val;
 		}
 
 	}
