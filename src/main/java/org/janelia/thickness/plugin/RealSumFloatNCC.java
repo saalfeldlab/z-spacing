@@ -12,6 +12,7 @@ import net.imglib2.util.RealSum;
 public class RealSumFloatNCC implements Callable< Double >
 {
 	protected float[] ap;
+
 	protected float[] bp;
 
 	public RealSumFloatNCC( final float[] ap, final float[] bp )
@@ -32,7 +33,6 @@ public class RealSumFloatNCC implements Callable< Double >
 		for ( int i = 0; i < ap.length; ++i )
 		{
 
-			
 			final double va = ap[ i ];
 			final double vb = bp[ i ];
 

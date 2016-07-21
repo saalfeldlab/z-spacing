@@ -16,58 +16,62 @@ import net.imglib2.type.numeric.RealType;
  * @author hanslovskyp
  *
  */
-public class MultipliersTrackerVisitor extends AbstractMultiVisitor {
-	
+public class MultipliersTrackerVisitor extends AbstractMultiVisitor
+{
+
 	private final String basePath;
+
 	private final String separator;
-	
+
 	private int r;
 
-	public MultipliersTrackerVisitor(final String basePath, final String separator ) {
-		this( new ArrayList<Visitor>(), basePath, separator );
+	public MultipliersTrackerVisitor( final String basePath, final String separator )
+	{
+		this( new ArrayList< Visitor >(), basePath, separator );
 	}
 
-	public MultipliersTrackerVisitor( final ArrayList< Visitor > visitors, final String basePath, final String separator ) {
+	public MultipliersTrackerVisitor( final ArrayList< Visitor > visitors, final String basePath, final String separator )
+	{
 		super( visitors );
 		this.basePath = basePath;
 		this.separator = separator;
 	}
 
 	@Override
-	< T extends RealType< T > > void actSelf( 
-			final int iteration, 
-			final RandomAccessibleInterval< T > matrix, 
+	< T extends RealType< T > > void actSelf(
+			final int iteration,
+			final RandomAccessibleInterval< T > matrix,
 			final double[] lut,
 			final int[] permutation,
 			final int[] inversePermutation,
 			final double[] multipliers,
 			final double[] weights,
-			final RandomAccessibleInterval< double[] > estimatedFit
-			) {
-		
-		
+			final RandomAccessibleInterval< double[] > estimatedFit )
+	{
+
 		final File file = new File( String.format( this.basePath, iteration ) );
 		r = 0;
-		try {
-			
+		try
+		{
+
 			file.createNewFile();
 			final FileWriter fw = new FileWriter( file.getAbsoluteFile() );
 			final BufferedWriter bw = new BufferedWriter( fw );
-			
-			for ( int i = 0; i < multipliers.length; ++i ) {
+
+			for ( int i = 0; i < multipliers.length; ++i )
+			{
 				final double c = multipliers[ inversePermutation[ i ] ];
 				bw.write( String.format( "%d" + this.separator + "%f\n", ++r, c ) );
 			}
-			
+
 			bw.close();
-		} catch (final IOException e) {
+		}
+		catch ( final IOException e )
+		{
 			// catch exceptions?
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
-		
-		
 
 	}
 

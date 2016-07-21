@@ -30,22 +30,24 @@ import net.imglib2.view.Views;
  * @author Stephan Saalfeld <saalfelds@janelia.hhmi.org>
  * 
  */
-public class SingleDimensionLUTRealTransform extends AbstractLUTRealTransform {
+public class SingleDimensionLUTRealTransform extends AbstractLUTRealTransform
+{
 
 	final protected int d;
-	
+
 	public SingleDimensionLUTRealTransform( final double[] lut, final int numSourceDimensions, final int numTargetDimensions, final int d )
 	{
 		super( lut, numSourceDimensions, numTargetDimensions );
 		this.d = d;
 	}
-	
+
 	@Override
 	public void apply( final double[] source, final double[] target )
 	{
 		assert source.length == target.length: "Dimensions do not match.";
 
-		for ( @SuppressWarnings( "hiding" ) int d = 0; d < target.length; d++ )
+		for ( @SuppressWarnings( "hiding" )
+		int d = 0; d < target.length; d++ )
 			target[ d ] = source[ d ];
 
 		target[ d ] = applyChecked( source[ d ] );
@@ -56,7 +58,8 @@ public class SingleDimensionLUTRealTransform extends AbstractLUTRealTransform {
 	{
 		assert source.length == target.length: "Dimensions do not match.";
 
-		for ( @SuppressWarnings( "hiding" ) int d = 0; d < target.length; d++ )
+		for ( @SuppressWarnings( "hiding" )
+		int d = 0; d < target.length; d++ )
 			target[ d ] = source[ d ];
 
 		target[ d ] = ( float ) applyChecked( source[ d ] );
@@ -86,7 +89,8 @@ public class SingleDimensionLUTRealTransform extends AbstractLUTRealTransform {
 	{
 		assert source.length == target.length: "Dimensions do not match.";
 
-		for ( @SuppressWarnings( "hiding" ) int d = 0; d < target.length; d++ )
+		for ( @SuppressWarnings( "hiding" )
+		int d = 0; d < target.length; d++ )
 			source[ d ] = target[ d ];
 
 		source[ d ] = applyInverseChecked( target[ d ] );
@@ -97,10 +101,11 @@ public class SingleDimensionLUTRealTransform extends AbstractLUTRealTransform {
 	{
 		assert source.length == target.length: "Dimensions do not match.";
 
-		for ( @SuppressWarnings( "hiding" ) int d = 0; d < target.length; d++ )
+		for ( @SuppressWarnings( "hiding" )
+		int d = 0; d < target.length; d++ )
 			source[ d ] = target[ d ];
 
-		source[ d ] = ( float )applyInverseChecked( target[ d ] );
+		source[ d ] = ( float ) applyInverseChecked( target[ d ] );
 	}
 
 	@Override
@@ -121,37 +126,28 @@ public class SingleDimensionLUTRealTransform extends AbstractLUTRealTransform {
 	{
 		return new InverseRealTransform( this );
 	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	final static public void main( final String[] args ) {
+
+	final static public void main( final String[] args )
+	{
 		new ImageJ();
 		final ImagePlus imp = new ImagePlus( "http://media.npr.org/images/picture-show-flickr-promo.jpg" );
 		imp.show();
-		
-		final float[] pixels = ( float[] )imp.getProcessor().convertToFloat().getPixels();
-		final ArrayImg<FloatType, FloatArray> img = ArrayImgs.floats(pixels, imp.getWidth(), imp.getHeight());
-		
-		final double[] lut = new double[Math.max(imp.getWidth(), imp.getHeight())];
-		for (int i =0; i < lut.length; ++i)
-			lut[i] = i + Math.pow(i, 1.5);
-		
-		final SingleDimensionLUTRealTransform transform = new SingleDimensionLUTRealTransform(lut, 2, 2, 1);
-		final RealRandomAccessible<FloatType> source = Views.interpolate( Views.extendBorder(img), new NLinearInterpolatorFactory<FloatType>() );
-		final RandomAccessible<FloatType> target = new RealTransformRandomAccessible<FloatType, RealTransform>(source, transform);
-		final RandomAccessible<FloatType> target2 = RealViews.transform(source, transform);
-		
+
+		final float[] pixels = ( float[] ) imp.getProcessor().convertToFloat().getPixels();
+		final ArrayImg< FloatType, FloatArray > img = ArrayImgs.floats( pixels, imp.getWidth(), imp.getHeight() );
+
+		final double[] lut = new double[ Math.max( imp.getWidth(), imp.getHeight() ) ];
+		for ( int i = 0; i < lut.length; ++i )
+			lut[ i ] = i + Math.pow( i, 1.5 );
+
+		final SingleDimensionLUTRealTransform transform = new SingleDimensionLUTRealTransform( lut, 2, 2, 1 );
+		final RealRandomAccessible< FloatType > source = Views.interpolate( Views.extendBorder( img ), new NLinearInterpolatorFactory< FloatType >() );
+		final RandomAccessible< FloatType > target = new RealTransformRandomAccessible< FloatType, RealTransform >( source, transform );
+		final RandomAccessible< FloatType > target2 = RealViews.transform( source, transform );
+
 //		RealViews.transformReal(source, transform);
-		
-		
-		ImageJFunctions.show(Views.interval(target, new FinalInterval(imp.getWidth(), imp.getHeight())));
-		ImageJFunctions.show(Views.interval(target2, new FinalInterval(imp.getWidth(), imp.getHeight())));
+
+		ImageJFunctions.show( Views.interval( target, new FinalInterval( imp.getWidth(), imp.getHeight() ) ) );
+		ImageJFunctions.show( Views.interval( target2, new FinalInterval( imp.getWidth(), imp.getHeight() ) ) );
 	}
 }

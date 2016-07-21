@@ -11,6 +11,7 @@ import net.imglib2.util.RealSum;
 public class RealSumARGBNCC implements Callable< Double >
 {
 	protected int[] ap;
+
 	protected int[] bp;
 
 	public RealSumARGBNCC( final int[] ap, final int[] bp )
@@ -37,8 +38,7 @@ public class RealSumARGBNCC implements Callable< Double >
 			final int gb = ( bp[ i ] >> 8 ) & 0xff;
 			final int bb = bp[ i ] & 0xff;
 
-			if (
-					ra == 0 || ga == 0 || ba == 0 ||
+			if ( ra == 0 || ga == 0 || ba == 0 ||
 					rb == 0 || gb == 0 || bb == 0 ||
 					ra == 255 || ga == 255 || ba == 255 ||
 					rb == 255 || gb == 255 || bb == 255 )

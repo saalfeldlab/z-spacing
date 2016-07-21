@@ -37,7 +37,7 @@ public class LUTRealTransform extends AbstractLUTRealTransform
 	{
 		super( lut, numSourceDimensions, numTargetDimensions );
 	}
-	
+
 	@Override
 	public void apply( final double[] source, final double[] target )
 	{
@@ -97,13 +97,13 @@ public class LUTRealTransform extends AbstractLUTRealTransform
 	public void applyInverse( final RealPositionable source, final RealLocalizable target )
 	{
 		assert source.numDimensions() == target.numDimensions(): "Dimensions do not match.";
-		
+
 		final int n = target.numDimensions();
 		for ( int d = 0; d < n; ++d )
 			source.setPosition( applyInverseChecked( target.getDoublePosition( d ) ), d );
 	}
-	
-	/** 
+
+	/**
 	 * TODO create actual inverse
 	 */
 	@Override
@@ -111,14 +111,8 @@ public class LUTRealTransform extends AbstractLUTRealTransform
 	{
 		return new InverseRealTransform( this );
 	}
-	
-	
-	
-	
-	
-	
-	
-	public static < T extends Type< T >> void render( final RealRandomAccessible< T > source, final RandomAccessibleInterval< T > target, final RealTransform transform, final double dx )
+
+	public static < T extends Type< T > > void render( final RealRandomAccessible< T > source, final RandomAccessibleInterval< T > target, final RealTransform transform, final double dx )
 	{
 		final RealRandomAccessible< T > interpolant = Views.interpolate( Views.extendBorder( target ), new NearestNeighborInterpolatorFactory< T >() );
 		final RealRandomAccess< T > a = source.realRandomAccess();
@@ -136,32 +130,33 @@ public class LUTRealTransform extends AbstractLUTRealTransform
 			}
 		}
 	}
-	
-	final static public void main( final String[] args ) {
-		
+
+	final static public void main( final String[] args )
+	{
+
 		new ImageJ();
 		final ImagePlus imp = new ImagePlus( "http://media.npr.org/images/picture-show-flickr-promo.jpg" );
 		imp.show();
-		
-		final float[] pixels = ( float[] )imp.getProcessor().convertToFloat().getPixels();
-		final ArrayImg<FloatType, FloatArray> img = ArrayImgs.floats(pixels, imp.getWidth(), imp.getHeight());
-		
-		final double[] lut = new double[Math.max(imp.getWidth(), imp.getHeight())];
-		for (int i =0; i < lut.length; ++i)
-			lut[i] = i + Math.pow(i, 1.5);
-		
-		final LUTRealTransform transform = new LUTRealTransform(lut, 2, 2);
-		final RealRandomAccessible<FloatType> source = Views.interpolate( Views.extendBorder(img), new NLinearInterpolatorFactory<FloatType>() );
-		final RandomAccessible<FloatType> target = new RealTransformRandomAccessible<FloatType, RealTransform>(source, transform);
-		final RandomAccessible<FloatType> target2 = RealViews.transform(source, transform);
-		
+
+		final float[] pixels = ( float[] ) imp.getProcessor().convertToFloat().getPixels();
+		final ArrayImg< FloatType, FloatArray > img = ArrayImgs.floats( pixels, imp.getWidth(), imp.getHeight() );
+
+		final double[] lut = new double[ Math.max( imp.getWidth(), imp.getHeight() ) ];
+		for ( int i = 0; i < lut.length; ++i )
+			lut[ i ] = i + Math.pow( i, 1.5 );
+
+		final LUTRealTransform transform = new LUTRealTransform( lut, 2, 2 );
+		final RealRandomAccessible< FloatType > source = Views.interpolate( Views.extendBorder( img ), new NLinearInterpolatorFactory< FloatType >() );
+		final RandomAccessible< FloatType > target = new RealTransformRandomAccessible< FloatType, RealTransform >( source, transform );
+		final RandomAccessible< FloatType > target2 = RealViews.transform( source, transform );
+
 //		RealViews.transformReal(source, transform);
-		
-		final ArrayImg<FloatType, FloatArray> targetImg = ArrayImgs.floats(imp.getWidth(), imp.getHeight());
-		render(source, targetImg, transform, 0.05);
-		
-		ImageJFunctions.show(Views.interval(target, new FinalInterval(imp.getWidth(), imp.getHeight())));
-		ImageJFunctions.show(Views.interval(target2, new FinalInterval(imp.getWidth(), imp.getHeight())));
-		ImageJFunctions.show(targetImg);
+
+		final ArrayImg< FloatType, FloatArray > targetImg = ArrayImgs.floats( imp.getWidth(), imp.getHeight() );
+		render( source, targetImg, transform, 0.05 );
+
+		ImageJFunctions.show( Views.interval( target, new FinalInterval( imp.getWidth(), imp.getHeight() ) ) );
+		ImageJFunctions.show( Views.interval( target2, new FinalInterval( imp.getWidth(), imp.getHeight() ) ) );
+		ImageJFunctions.show( targetImg );
 	}
 }

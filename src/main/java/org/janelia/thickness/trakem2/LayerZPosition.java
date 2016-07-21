@@ -16,6 +16,24 @@
  */
 package org.janelia.thickness.trakem2;
 
+import java.awt.Color;
+import java.awt.Image;
+import java.awt.Rectangle;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.janelia.thickness.inference.InferFromMatrix;
+import org.janelia.thickness.inference.Options;
+import org.janelia.thickness.inference.fits.CorrelationFitAverage;
+import org.janelia.thickness.mediator.OpinionMediatorWeightedAverage;
+
 import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.GenericDialog;
@@ -32,20 +50,6 @@ import ini.trakem2.display.LayerSet;
 import ini.trakem2.display.Patch;
 import ini.trakem2.plugin.TPlugIn;
 import ini.trakem2.utils.Utils;
-
-import java.awt.Color;
-import java.awt.Image;
-import java.awt.Rectangle;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import mpicbg.ij.FeatureTransform;
 import mpicbg.ij.SIFT;
 import mpicbg.imagefeatures.Feature;
@@ -53,23 +57,16 @@ import mpicbg.imagefeatures.FloatArray2DSIFT;
 import mpicbg.models.AbstractModel;
 import mpicbg.models.AffineModel2D;
 import mpicbg.models.HomographyModel2D;
-import mpicbg.models.IllDefinedDataPointsException;
 import mpicbg.models.NotEnoughDataPointsException;
 import mpicbg.models.PointMatch;
 import mpicbg.models.RigidModel2D;
 import mpicbg.models.SimilarityModel2D;
-import mpicbg.models.TranslationModel1D;
 import mpicbg.models.TranslationModel2D;
 import mpicbg.trakem2.align.Align;
 import mpicbg.trakem2.align.Align.Param;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.imageplus.ImagePlusImgs;
 import net.imglib2.type.numeric.real.FloatType;
-
-import org.janelia.thickness.inference.InferFromMatrix;
-import org.janelia.thickness.inference.Options;
-import org.janelia.thickness.inference.fits.CorrelationFitAverage;
-import org.janelia.thickness.mediator.OpinionMediatorWeightedAverage;
 
 /**
  *
@@ -79,37 +76,49 @@ import org.janelia.thickness.mediator.OpinionMediatorWeightedAverage;
 public class LayerZPosition implements TPlugIn
 {
 	protected LayerSet layerset = null;
+
 	static protected int radius = 10;
+
 	static protected int iterations = 100;
+
 	static protected double regularize = 0.6;
+
 	static protected int innerIterations = 10;
+
 	static protected double innerRegularize = 0.1;
+
 	static protected boolean reorder = true;
+
 	static protected double scale = -1;
+
 	static protected boolean showMatrix = true;
+
 	static protected Param siftParam = Align.param.clone();
-	final static protected String[] similarityMethods = new String[]{ "NCC (aligned)", "SIFT consensus (unaligned)" };
+
+	final static protected String[] similarityMethods = new String[] { "NCC (aligned)", "SIFT consensus (unaligned)" };
+
 	static protected String similarityMethod = similarityMethods[ 0 ];
 
 	private Layer currentLayer( final Object... params )
 	{
 		final Layer layer;
-		if (params != null && params[ 0 ] != null)
+		if ( params != null && params[ 0 ] != null )
 		{
 			final Object param = params[ 0 ];
 			if ( Layer.class.isInstance( param ) )
-				layer = ( Layer)param;
+				layer = ( Layer ) param;
 			else if ( LayerSet.class.isInstance( param ) )
-				layer = ( ( LayerSet )param ).getLayer( 0 );
+				layer = ( ( LayerSet ) param ).getLayer( 0 );
 			else if ( Displayable.class.isInstance( param ) )
-				layer = ( ( Displayable )param ).getLayer();
-			else layer = null;
+				layer = ( ( Displayable ) param ).getLayer();
+			else
+				layer = null;
 		}
 		else
 		{
 			final Display front = Display.getFront();
 			if ( front == null )
-				layer = Project.getProjects().get(0).getRootLayerSet().getLayer( 0 );
+				layer = Project.getProjects().get( 0 ).getRootLayerSet().getLayer( 0 );
 			else
 				layer = front.getLayer();
 		}
@@ -125,7 +134,7 @@ public class LayerZPosition implements TPlugIn
 		else
 			roi = front.getRoi();
 		if ( roi == null )
-			return new Rectangle( 0, 0, ( int )layerset.getLayerWidth(), ( int )layerset.getLayerHeight() );
+			return new Rectangle( 0, 0, ( int ) layerset.getLayerWidth(), ( int ) layerset.getLayerHeight() );
 		else
 			return roi.getBounds();
 	}
@@ -147,13 +156,13 @@ public class LayerZPosition implements TPlugIn
 	@Override
 	public boolean setup( final Object... params )
 	{
-		if (params != null && params[ 0 ] != null)
+		if ( params != null && params[ 0 ] != null )
 		{
 			final Object param = params[ 0 ];
 			if ( LayerSet.class.isInstance( param ) )
-				layerset = ( LayerSet )param;
+				layerset = ( LayerSet ) param;
 			else if ( Displayable.class.isInstance( param ) )
-				layerset = ( ( Displayable )param ).getLayerSet();
+				layerset = ( ( Displayable ) param ).getLayerSet();
 			else
 				return false;
 		}
@@ -161,7 +170,7 @@ public class LayerZPosition implements TPlugIn
 		{
 			final Display front = Display.getFront();
 			if ( front == null )
-				layerset = Project.getProjects().get(0).getRootLayerSet();
+				layerset = Project.getProjects().get( 0 ).getRootLayerSet();
 			else
 				layerset = front.getLayerSet();
 		}
@@ -177,20 +186,20 @@ public class LayerZPosition implements TPlugIn
 		final ArrayList< Patch > filteredPatches = new ArrayList< Patch >();
 		for ( final Displayable d : filteredDisplayables )
 			if ( d.isVisible() )
-				filteredPatches.add( ( Patch )d );
+				filteredPatches.add( ( Patch ) d );
 
 		if ( filteredPatches.size() > 0 )
 		{
 			final Image imgi = layer.getProject().getLoader().getFlatAWTImage(
-	                layer,
-	                fov,
-	                s,
-	                0xffffffff,
-	                ImagePlus.COLOR_RGB,
-	                Patch.class,
-	                filteredPatches,
-	                true,
-	                new Color( 0x00ffffff, true ) );
+					layer,
+					fov,
+					s,
+					0xffffffff,
+					ImagePlus.COLOR_RGB,
+					Patch.class,
+					filteredPatches,
+					true,
+					new Color( 0x00ffffff, true ) );
 			return new ColorProcessor( imgi );
 		}
 		else
@@ -207,7 +216,7 @@ public class LayerZPosition implements TPlugIn
 		if ( ip == null )
 			return null;
 		else
-			return ( int[] )ip.getPixels();
+			return ( int[] ) ip.getPixels();
 	}
 
 	static public void optimize(
@@ -218,7 +227,8 @@ public class LayerZPosition implements TPlugIn
 			final double reg,
 			final int innerIter,
 			final double innerReg,
-			final boolean reord ) throws Exception {
+			final boolean reord ) throws Exception
+	{
 		final Options options = Options.generateDefaultOptions();
 		options.comparisonRange = rad;
 		options.nIterations = iter;
@@ -257,7 +267,7 @@ public class LayerZPosition implements TPlugIn
 	static private FloatProcessor initMatrix( final int size )
 	{
 		final FloatProcessor ip = new FloatProcessor( size, size );
-		final float[] ipPixels = ( float[] )ip.getPixels();
+		final float[] ipPixels = ( float[] ) ip.getPixels();
 		for ( int i = 0; i < ipPixels.length; ++i )
 			ipPixels[ i ] = Float.NaN;
 		ip.setMinAndMax( -0.2, 1.0 );
@@ -282,7 +292,6 @@ public class LayerZPosition implements TPlugIn
 		else
 			impMatrix = null;
 
-
 		for ( int i = 0; i < layers.size(); ++i )
 		{
 			final int fi = i;
@@ -293,7 +302,7 @@ public class LayerZPosition implements TPlugIn
 
 			ip.setf( fi, fi, 1.0f );
 
-	        final ExecutorService exec = Executors.newFixedThreadPool( Runtime.getRuntime().availableProcessors() );
+			final ExecutorService exec = Executors.newFixedThreadPool( Runtime.getRuntime().availableProcessors() );
 			final ArrayList< Future< FloatProcessor > > tasks = new ArrayList< Future< FloatProcessor > >();
 
 			for ( int j = i + 1; j < layers.size() && j <= i + r; ++j )
@@ -316,7 +325,7 @@ public class LayerZPosition implements TPlugIn
 						}
 					}
 				},
-				ip ) );
+						ip ) );
 			}
 
 			for ( final Future< FloatProcessor > fu : tasks )
@@ -418,49 +427,51 @@ public class LayerZPosition implements TPlugIn
 		final ArrayList< PointMatch > candidates = new ArrayList< PointMatch >();
 		final ArrayList< PointMatch > inliers = new ArrayList< PointMatch >();
 
-		if (features1.size() > 0 && features2.size() > 0)
+		if ( features1.size() > 0 && features2.size() > 0 )
 		{
 			FeatureTransform.matchFeatures( features1, features2, candidates, param.rod );
 
-            AbstractModel< ? > model;
-            switch ( param.expectedModelIndex )
-            {
-                case 0:
-                    model = new TranslationModel2D();
-                    break;
-                case 1:
-                    model = new RigidModel2D();
-                    break;
-                case 2:
-                    model = new SimilarityModel2D();
-                    break;
-                case 3:
-                    model = new AffineModel2D();
-                    break;
-                case 4:
-                    model = new HomographyModel2D();
-                    break;
-                default:
-                    return 0.0;
-            }
+			AbstractModel< ? > model;
+			switch ( param.expectedModelIndex )
+			{
+			case 0:
+				model = new TranslationModel2D();
+				break;
+			case 1:
+				model = new RigidModel2D();
+				break;
+			case 2:
+				model = new SimilarityModel2D();
+				break;
+			case 3:
+				model = new AffineModel2D();
+				break;
+			case 4:
+				model = new HomographyModel2D();
+				break;
+			default:
+				return 0.0;
+			}
 
 			boolean modelFound = false;
-			try {
+			try
+			{
 				modelFound = model.filterRansac(
-					candidates,
-					inliers,
-					1000,
-					param.maxEpsilon,
-					param.minInlierRatio,
-					param.minNumInliers,
-					3 );
+						candidates,
+						inliers,
+						1000,
+						param.maxEpsilon,
+						param.minInlierRatio,
+						param.minNumInliers,
+						3 );
 			}
-			catch (final NotEnoughDataPointsException e) {
+			catch ( final NotEnoughDataPointsException e )
+			{
 				modelFound = false;
 			}
 
-			if (modelFound)
-				return ( double )inliers.size() / ( double )candidates.size();
+			if ( modelFound )
+				return ( double ) inliers.size() / ( double ) candidates.size();
 			else
 				return 0.0;
 		}
@@ -473,30 +484,31 @@ public class LayerZPosition implements TPlugIn
 			final Param param,
 			final Rectangle fov ) throws InterruptedException
 	{
-		final double s = Math.min( 1.0, Math.min( ( double )param.sift.maxOctaveSize / ( double )fov.getWidth(), ( double )param.sift.maxOctaveSize / ( double )fov.getHeight() ) );
+		final double s = Math.min( 1.0, Math.min( param.sift.maxOctaveSize / fov.getWidth(), param.sift.maxOctaveSize / fov.getHeight() ) );
 
 		@SuppressWarnings( "unchecked" )
-		final ArrayList< Feature >[] featuresArray = ( ArrayList< Feature >[] )new ArrayList[ layers.size() ];
+		final ArrayList< Feature >[] featuresArray = new ArrayList[ layers.size() ];
 		final AtomicInteger i = new AtomicInteger( 0 );
 		final ArrayList< Thread > threads = new ArrayList< Thread >();
 		for ( int t = 0; t < Runtime.getRuntime().availableProcessors(); ++t )
 		{
 			final Thread thread = new Thread(
-				new Runnable(){
-					@Override
-					public void run(){
-						final FloatArray2DSIFT sift = new FloatArray2DSIFT( param.sift );
-						final SIFT ijSIFT = new SIFT( sift );
-						for ( int k = i.getAndIncrement(); k < layers.size(); k = i.getAndIncrement() )
+					new Runnable()
+					{
+						@Override
+						public void run()
 						{
-							final ArrayList< Feature > features = extract( ijSIFT, getColorProcessor( layers.get( k ), fov, s ) );
-							IJ.log( k + ": " + features.size() + " features extracted" );
-							featuresArray[ k ] = features;
+							final FloatArray2DSIFT sift = new FloatArray2DSIFT( param.sift );
+							final SIFT ijSIFT = new SIFT( sift );
+							for ( int k = i.getAndIncrement(); k < layers.size(); k = i.getAndIncrement() )
+							{
+								final ArrayList< Feature > features = extract( ijSIFT, getColorProcessor( layers.get( k ), fov, s ) );
+								IJ.log( k + ": " + features.size() + " features extracted" );
+								featuresArray[ k ] = features;
+							}
 						}
-					}
-				}
-			);
-			threads.add(thread);
+					} );
+			threads.add( thread );
 			thread.start();
 		}
 		for ( final Thread t : threads )
@@ -539,29 +551,30 @@ public class LayerZPosition implements TPlugIn
 			for ( int t = 0; t < Runtime.getRuntime().availableProcessors(); ++t )
 			{
 				final Thread thread = new Thread(
-					new Runnable(){
-						@Override
-						public void run(){
-							for ( int k = j.getAndIncrement(); k < layers.size() && k < fi + radius; k = j.getAndIncrement() )
+						new Runnable()
+						{
+							@Override
+							public void run()
 							{
-								final ArrayList< Feature > f2 = featuresList.get( k );
-								if ( f2 == null || f2.size() == 0 )
+								for ( int k = j.getAndIncrement(); k < layers.size() && k < fi + radius; k = j.getAndIncrement() )
 								{
+									final ArrayList< Feature > f2 = featuresList.get( k );
+									if ( f2 == null || f2.size() == 0 )
+									{
+										if ( impMatrix != null )
+											impMatrix.updateAndDraw();
+										continue;
+									}
+
+									final float inlierRatio = ( float ) match( p, f1, f2 );
+									ip.setf( fi, k, inlierRatio );
+									ip.setf( k, fi, inlierRatio );
 									if ( impMatrix != null )
 										impMatrix.updateAndDraw();
-									continue;
 								}
-
-								final float inlierRatio = ( float )match( p, f1, f2);
-								ip.setf( fi, k, inlierRatio );
-								ip.setf( k, fi, inlierRatio );
-								if ( impMatrix != null )
-									impMatrix.updateAndDraw();
 							}
-						}
-					}
-				);
-				threads.add(thread);
+						} );
+				threads.add( thread );
 				thread.start();
 			}
 			for ( final Thread t : threads )
@@ -615,12 +628,8 @@ public class LayerZPosition implements TPlugIn
 		siftParam.readSIFTFields( gd );
 		siftParam.readGeometricConsensusFilterFields( gd );
 
-
 		runSIFT( layers, fov, radius, siftParam.clone() );
 	}
-
-
-
 
 	@Override
 	public Object invoke( final Object... params )
@@ -640,7 +649,6 @@ public class LayerZPosition implements TPlugIn
 		gd.addNumericField( "inner_regularization :", innerRegularize, 2, 6, "" );
 		gd.addCheckbox( " allow_reordering", reorder );
 
-
 		gd.addChoice(
 				"Similarity_method :",
 				similarityMethods, similarityMethod );
@@ -653,7 +661,7 @@ public class LayerZPosition implements TPlugIn
 				layerset.getLayers().subList(
 						gd.getNextChoiceIndex(),
 						gd.getNextChoiceIndex() + 1 );
-		radius = ( int )gd.getNextNumber();
+		radius = ( int ) gd.getNextNumber();
 		final int method = gd.getNextChoiceIndex();
 		similarityMethod = similarityMethods[ method ];
 		showMatrix = gd.getNextBoolean();
@@ -664,7 +672,7 @@ public class LayerZPosition implements TPlugIn
 			case 1:
 				invokeSIFT( layers, getRoi( layerset ) );
 				break;
-			default :
+			default:
 				invokeNCC( layers, getRoi( layerset ) );
 			}
 		}

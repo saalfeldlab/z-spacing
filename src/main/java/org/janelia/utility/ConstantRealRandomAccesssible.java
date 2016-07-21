@@ -6,59 +6,67 @@ import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.type.numeric.RealType;
 
-public class ConstantRealRandomAccesssible< T extends RealType< T > > implements RealRandomAccessible<T> {
-	
+public class ConstantRealRandomAccesssible< T extends RealType< T > > implements RealRandomAccessible< T >
+{
+
 	private final int numDimensions;
+
 	private final T value;
-	
-	
-	
 
 	/**
 	 * @param numDimensions
 	 * @param value
 	 */
-	public ConstantRealRandomAccesssible(final int numDimensions, final T value) {
+	public ConstantRealRandomAccesssible( final int numDimensions, final T value )
+	{
 		super();
 		this.numDimensions = numDimensions;
 		this.value = value;
 	}
 
 	@Override
-	public int numDimensions() {
+	public int numDimensions()
+	{
 		return this.numDimensions;
 	}
-	
-	public class ConstantRealRandomAccess extends RealPoint implements RealRandomAccess< T > {
-		
-		public ConstantRealRandomAccess() {
+
+	public class ConstantRealRandomAccess extends RealPoint implements RealRandomAccess< T >
+	{
+
+		public ConstantRealRandomAccess()
+		{
 			super( numDimensions );
 		}
 
 		@Override
-		public T get() {
+		public T get()
+		{
 			return value;
 		}
 
 		@Override
-		public ConstantRealRandomAccess copy() {
+		public ConstantRealRandomAccess copy()
+		{
 			return new ConstantRealRandomAccess();
 		}
 
 		@Override
-		public ConstantRealRandomAccess copyRealRandomAccess() {
+		public ConstantRealRandomAccess copyRealRandomAccess()
+		{
 			return copy();
 		}
-		
+
 	}
 
 	@Override
-	public RealRandomAccess<T> realRandomAccess() {
+	public RealRandomAccess< T > realRandomAccess()
+	{
 		return new ConstantRealRandomAccess();
 	}
 
 	@Override
-	public RealRandomAccess<T> realRandomAccess(final RealInterval interval) {
+	public RealRandomAccess< T > realRandomAccess( final RealInterval interval )
+	{
 		return realRandomAccess();
 	}
 

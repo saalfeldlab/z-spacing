@@ -17,17 +17,22 @@ import net.imglib2.view.Views;
  * @author hanslovskyp
  *
  */
-public class CorrelationFitTrackerVisitor extends AbstractMultiVisitor {
-	
+public class CorrelationFitTrackerVisitor extends AbstractMultiVisitor
+{
+
 	private final String basePath;
+
 	private final int range;
+
 	private final String separator;
 
-	public CorrelationFitTrackerVisitor(final String basePath, final int range, final String separator ) {
-		this( new ArrayList<Visitor>(), basePath, range, separator );
+	public CorrelationFitTrackerVisitor( final String basePath, final int range, final String separator )
+	{
+		this( new ArrayList< Visitor >(), basePath, range, separator );
 	}
 
-	public CorrelationFitTrackerVisitor( final ArrayList< Visitor > visitors, final String basePath, final int range, final String separator ) {
+	public CorrelationFitTrackerVisitor( final ArrayList< Visitor > visitors, final String basePath, final int range, final String separator )
+	{
 		super( visitors );
 		this.basePath = basePath;
 		this.range = range;
@@ -35,42 +40,43 @@ public class CorrelationFitTrackerVisitor extends AbstractMultiVisitor {
 	}
 
 	@Override
-	< T extends RealType< T > > void actSelf( 
-			final int iteration, 
-			final RandomAccessibleInterval< T > matrix, 
+	< T extends RealType< T > > void actSelf(
+			final int iteration,
+			final RandomAccessibleInterval< T > matrix,
 			final double[] lut,
 			final int[] permutation,
 			final int[] inversePermutation,
 			final double[] multipliers,
 			final double[] weights,
-			final RandomAccessibleInterval< double[] > estimatedFits
-			) {
-		
+			final RandomAccessibleInterval< double[] > estimatedFits )
+	{
+
 		if ( estimatedFits == null )
 			return;
-		
+
 		final File file = new File( String.format( this.basePath, iteration ) );
-		try {
-			
+		try
+		{
+
 			file.createNewFile();
 			final FileWriter fw = new FileWriter( file.getAbsoluteFile() );
 			final BufferedWriter bw = new BufferedWriter( fw );
-			
-			for ( final double[] estimatedFit : Views.flatIterable( estimatedFits) ) {
+
+			for ( final double[] estimatedFit : Views.flatIterable( estimatedFits ) )
+			{
 				for ( final double v : estimatedFit )
 					bw.write( String.format( "%f%s", v, separator ) );
-				bw.write(  "\n" );
+				bw.write( "\n" );
 			}
-			
+
 			bw.close();
-		} catch (final IOException e) {
+		}
+		catch ( final IOException e )
+		{
 			// catch exceptions?
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
-		
-		
 
 	}
 
