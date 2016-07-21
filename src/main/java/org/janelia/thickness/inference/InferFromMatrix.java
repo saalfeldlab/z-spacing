@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.janelia.thickness.EstimateQualityOfSlice;
+import org.janelia.thickness.EstimateScalingFactors;
 import org.janelia.thickness.ShiftCoordinates;
 import org.janelia.thickness.inference.fits.AbstractCorrelationFit;
 import org.janelia.thickness.inference.visitor.LazyVisitor;
@@ -177,20 +177,20 @@ public class InferFromMatrix
 		final int[] permutationLut = new int[ n ];
 		final int[] inverse = permutationLut.clone();
 		final int nMatrixDim = inputMatrix.numDimensions();
-		final double[] multipliers = new double[ n ];
-		for ( int i = 0; i < multipliers.length; i++ )
+		final double[] scalingFactors = new double[ n ];
+		for ( int i = 0; i < scalingFactors.length; i++ )
 		{
-			multipliers[ i ] = 1.0;
+			scalingFactors[ i ] = 1.0;
 		}
 
 		double[] permutedLut = lut.clone(); // sorted lut
-		final double[] multipliersPrevious = multipliers.clone();
+		final double[] scalingFactorsPrevious = scalingFactors.clone();
 		ArraySortedIndices.sort( permutedLut, permutationLut, inverse );
 
-		ArrayImg< T, ? > inputMultipliedStrip = new ArrayImgFactory< T >().create( new long[] { 2 * options.comparisonRange + 1, n }, inputMatrix.randomAccess().get() );
+		ArrayImg< T, ? > inputScaledStrip = new ArrayImgFactory< T >().create( new long[] { 2 * options.comparisonRange + 1, n }, inputMatrix.randomAccess().get() );
 
-		RandomAccessibleInterval< T > inputMultipliedMatrix = MatrixStripConversion.stripToMatrix( inputMultipliedStrip, inputMatrix.randomAccess().get() );
-		for ( Cursor< T > source = Views.flatIterable( inputMatrix ).cursor(), target = Views.flatIterable( inputMultipliedMatrix ).cursor(); source.hasNext(); )
+		RandomAccessibleInterval< T > inputScaledMatrix = MatrixStripConversion.stripToMatrix( inputScaledStrip, inputMatrix.randomAccess().get() );
+		for ( Cursor< T > source = Views.flatIterable( inputMatrix ).cursor(), target = Views.flatIterable( inputScaledMatrix ).cursor(); source.hasNext(); )
 			target.next().set( source.next() );
 
 		final Regularizer regularizer;
@@ -221,7 +221,7 @@ public class InferFromMatrix
 		for ( int iteration = 0; iteration < options.nIterations; ++iteration )
 		{
 
-			// multipliers always in permuted order
+			// scaling factors always in permuted order
 
 			final PermutationTransform permutation = new PermutationTransform( inverse, nMatrixDim, nMatrixDim ); // need
 																													// to
@@ -230,16 +230,16 @@ public class InferFromMatrix
 																													// into
 																													// source?
 			final IntervalView< T > matrix = Views.interval( new TransformView< T >( inputMatrix, permutation ), inputMatrix );
-			IntervalView< T > multipliedMatrix = Views.interval( new TransformView< T >( inputMultipliedMatrix, permutation ), inputMultipliedMatrix );
+			IntervalView< T > scaledMatrix = Views.interval( new TransformView< T >( inputScaledMatrix, permutation ), inputScaledMatrix );
 
 			if ( iteration == 0 )
-				visitor.act( iteration, matrix, lut, permutationLut, inverse, multipliers, null );
+				visitor.act( iteration, matrix, lut, permutationLut, inverse, scalingFactors, null );
 
 			final double[] shifts = this.getMediatedShifts(
 					matrix,
-					multipliedMatrix,
+					scaledMatrix,
 					permutedLut,
-					multipliers,
+					scalingFactors,
 					iteration,
 					options );
 
@@ -247,7 +247,6 @@ public class InferFromMatrix
 					permutedLut, // rewrite interface to use view on permuted
 									// lut? probably not
 					shifts,
-					multipliers,
 					startingCoordinates,
 					permutation.copyToDimension( 1, 1 ),
 					options );
@@ -261,12 +260,12 @@ public class InferFromMatrix
 			regularizer.regularize( permutedLut, options );
 
 			updateArray( permutedLut, lut, inverse );
-			updateArray( multipliers, multipliersPrevious, inverse );
+			updateArray( scalingFactors, scalingFactorsPrevious, inverse );
 			permutedLut = lut.clone();
 			ArraySortedIndices.sort( permutedLut, permutationLut, inverse );
-			updateArray( multipliersPrevious, multipliers, permutationLut );
+			updateArray( scalingFactorsPrevious, scalingFactors, permutationLut );
 
-			visitor.act( iteration + 1, matrix, lut, permutationLut, inverse, multipliers, null );
+			visitor.act( iteration + 1, matrix, lut, permutationLut, inverse, scalingFactors, null );
 
 		}
 
@@ -275,58 +274,57 @@ public class InferFromMatrix
 
 	public < T extends RealType< T > > double[] getMediatedShifts(
 			final RandomAccessibleInterval< T > matrix,
-			final RandomAccessibleInterval< T > multipliedMatrix,
+			final RandomAccessibleInterval< T > scaledMatrix,
 			final double[] lut,
-			final double[] multipliers,
+			final double[] scalingFactors,
 			final int iteration,
 			final Options options ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
 	{
 
-		final int nMatrixDimensions = multipliedMatrix.numDimensions();
+		final int nMatrixDimensions = scaledMatrix.numDimensions();
 		final LUTRealTransform transform = new LUTRealTransform( lut, nMatrixDimensions, nMatrixDimensions );
 
-		// use multiplied matrix
-		RandomAccessibleInterval< double[] > fits = correlationFit.estimateFromMatrix( multipliedMatrix, lut, transform, options );
+		// use scaled matrix
+		RandomAccessibleInterval< double[] > fits = correlationFit.estimateFromMatrix( scaledMatrix, lut, transform, options );
 
-		// use original matrix to estimate multipliers
-		EstimateQualityOfSlice.estimateQuadraticFromMatrix( matrix,
-				multipliers,
+		// use original matrix to estimate scaling factors
+		EstimateScalingFactors.estimateQuadraticFromMatrix( matrix,
+				scalingFactors,
 				lut,
 				fits,
-				options.multiplierGenerationRegularizerWeight,
+				options.scalingFactorRegularizerWeight,
 				options.comparisonRange,
-				options.multiplierEstimationIterations );
+				options.scalingFactorEstimationIterations );
 
-		// write multiplied matrix to multipliedMatrix
+		// write scaled matrix to scaledMatrix
 		RandomAccess< T > matrixRA = matrix.randomAccess();
-		RandomAccess< T > multipliedMatrixRA = multipliedMatrix.randomAccess();
+		RandomAccess< T > scaledMatrixRA = scaledMatrix.randomAccess();
 		for ( int z = 0; z < lut.length; ++z )
 		{
 			matrixRA.setPosition( z, 0 );
-			multipliedMatrixRA.setPosition( z, 0 );
+			scaledMatrixRA.setPosition( z, 0 );
 			int max = Math.min( lut.length, z + options.comparisonRange + 1 );
 			for ( int k = Math.max( 0, z - options.comparisonRange ); k < max; ++k )
 			{
 				matrixRA.setPosition( k, 1 );
-				multipliedMatrixRA.setPosition( k, 1 );
-				multipliedMatrixRA.get().set( matrixRA.get() );
+				scaledMatrixRA.setPosition( k, 1 );
+				scaledMatrixRA.get().set( matrixRA.get() );
 				if ( k != z )
-					multipliedMatrixRA.get().mul( multipliers[ z ] * multipliers[ k ] );
+					scaledMatrixRA.get().mul( scalingFactors[ z ] * scalingFactors[ k ] );
 			}
 		}
 
-		// use multiplied matrix to collect shifts
+		// use scaled matrix to collect shifts
 		final TreeMap< Long, ArrayList< Double > > shifts =
 				ShiftCoordinates.collectShiftsFromMatrix(
 						lut,
-						multipliedMatrix,
-						multipliers,
+						scaledMatrix,
+						scalingFactors,
 						fits,
 						options );
 
 		final double[] mediatedShifts = new double[ lut.length ];
 		mediateShifts( shifts, mediatedShifts );
-		// this.shiftMediator.mediate( shifts, mediatedShifts );
 
 		return mediatedShifts;
 	}
@@ -334,7 +332,6 @@ public class InferFromMatrix
 	public void applyShifts(
 			final double[] coordinates,
 			final double[] shifts,
-			final double[] multipliers,
 			final double[] regularizerCoordinates,
 			final PermutationTransform permutation,
 			final Options options )

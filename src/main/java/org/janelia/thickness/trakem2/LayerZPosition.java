@@ -232,8 +232,8 @@ public class LayerZPosition implements TPlugIn
 		options.comparisonRange = rad;
 		options.nIterations = iter;
 		options.shiftProportion = reg;
-		options.multiplierEstimationIterations = innerIter;
-		options.multiplierGenerationRegularizerWeight = innerReg;
+		options.scalingFactorEstimationIterations = innerIter;
+		options.scalingFactorRegularizerWeight = innerReg;
 		options.withReorder = reord;
 		options.regularizationType = InferFromMatrix.RegularizationType.BORDER;
 		options.minimumSectionThickness = 0.0;

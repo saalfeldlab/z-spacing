@@ -74,8 +74,8 @@ public class ZPositionCorrection implements PlugIn
 		dialog.addMessage( "Optimizer :" );
 		dialog.addNumericField( "outer_iterations :", options.nIterations, 0, 6, "" );
 		dialog.addNumericField( "outer_regularization :", options.shiftProportion, 2, 6, "" );
-		dialog.addNumericField( "inner_iterations :", options.multiplierEstimationIterations, 0, 6, "" );
-		dialog.addNumericField( "inner_regularization :", options.multiplierGenerationRegularizerWeight, 2, 6, "" );
+		dialog.addNumericField( "inner_iterations :", options.scalingFactorEstimationIterations, 0, 6, "" );
+		dialog.addNumericField( "inner_regularization :", options.scalingFactorRegularizerWeight, 2, 6, "" );
 		dialog.addCheckbox( " allow_reordering", options.withReorder );
 
 		dialog.showDialog();
@@ -90,8 +90,8 @@ public class ZPositionCorrection implements PlugIn
 		options.comparisonRange = ( int ) dialog.getNextNumber();
 		options.nIterations = ( int ) dialog.getNextNumber();
 		options.shiftProportion = dialog.getNextNumber();
-		options.multiplierEstimationIterations = ( int ) dialog.getNextNumber();
-		options.multiplierGenerationRegularizerWeight = dialog.getNextNumber();
+		options.scalingFactorEstimationIterations = ( int ) dialog.getNextNumber();
+		options.scalingFactorRegularizerWeight = dialog.getNextNumber();
 		options.withReorder = dialog.getNextBoolean();
 		options.forceMonotonicity = !options.withReorder;
 		options.minimumSectionThickness = 1e-9;

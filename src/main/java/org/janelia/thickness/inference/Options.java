@@ -26,14 +26,14 @@ public class Options implements Serializable
 	public static Options generateDefaultOptions()
 	{
 		final Options result = new Options();
-		result.multiplierGenerationRegularizerWeight = 0.1;
+		result.scalingFactorRegularizerWeight = 0.1;
 		result.coordinateUpdateRegularizerWeight = 0.0;
 		result.shiftProportion = 0.6;
 		result.nIterations = 100;
 		result.comparisonRange = 10;
 		result.minimumSectionThickness = 0.01;
 		result.regularizationType = InferFromMatrix.RegularizationType.BORDER;
-		result.multiplierEstimationIterations = 10;
+		result.scalingFactorEstimationIterations = 10;
 		result.withReorder = true;
 		result.nThreads = Runtime.getRuntime().availableProcessors();
 		result.forceMonotonicity = false;
@@ -42,7 +42,7 @@ public class Options implements Serializable
 		return result;
 	}
 
-	public Double multiplierGenerationRegularizerWeight; // m_regularized = m *
+	public Double scalingFactorRegularizerWeight; // m_regularized = m *
 															// ( 1 - w ) + 1 * w
 
 	public Double coordinateUpdateRegularizerWeight; // coordinate_regularized =
@@ -59,7 +59,7 @@ public class Options implements Serializable
 
 	public InferFromMatrix.RegularizationType regularizationType;
 
-	public Integer multiplierEstimationIterations;
+	public Integer scalingFactorEstimationIterations;
 
 	public Boolean withReorder;
 
