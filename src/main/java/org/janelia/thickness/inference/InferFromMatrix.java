@@ -384,9 +384,9 @@ public class InferFromMatrix
 			{
 				for ( final Double l : localShifts )
 					shift += l;
+				shift /= localShifts.size();
 			}
 
-			shift /= localShifts.size();
 			mediatedShifts[ i ] = shift;
 		}
 	}
