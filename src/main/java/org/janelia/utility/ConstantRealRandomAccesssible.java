@@ -4,7 +4,6 @@ import net.imglib2.RealInterval;
 import net.imglib2.RealPoint;
 import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
-import net.imglib2.type.numeric.RealType;
 
 /**
  * 
@@ -12,7 +11,7 @@ import net.imglib2.type.numeric.RealType;
  *
  * @param <T>
  */
-public class ConstantRealRandomAccesssible< T extends RealType< T > > implements RealRandomAccessible< T >
+public class ConstantRealRandomAccesssible< T > implements RealRandomAccessible< T >
 {
 
 	private final int numDimensions;
