@@ -25,10 +25,8 @@ public abstract class AbstractCorrelationFit
 			final AbstractLUTRealTransform transform,
 			Options options )
 	{
-		int range = options.comparisonRange;
-		boolean forceMonotonicity = options.forceMonotonicity;
-		int estimateWindowRadius = options.estimateWindowRadius > 0 ? options.estimateWindowRadius : coordinates.length - 1;
-		int nFits = ( int ) Math.ceil( ( coordinates.length - estimateWindowRadius ) * 1.0 / estimateWindowRadius );
+		final int range = options.comparisonRange;
+		final boolean forceMonotonicity = options.forceMonotonicity;
 
 		final T correlationsNaNExtension = correlations.randomAccess().get().copy();
 		correlationsNaNExtension.setReal( Double.NaN );
@@ -41,7 +39,7 @@ public abstract class AbstractCorrelationFit
 		final RealRandomAccess< T > access1 = transformedCorrelations.realRandomAccess();
 		final RealRandomAccess< T > access2 = transformedCorrelations.realRandomAccess();
 
-		init( options.comparisonRange );
+		init( range );
 
 		for ( int z = 0; z < coordinates.length; ++z )
 		{
