@@ -6,6 +6,7 @@ import java.util.TreeMap;
 import org.janelia.thickness.EstimateQualityOfSlice;
 import org.janelia.thickness.ShiftCoordinates;
 import org.janelia.thickness.inference.fits.AbstractCorrelationFit;
+import org.janelia.thickness.inference.visitor.LazyVisitor;
 import org.janelia.thickness.inference.visitor.Visitor;
 import org.janelia.thickness.lut.LUTRealTransform;
 import org.janelia.thickness.lut.PermutationTransform;
@@ -170,20 +171,7 @@ public class InferFromMatrix
 		return estimateZCoordinates(
 				matrix,
 				startingCoordinates,
-				new Visitor()
-				{
-
-					@Override
-					public < U extends RealType< U > > void act( final int iteration,
-							final RandomAccessibleInterval< U > matrix, final double[] lut,
-							final int[] permutation, final int[] inversePermutation,
-							final double[] multipliers,
-							final RandomAccessibleInterval< double[] > estimatedFit )
-					{
-						// don't do anything
-					}
-
-				},
+				new LazyVisitor(),
 				options );
 	}
 
