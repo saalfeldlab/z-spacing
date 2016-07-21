@@ -3,10 +3,9 @@
  */
 package org.janelia.thickness.inference.fits;
 
-import org.janelia.utility.ConstantRealRandomAccesssible;
-
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.util.ConstantUtils;
 import net.imglib2.view.Views;
 
 /**
@@ -52,7 +51,7 @@ public class GlobalCorrelationFitAverage extends AbstractCorrelationFit
 		for ( int z = 1; z < estimate.length; ++z )
 			estimate[ z ] /= -nSamples[ z ];
 		FinalInterval fi = new FinalInterval( size );
-		return Views.interval( Views.raster( new ConstantRealRandomAccesssible<>( 1, estimate ) ), fi );
+		return Views.interval( Views.raster( ConstantUtils.constantRealRandomAccessible( estimate, 1 ) ), fi );
 	}
 
 }
