@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.IllegalFormatException;
 
 import org.janelia.thickness.lut.SingleDimensionLUTRealTransform;
-import org.janelia.utility.CopyFromIntervalToInterval;
 
 import ij.IJ;
 import ij.ImagePlus;
 import ij.process.FloatProcessor;
+import net.imglib2.Cursor;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
@@ -95,9 +95,14 @@ public class ApplyTransformToImageVisitor extends AbstractMultiVisitor
 		final RealRandomAccessible< FloatType > interpolated = Views.interpolate( Views.extendValue( this.image, new FloatType( Float.NaN ) ), this.interpolatorFactory );
 		// TODO permute lut and image first!
 		final IntervalView< FloatType > transformed = Views.interval( RealViews.transform( interpolated, lutTransform ), this.targetImgWrapped );
-		Views.flatIterable( transformed ).cursor();
 
-		CopyFromIntervalToInterval.copyToRealType( transformed, this.targetImgWrapped );
+		final Cursor< FloatType > sourceCursor = Views.flatIterable( transformed ).cursor();
+		Cursor< FloatType > targetCursor = Views.flatIterable( this.targetImgWrapped ).cursor();
+
+		while ( sourceCursor.hasNext() )
+		{
+			targetCursor.next().setReal( sourceCursor.next().getRealDouble() );
+		}
 
 		IJ.save( targetImg, String.format( this.basePath, iteration ) );
 	}
