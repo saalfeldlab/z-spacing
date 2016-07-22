@@ -1,17 +1,12 @@
 /**
- * 
+ *
  */
 package org.janelia.thickness.inference.visitor;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 
 import org.janelia.thickness.lut.PermutationTransform;
 
-import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
@@ -26,27 +21,16 @@ import net.imglib2.view.Views;
  * @author Philipp Hanslovsky &lt;hanslovskyp@janelia.hhmi.org&gt;
  *
  */
-public class ActualCoordinatesTrackerVisitor extends AbstractMultiVisitor
+public class PermutedLUTVisitor extends CSVVisitor
 {
 
-	private final String basePath;
-
-	private final String separator;
-
-	public ActualCoordinatesTrackerVisitor( final String basePath, final String separator )
+	public PermutedLUTVisitor( final String basePath, final String relativePattern, final String separator )
 	{
-		this( new ArrayList< Visitor >(), basePath, separator );
-	}
-
-	public ActualCoordinatesTrackerVisitor( final ArrayList< Visitor > visitors, final String basePath, final String separator )
-	{
-		super( visitors );
-		this.basePath = basePath;
-		this.separator = separator;
+		super( basePath, relativePattern, separator );
 	}
 
 	@Override
-	< T extends RealType< T > > void actSelf(
+	public < T extends RealType< T > > void act(
 			final int iteration,
 			final RandomAccessibleInterval< T > matrix,
 			final double[] lut,
@@ -60,21 +44,11 @@ public class ActualCoordinatesTrackerVisitor extends AbstractMultiVisitor
 		final PermutationTransform transform = new PermutationTransform( permutation, 1, 1 );
 		final IntervalView< DoubleType > permuted = Views.interval( new TransformView< DoubleType >( coordinateImage, transform ), coordinateImage );
 
-		final File file = new File( String.format( this.basePath, iteration ) );
 		try
 		{
-
-			file.createNewFile();
-			final FileWriter fw = new FileWriter( file.getAbsoluteFile() );
-			final BufferedWriter bw = new BufferedWriter( fw );
-
-			int r = 0;
-			for ( final Cursor< DoubleType > c = permuted.cursor(); c.hasNext(); ++r )
-			{
-				bw.write( String.format( "%d" + this.separator + "%f" + this.separator + "%f\n", r, lut[ r ], c.next().get() ) );
-			}
-
-			bw.close();
+			final String path = fileDir( iteration );
+			createParentDirectory( path );
+			write( new IndexedIterable<>( separator, permuted ), path );
 		}
 		catch ( final IOException e )
 		{

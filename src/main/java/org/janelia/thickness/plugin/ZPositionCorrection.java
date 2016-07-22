@@ -14,7 +14,12 @@ import org.janelia.thickness.inference.Options;
 import org.janelia.thickness.inference.fits.AbstractCorrelationFit;
 import org.janelia.thickness.inference.fits.GlobalCorrelationFitAverage;
 import org.janelia.thickness.inference.fits.LocalCorrelationFitAverage;
+import org.janelia.thickness.inference.visitor.CorrelationFitVisitor;
+import org.janelia.thickness.inference.visitor.FileSaverVisitor;
+import org.janelia.thickness.inference.visitor.LUTVisitor;
 import org.janelia.thickness.inference.visitor.LazyVisitor;
+import org.janelia.thickness.inference.visitor.ListVisitor;
+import org.janelia.thickness.inference.visitor.ScalingFactorsVisitor;
 import org.janelia.thickness.inference.visitor.Visitor;
 import org.janelia.thickness.lut.LUTRealTransform;
 import org.janelia.thickness.lut.PermutationTransform;
@@ -69,6 +74,37 @@ public class ZPositionCorrection implements PlugIn
 	static
 	{
 		addVisitor( "lazy", new LazyVisitor() );
+
+		final ListVisitor lv = new ListVisitor();
+		lv.addVisitor( new CorrelationFitVisitor( "", "", ",", 0 ) );
+		lv.addVisitor( new ScalingFactorsVisitor( "", "", "," ) );
+		lv.addVisitor( new LUTVisitor( "", "", "," ) );
+		final VisitorInit lvi = new VisitorInit() {
+			@Override
+			public Visitor init( final Visitor visitor, final RandomAccessibleInterval< DoubleType > matrix, final Options options )
+			{
+				final GenericDialogPlus dialog = new GenericDialogPlus( "Choose output directory for visitor!" );
+				dialog.addDirectoryField( "Output directory", System.getProperty( "user.home" ) );
+				dialog.showDialog();
+				if ( dialog.wasCanceled() )
+					return new LazyVisitor();
+
+				final String basePath = dialog.getNextString();
+
+				final ArrayList< Visitor > vs = lv.getVisitors();
+				final String[] relativePatternsBase = {
+						"correlation-fit/", "scaling-factors/", "lut/"
+				};
+				for ( int i = 0; i < relativePatternsBase.length; ++i )
+				{
+					final FileSaverVisitor v = ( FileSaverVisitor ) vs.get( i );
+					v.setRelativeFilePattern( relativePatternsBase[ i ], options.nIterations, ".csv" );
+					v.setBasePath( basePath );
+				}
+				return lv;
+			}
+		};
+		addVisitor( "variables", lv, lvi );
 	}
 
 	public static interface VisitorInit
@@ -192,7 +228,7 @@ public class ZPositionCorrection implements PlugIn
 				{
 					e.printStackTrace();
 				}
-				System.out.println( options.toString() );
+		System.out.println( options.toString() );
 
 				if ( estimatedSuccessfully )
 				{
