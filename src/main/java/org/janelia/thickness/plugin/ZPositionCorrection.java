@@ -9,7 +9,9 @@ import java.util.concurrent.Executors;
 
 import org.janelia.thickness.inference.InferFromMatrix;
 import org.janelia.thickness.inference.Options;
+import org.janelia.thickness.inference.fits.AbstractCorrelationFit;
 import org.janelia.thickness.inference.fits.GlobalCorrelationFitAverage;
+import org.janelia.thickness.inference.fits.LocalCorrelationFitAverage;
 import org.janelia.thickness.inference.visitor.LazyVisitor;
 import org.janelia.thickness.lut.LUTRealTransform;
 import org.janelia.thickness.lut.PermutationTransform;
@@ -78,6 +80,7 @@ public class ZPositionCorrection implements PlugIn
 		dialog.addNumericField( "inner_iterations :", options.scalingFactorEstimationIterations, 0, 6, "" );
 		dialog.addNumericField( "inner_regularization :", options.scalingFactorRegularizerWeight, 2, 6, "" );
 		dialog.addCheckbox( " allow_reordering", options.withReorder );
+		dialog.addNumericField( "number of local estimates :", 1, 0, 6, "" );
 
 		dialog.showDialog();
 
@@ -98,6 +101,9 @@ public class ZPositionCorrection implements PlugIn
 		options.minimumSectionThickness = 1e-9;
 		options.regularizationType = InferFromMatrix.RegularizationType.BORDER;
 
+		final int nLocalEstimates = ( int ) dialog.getNextNumber();
+
+
 		final FloatProcessor matrixFp = inputIsMatrix ? normalize( input ).getProcessor().convertToFloatProcessor() : calculateSimilarityMatrix( input, options.comparisonRange );
 
 		if ( matrixFp == null )
@@ -116,7 +122,9 @@ public class ZPositionCorrection implements PlugIn
 				for ( int i = 0; i < startingCoordinates.length; i++ )
 					startingCoordinates[ i ] = i;
 
-				final InferFromMatrix inf = new InferFromMatrix( new GlobalCorrelationFitAverage() );
+				options.estimateWindowRadius = startingCoordinates.length / nLocalEstimates;
+				final AbstractCorrelationFit correlationFit = nLocalEstimates < 2 ? new GlobalCorrelationFitAverage() : new LocalCorrelationFitAverage( startingCoordinates.length, options );
+				final InferFromMatrix inf = new InferFromMatrix( correlationFit );
 
 				boolean estimatedSuccessfully = false;
 				double[] transform = null;
