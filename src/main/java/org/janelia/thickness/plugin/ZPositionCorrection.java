@@ -79,7 +79,8 @@ public class ZPositionCorrection implements PlugIn
 		lv.addVisitor( new CorrelationFitVisitor( "", "", ",", 0 ) );
 		lv.addVisitor( new ScalingFactorsVisitor( "", "", "," ) );
 		lv.addVisitor( new LUTVisitor( "", "", "," ) );
-		final VisitorInit lvi = new VisitorInit() {
+		final VisitorInit lvi = new VisitorInit()
+		{
 			@Override
 			public Visitor init( final Visitor visitor, final RandomAccessibleInterval< DoubleType > matrix, final Options options )
 			{
@@ -117,7 +118,8 @@ public class ZPositionCorrection implements PlugIn
 
 	public static void addVisitor( final String name, final Visitor visitor )
 	{
-		addVisitor( name, visitor, new VisitorInit(){} );
+		addVisitor( name, visitor, new VisitorInit()
+		{} );
 	}
 
 	public static void addVisitor( final String name, final Visitor visitor, final VisitorInit init )
@@ -182,7 +184,6 @@ public class ZPositionCorrection implements PlugIn
 
 		final String visitorString = dialog.getNextChoice();
 
-
 		final FloatProcessor matrixFp = inputIsMatrix ? normalize( input ).getProcessor().convertToFloatProcessor() : calculateSimilarityMatrix( input, options.comparisonRange );
 
 		if ( matrixFp == null )
@@ -191,113 +192,111 @@ public class ZPositionCorrection implements PlugIn
 		final boolean isStrip = matrixFp.getWidth() != matrixFp.getHeight();
 		final RandomAccessibleInterval< DoubleType > wrappedFp = wrapDouble( new ImagePlus( "", matrixFp ) );
 
-		final RandomAccessibleInterval< DoubleType > matrix = isStrip ?
-				MatrixStripConversion.stripToMatrix( wrappedFp, new DoubleType() ) : wrappedFp;
+		final RandomAccessibleInterval< DoubleType > matrix = isStrip ? MatrixStripConversion.stripToMatrix( wrappedFp, new DoubleType() ) : wrappedFp;
 
-				if ( !inputIsMatrix )
-					ImageJFunctions.show( matrix );
+		if ( !inputIsMatrix )
+			ImageJFunctions.show( matrix );
 
-				final double[] startingCoordinates = new double[ ( int ) matrix.dimension( 0 ) ];
-				for ( int i = 0; i < startingCoordinates.length; i++ )
-					startingCoordinates[ i ] = i;
+		final double[] startingCoordinates = new double[ ( int ) matrix.dimension( 0 ) ];
+		for ( int i = 0; i < startingCoordinates.length; i++ )
+			startingCoordinates[ i ] = i;
 
-				options.estimateWindowRadius = startingCoordinates.length / nLocalEstimates;
-				final AbstractCorrelationFit correlationFit = nLocalEstimates < 2 ? new GlobalCorrelationFitAverage() : new LocalCorrelationFitAverage( startingCoordinates.length, options );
-				final InferFromMatrix inf = new InferFromMatrix( correlationFit );
+		options.estimateWindowRadius = startingCoordinates.length / nLocalEstimates;
+		final AbstractCorrelationFit correlationFit = nLocalEstimates < 2 ? new GlobalCorrelationFitAverage() : new LocalCorrelationFitAverage( startingCoordinates.length, options );
+		final InferFromMatrix inf = new InferFromMatrix( correlationFit );
 
-				boolean estimatedSuccessfully = false;
-				double[] transform = null;
-				try
-				{
-					final ValuePair< Visitor, VisitorInit > visitorAndInit = visitors.get( visitorString );
-					visitorAndInit.getB().init(visitorAndInit.getA(), matrix, options );
-					transform = inf.estimateZCoordinates( matrix, startingCoordinates, visitorAndInit.getA(), options );
-					estimatedSuccessfully = true;
-				}
-				catch ( final NotEnoughDataPointsException e )
-				{
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				catch ( final IllDefinedDataPointsException e )
-				{
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				catch ( final Exception e )
-				{
-					e.printStackTrace();
-				}
+		boolean estimatedSuccessfully = false;
+		double[] transform = null;
+		try
+		{
+			final ValuePair< Visitor, VisitorInit > visitorAndInit = visitors.get( visitorString );
+			visitorAndInit.getB().init( visitorAndInit.getA(), matrix, options );
+			transform = inf.estimateZCoordinates( matrix, startingCoordinates, visitorAndInit.getA(), options );
+			estimatedSuccessfully = true;
+		}
+		catch ( final NotEnoughDataPointsException e )
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		catch ( final IllDefinedDataPointsException e )
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		catch ( final Exception e )
+		{
+			e.printStackTrace();
+		}
 		System.out.println( options.toString() );
 
-				if ( estimatedSuccessfully )
+		if ( estimatedSuccessfully )
+		{
+
+			IJ.log( Arrays.toString( transform ) );
+			boolean renderTransformedStack = false;
+
+			final double[] sortedTransform = transform.clone();
+			final int[] forward = new int[ sortedTransform.length ];
+			final int[] backward = new int[ sortedTransform.length ];
+
+			if ( options.withReorder )
+				ArraySortedIndices.sort( sortedTransform, forward, backward );
+			else
+				for ( int i = 0; i < forward.length; ++i )
 				{
-
-					IJ.log( Arrays.toString( transform ) );
-					boolean renderTransformedStack = false;
-
-					final double[] sortedTransform = transform.clone();
-					final int[] forward = new int[ sortedTransform.length ];
-					final int[] backward = new int[ sortedTransform.length ];
-
-					if ( options.withReorder )
-						ArraySortedIndices.sort( sortedTransform, forward, backward );
-					else
-						for ( int i = 0; i < forward.length; ++i )
-						{
-							forward[ i ] = i;
-							backward[ i ] = i;
-						}
-
-					final int[] permutationArray = backward; // use backward?
-
-					final PermutationTransform permutation = new PermutationTransform( permutationArray, 2, 2 );
-					final LUTRealTransform lut = new LUTRealTransform( sortedTransform, 2, 2 );
-					final IntervalView< DoubleType > transformedStripOrMatrix = Views.interval( Views.raster(
-							generateTransformed( matrix, permutation, lut, new DoubleType( Double.NaN ) ) ), matrix );
-					final RandomAccessibleInterval< DoubleType > transformedMatrix = isStrip ? MatrixStripConversion.matrixToStrip( transformedStripOrMatrix, options.comparisonRange, new DoubleType() ) : transformedStripOrMatrix;
-
-
-					ImageJFunctions.show( transformedMatrix, "Warped matrix" );
-
-					double renderingZScale = 1.0;
-					final GenericDialogPlus renderDialog = new GenericDialogPlus( "Rendering." );
-					renderDialog.addCheckbox( "Render stack?", renderTransformedStack );
-					if ( inputIsMatrix )
-						renderDialog.addFileField( "Input path (use current image if empty)", "" );
-					renderDialog.addNumericField( "Scale result stack", renderingZScale, 4 );
-					renderDialog.showDialog();
-
-					if ( renderDialog.wasCanceled() )
-						return;
-
-					renderTransformedStack = renderDialog.getNextBoolean();
-					renderingZScale = renderDialog.getNextNumber();
-
-					if ( renderTransformedStack )
-					{
-						final ImagePlus stackImp = inputIsMatrix ? getFileFromOption( renderDialog.getNextString() ) : input;
-						new ImageConverter( stackImp ).convertToGray32();
-						final RandomAccessibleInterval< FloatType > stack = ImageJFunctions.wrapFloat( stackImp );
-
-						final SingleDimensionPermutationTransform permutation1D = new SingleDimensionPermutationTransform( permutationArray, 3, 3, 2 );
-						final SingleDimensionLUTRealTransform lut1D = new SingleDimensionLUTRealTransform( sortedTransform, 3, 3, 2 );
-
-						final ImageStack transformedStack =
-								generateStack(
-										generateTransformed( stack, permutation1D, lut1D, new FloatType( Float.NaN ) ),
-										stackImp.getWidth(),
-										stackImp.getHeight(),
-										stackImp.getStackSize(),
-										renderingZScale );
-
-						final ImagePlus resultImp = new ImagePlus( "Warped image stack", transformedStack );
-						resultImp.show();
-
-						IJ.log( "Rendered warped image stack." );
-					}
-
+					forward[ i ] = i;
+					backward[ i ] = i;
 				}
+
+			final int[] permutationArray = backward; // use backward?
+
+			final PermutationTransform permutation = new PermutationTransform( permutationArray, 2, 2 );
+			final LUTRealTransform lut = new LUTRealTransform( sortedTransform, 2, 2 );
+			final IntervalView< DoubleType > transformedStripOrMatrix = Views.interval( Views.raster(
+					generateTransformed( matrix, permutation, lut, new DoubleType( Double.NaN ) ) ), matrix );
+			final RandomAccessibleInterval< DoubleType > transformedMatrix = isStrip ? MatrixStripConversion.matrixToStrip( transformedStripOrMatrix, options.comparisonRange, new DoubleType() ) : transformedStripOrMatrix;
+
+			ImageJFunctions.show( transformedMatrix, "Warped matrix" );
+
+			double renderingZScale = 1.0;
+			final GenericDialogPlus renderDialog = new GenericDialogPlus( "Rendering." );
+			renderDialog.addCheckbox( "Render stack?", renderTransformedStack );
+			if ( inputIsMatrix )
+				renderDialog.addFileField( "Input path (use current image if empty)", "" );
+			renderDialog.addNumericField( "Scale result stack", renderingZScale, 4 );
+			renderDialog.showDialog();
+
+			if ( renderDialog.wasCanceled() )
+				return;
+
+			renderTransformedStack = renderDialog.getNextBoolean();
+			renderingZScale = renderDialog.getNextNumber();
+
+			if ( renderTransformedStack )
+			{
+				final ImagePlus stackImp = inputIsMatrix ? getFileFromOption( renderDialog.getNextString() ) : input;
+				new ImageConverter( stackImp ).convertToGray32();
+				final RandomAccessibleInterval< FloatType > stack = ImageJFunctions.wrapFloat( stackImp );
+
+				final SingleDimensionPermutationTransform permutation1D = new SingleDimensionPermutationTransform( permutationArray, 3, 3, 2 );
+				final SingleDimensionLUTRealTransform lut1D = new SingleDimensionLUTRealTransform( sortedTransform, 3, 3, 2 );
+
+				final ImageStack transformedStack =
+						generateStack(
+								generateTransformed( stack, permutation1D, lut1D, new FloatType( Float.NaN ) ),
+								stackImp.getWidth(),
+								stackImp.getHeight(),
+								stackImp.getStackSize(),
+								renderingZScale );
+
+				final ImagePlus resultImp = new ImagePlus( "Warped image stack", transformedStack );
+				resultImp.show();
+
+				IJ.log( "Rendered warped image stack." );
+			}
+
+		}
 
 	}
 
