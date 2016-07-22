@@ -3,6 +3,8 @@ package org.janelia.thickness.plugin;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -13,6 +15,7 @@ import org.janelia.thickness.inference.fits.AbstractCorrelationFit;
 import org.janelia.thickness.inference.fits.GlobalCorrelationFitAverage;
 import org.janelia.thickness.inference.fits.LocalCorrelationFitAverage;
 import org.janelia.thickness.inference.visitor.LazyVisitor;
+import org.janelia.thickness.inference.visitor.Visitor;
 import org.janelia.thickness.lut.LUTRealTransform;
 import org.janelia.thickness.lut.PermutationTransform;
 import org.janelia.thickness.lut.SingleDimensionLUTRealTransform;
@@ -61,6 +64,12 @@ import net.imglib2.view.Views;
 public class ZPositionCorrection implements PlugIn
 {
 
+	public static HashMap< String, Visitor > visitors = new HashMap<>();
+	static
+	{
+		visitors.put( "lazy", new LazyVisitor() );
+	}
+
 	@Override
 	public void run( final String arg0 )
 	{
@@ -82,6 +91,16 @@ public class ZPositionCorrection implements PlugIn
 		dialog.addCheckbox( " allow_reordering", options.withReorder );
 		dialog.addNumericField( "number of local estimates :", 1, 0, 6, "" );
 
+		synchronized ( visitors )
+		{
+			final String[] visitorStrings = new String[ visitors.size() ];
+			final Iterator< String > keysIterator = visitors.keySet().iterator();
+			for ( int i = 0; i < visitorStrings.length; ++i )
+				visitorStrings[ i ] = keysIterator.next();
+
+			dialog.addChoice( "Visitor", visitorStrings, visitors.containsKey( "lazy" ) ? "lazy" : visitorStrings[ 0 ] );
+		}
+
 		dialog.showDialog();
 
 		if ( dialog.wasCanceled() )
@@ -102,6 +121,8 @@ public class ZPositionCorrection implements PlugIn
 		options.regularizationType = InferFromMatrix.RegularizationType.BORDER;
 
 		final int nLocalEstimates = ( int ) dialog.getNextNumber();
+
+		final String visitorString = dialog.getNextChoice();
 
 
 		final FloatProcessor matrixFp = inputIsMatrix ? normalize( input ).getProcessor().convertToFloatProcessor() : calculateSimilarityMatrix( input, options.comparisonRange );
@@ -130,7 +151,7 @@ public class ZPositionCorrection implements PlugIn
 				double[] transform = null;
 				try
 				{
-					transform = inf.estimateZCoordinates( matrix, startingCoordinates, new LazyVisitor(), options );
+					transform = inf.estimateZCoordinates( matrix, startingCoordinates, visitors.get( visitorString ), options );
 					estimatedSuccessfully = true;
 				}
 				catch ( final NotEnoughDataPointsException e )
