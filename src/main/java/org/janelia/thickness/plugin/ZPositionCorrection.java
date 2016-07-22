@@ -53,6 +53,7 @@ import net.imglib2.transform.Transform;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.ValuePair;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.TransformView;
 import net.imglib2.view.Views;
@@ -64,10 +65,31 @@ import net.imglib2.view.Views;
 public class ZPositionCorrection implements PlugIn
 {
 
-	public static HashMap< String, Visitor > visitors = new HashMap<>();
+	private static HashMap< String, ValuePair< Visitor, VisitorInit > > visitors = new HashMap<>();
 	static
 	{
-		visitors.put( "lazy", new LazyVisitor() );
+		addVisitor( "lazy", new LazyVisitor() );
+	}
+
+	public static interface VisitorInit
+	{
+		default Visitor init( final Visitor visitor, final RandomAccessibleInterval< DoubleType > matrix, final Options options )
+		{
+			return visitor;
+		}
+	}
+
+	public static void addVisitor( final String name, final Visitor visitor )
+	{
+		addVisitor( name, visitor, new VisitorInit(){} );
+	}
+
+	public static void addVisitor( final String name, final Visitor visitor, final VisitorInit init )
+	{
+		if ( name.equals( "lazy" ) && visitors.containsKey( name ) )
+			IJ.log( "Default visitor (\"lazy\") will not be replaced." );
+		else
+			visitors.put( name, new ValuePair<>( visitor, init ) );
 	}
 
 	@Override
@@ -151,7 +173,9 @@ public class ZPositionCorrection implements PlugIn
 				double[] transform = null;
 				try
 				{
-					transform = inf.estimateZCoordinates( matrix, startingCoordinates, visitors.get( visitorString ), options );
+					final ValuePair< Visitor, VisitorInit > visitorAndInit = visitors.get( visitorString );
+					visitorAndInit.getB().init(visitorAndInit.getA(), matrix, options );
+					transform = inf.estimateZCoordinates( matrix, startingCoordinates, visitorAndInit.getA(), options );
 					estimatedSuccessfully = true;
 				}
 				catch ( final NotEnoughDataPointsException e )
