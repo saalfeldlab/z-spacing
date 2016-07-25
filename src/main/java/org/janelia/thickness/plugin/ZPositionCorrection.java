@@ -58,7 +58,6 @@ import net.imglib2.transform.Transform;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.util.ValuePair;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.TransformView;
 import net.imglib2.view.Views;
@@ -70,19 +69,15 @@ import net.imglib2.view.Views;
 public class ZPositionCorrection implements PlugIn
 {
 
-	private static HashMap< String, ValuePair< Visitor, VisitorInit > > visitors = new HashMap<>();
+	private static HashMap< String, VisitorFactory > visitors = new HashMap<>();
 	static
 	{
 		addVisitor( "lazy", new LazyVisitor() );
 
-		final ListVisitor lv = new ListVisitor();
-		lv.addVisitor( new CorrelationFitVisitor( "", "", ",", 0 ) );
-		lv.addVisitor( new ScalingFactorsVisitor( "", "", "," ) );
-		lv.addVisitor( new LUTVisitor( "", "", "," ) );
-		final VisitorInit lvi = new VisitorInit()
+		final VisitorFactory factory = new VisitorFactory()
 		{
 			@Override
-			public Visitor init( final Visitor visitor, final RandomAccessibleInterval< DoubleType > matrix, final Options options )
+			public Visitor create( final RandomAccessibleInterval< DoubleType > matrix, final Options options )
 			{
 				final GenericDialogPlus dialog = new GenericDialogPlus( "Choose output directory for visitor!" );
 				dialog.addDirectoryField( "Output directory", System.getProperty( "user.home" ) );
@@ -91,6 +86,11 @@ public class ZPositionCorrection implements PlugIn
 					return new LazyVisitor();
 
 				final String basePath = dialog.getNextString();
+
+				final ListVisitor lv = new ListVisitor();
+				lv.addVisitor( new CorrelationFitVisitor( "", "", ",", 0 ) );
+				lv.addVisitor( new ScalingFactorsVisitor( "", "", "," ) );
+				lv.addVisitor( new LUTVisitor( "", "", "," ) );
 
 				final ArrayList< Visitor > vs = lv.getVisitors();
 				final String[] relativePatternsBase = {
@@ -105,29 +105,28 @@ public class ZPositionCorrection implements PlugIn
 				return lv;
 			}
 		};
-		addVisitor( "variables", lv, lvi );
+		addVisitor( "variables", factory );
 	}
 
-	public static interface VisitorInit
+	public static interface VisitorFactory
 	{
-		default Visitor init( final Visitor visitor, final RandomAccessibleInterval< DoubleType > matrix, final Options options )
-		{
-			return visitor;
-		}
+		Visitor create( final RandomAccessibleInterval< DoubleType > matrix, final Options options );
 	}
 
 	public static void addVisitor( final String name, final Visitor visitor )
 	{
-		addVisitor( name, visitor, new VisitorInit()
-		{} );
+		addVisitor( name, ( final RandomAccessibleInterval< DoubleType > matrix, final Options options ) ->
+		{
+			return visitor;
+		} );
 	}
 
-	public static void addVisitor( final String name, final Visitor visitor, final VisitorInit init )
+	public static void addVisitor( final String name, final VisitorFactory factory )
 	{
 		if ( name.equals( "lazy" ) && visitors.containsKey( name ) )
 			IJ.log( "Default visitor (\"lazy\") will not be replaced." );
 		else
-			visitors.put( name, new ValuePair<>( visitor, init ) );
+			visitors.put( name, factory );
 	}
 
 	@Override
@@ -209,9 +208,9 @@ public class ZPositionCorrection implements PlugIn
 		double[] transform = null;
 		try
 		{
-			final ValuePair< Visitor, VisitorInit > visitorAndInit = visitors.get( visitorString );
-			visitorAndInit.getB().init( visitorAndInit.getA(), matrix, options );
-			transform = inf.estimateZCoordinates( matrix, startingCoordinates, visitorAndInit.getA(), options );
+			final VisitorFactory factory = visitors.get( visitorString );
+			final Visitor visitor = factory.create( matrix, options );
+			transform = inf.estimateZCoordinates( matrix, startingCoordinates, visitor, options );
 			estimatedSuccessfully = true;
 		}
 		catch ( final NotEnoughDataPointsException e )
