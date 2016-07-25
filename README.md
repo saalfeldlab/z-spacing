@@ -26,4 +26,64 @@ Serial section Microscopy, using either optical or physical sectioning, is an es
   <dd>Specifies the amount of regularization in the outer loop of the optimizer. 0 means no regularization, 1 means full regularization (no change).  The per-section quality weight requires regularization to avoid trivial solutions.  We use a Tikhonov regularizer towards 1.0 weight.</dd>
   <dt>Allow reordering</dt>
   <dd>Specifies whether layers/ sections can change their relative order in the series.</dd>
+</dl>
+
+## Visitors
+*z*-spacing uses the [Visitor](https://github.com/saalfeldlab/z-spacing/blob/master/src/main/java/org/janelia/thickness/inference/visitor/Visitor.java) interface to inspect the state of each iteration of the inference. Currently, two visitors are provided for use in the **Z-Spacing Correction** Fiji plugin:
 <dl>
+ <dt>lazy (default)</dt>
+ <dd>Do not inspect state of inference.</dd>
+ <dt>variables</dt>
+ <dd>Log a user specified selection of
+ <ul>
+ <li>the current (local) function estimate ("&lt;root&gt;/correlation-fit/%0nd.csv"),</li>
+ <li>scaling factors ("&lt;root&gt;/scaling-factors/%0nd.csv"),</li>
+ <li>coordinate transform/look-up table ("&lt;root&gt;/lut/%0nd.csv"), and</li>
+ <li>scaled and warped matrix ("&lt;root&gt;/matrices/%0nd.csv"),</li>
+ </ul>
+ where the &lt;root&gt; directory is specified by the user, and n is the minimum number of digits necessary for displaying the specified number of iterations.
+ </dd>
+</dl>
+### Adding Visitors
+Users can add their own visitors by calling one of
+```java
+org.janelia.thickness.plugin.ZPositionCorrection.addVisitor( final String name, final Visitor visitor )
+org.janelia.thickness.plugin.ZPositionCorrection.addVisitor( final String name, final VisitorFactory factory )
+```
+from the script editor or the beanshell interpreter. The first option is the go-to choice for simple visitors. If the visitor needs specific information from the input matrix or options, the second option should be used. To that end, the user needs to implement the [VisitorFactory](https://github.com/saalfeldlab/z-spacing/blob/master/src/main/java/org/janelia/thickness/plugin/ZPositionCorrection.java#L138) interface. The following simple examples demonstrate how to add a visitor using both methods and can be easily extended for more specific tasks:
+
+- Simple Visitor
+```java
+import ij.IJ;
+import org.janelia.thickness.inference.visitor.Visitor;
+import org.janelia.thickness.plugin.ZPositionCorrection;
+
+ZPositionCorrection.addVisitor( "yay", new Visitor()
+	{ 
+		act( iteration, matrix, scaledMatrix, lut, permutation, inversePermutation, multipliers, estimatedFit ) {
+		IJ.log( "Doing iteration " + iteration );
+		}
+	}
+);
+```
+- Using Factory
+```java
+import ij.IJ;
+import org.janelia.thickness.inference.visitor.Visitor;
+import org.janelia.thickness.plugin.ZPositionCorrection;
+
+factory = new ZPositionCorrection.VisitorFactory() {
+	public Visitor create( matrix, options ) { 
+		return new Visitor() {
+			act( iteration, matrix, scaledMatrix, lut, permutation, inversePermutation, multipliers, estimatedFit )
+			{
+				IJ.log( "Doing iteration " + iteration + "/" + options.nIterations );
+			}
+		};
+	}
+};
+
+ZPositionCorrection.addVisitor( "yay2", factory );
+```
+
+Note that manually added visitors will not be stored, i.e. they will be lost after re-starting Fiji, and the "lazy" visitor cannot be overwritten.
