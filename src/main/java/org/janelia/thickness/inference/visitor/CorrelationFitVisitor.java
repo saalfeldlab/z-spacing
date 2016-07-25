@@ -90,7 +90,7 @@ public class CorrelationFitVisitor extends CSVVisitor
 			final String path = fileDir( iteration );
 			createParentDirectory( path );
 			final IterableInterval< double[] > iterable = Views.iterable( estimatedFits );
-			write( iterable, path );
+			write( new IndexedIterable<>( separator, new ArrayIterable( iterable ) ), path );
 		}
 		catch ( final IOException e )
 		{

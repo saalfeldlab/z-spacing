@@ -180,6 +180,7 @@ public class InferFromMatrix
 		final double[] scalingFactors = new double[ n ];
 		for ( int i = 0; i < scalingFactors.length; i++ )
 			scalingFactors[ i ] = 1.0;
+		final RandomAccessibleInterval< double[] >[] correlationFitsStore = new RandomAccessibleInterval[] { null };
 
 		double[] permutedLut = lut.clone(); // sorted lut
 		final double[] scalingFactorsPrevious = scalingFactors.clone();
@@ -231,7 +232,7 @@ public class InferFromMatrix
 			final IntervalView< T > scaledMatrix = Views.interval( new TransformView< T >( inputScaledMatrix, permutation ), inputScaledMatrix );
 
 			if ( iteration == 0 )
-				visitor.act( iteration, matrix, scaledMatrix, lut, permutationLut, inverse, scalingFactors, null );
+				visitor.act( iteration, matrix, scaledMatrix, lut, permutationLut, inverse, scalingFactors, correlationFitsStore[ 0 ] );
 
 			final double[] shifts = this.getMediatedShifts(
 					matrix,
@@ -239,6 +240,7 @@ public class InferFromMatrix
 					permutedLut,
 					scalingFactors,
 					iteration,
+					correlationFitsStore,
 					options );
 
 			this.applyShifts(
@@ -263,7 +265,7 @@ public class InferFromMatrix
 			ArraySortedIndices.sort( permutedLut, permutationLut, inverse );
 			updateArray( scalingFactorsPrevious, scalingFactors, permutationLut );
 
-			visitor.act( iteration + 1, matrix, scaledMatrix, lut, permutationLut, inverse, scalingFactors, null );
+			visitor.act( iteration + 1, matrix, scaledMatrix, lut, permutationLut, inverse, scalingFactors, correlationFitsStore[ 0 ] );
 
 		}
 
@@ -276,6 +278,7 @@ public class InferFromMatrix
 			final double[] lut,
 			final double[] scalingFactors,
 			final int iteration,
+			final RandomAccessibleInterval< double[] >[] correlationFitsStore,
 			final Options options ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
 	{
 
@@ -284,6 +287,7 @@ public class InferFromMatrix
 
 		// use scaled matrix
 		final RandomAccessibleInterval< double[] > fits = correlationFit.estimateFromMatrix( scaledMatrix, lut, transform, options );
+		correlationFitsStore[ 0 ] = fits;
 
 		// use original matrix to estimate scaling factors
 		EstimateScalingFactors.estimateQuadraticFromMatrix( matrix,
