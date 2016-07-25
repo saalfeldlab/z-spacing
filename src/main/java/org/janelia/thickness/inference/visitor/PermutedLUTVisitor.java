@@ -33,6 +33,7 @@ public class PermutedLUTVisitor extends CSVVisitor
 	public < T extends RealType< T > > void act(
 			final int iteration,
 			final RandomAccessibleInterval< T > matrix,
+			final RandomAccessibleInterval< T > scaledMatrix,
 			final double[] lut,
 			final int[] permutation,
 			final int[] inversePermutation,

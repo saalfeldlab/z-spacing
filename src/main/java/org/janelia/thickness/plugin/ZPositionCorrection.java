@@ -1,10 +1,12 @@
 package org.janelia.thickness.plugin;
 
+import java.awt.Checkbox;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Vector;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -15,10 +17,10 @@ import org.janelia.thickness.inference.fits.AbstractCorrelationFit;
 import org.janelia.thickness.inference.fits.GlobalCorrelationFitAverage;
 import org.janelia.thickness.inference.fits.LocalCorrelationFitAverage;
 import org.janelia.thickness.inference.visitor.CorrelationFitVisitor;
-import org.janelia.thickness.inference.visitor.FileSaverVisitor;
 import org.janelia.thickness.inference.visitor.LUTVisitor;
 import org.janelia.thickness.inference.visitor.LazyVisitor;
 import org.janelia.thickness.inference.visitor.ListVisitor;
+import org.janelia.thickness.inference.visitor.MatrixVisitor;
 import org.janelia.thickness.inference.visitor.ScalingFactorsVisitor;
 import org.janelia.thickness.inference.visitor.Visitor;
 import org.janelia.thickness.lut.LUTRealTransform;
@@ -81,27 +83,52 @@ public class ZPositionCorrection implements PlugIn
 			{
 				final GenericDialogPlus dialog = new GenericDialogPlus( "Choose output directory for visitor!" );
 				dialog.addDirectoryField( "Output directory", System.getProperty( "user.home" ) );
+				dialog.addCheckboxGroup(
+						4,
+						1,
+						new String[] { "Fit", "Scaling Factors", "Coordinate Transformation", "Matrix" },
+						new boolean[] { false, false, false, false } );
 				dialog.showDialog();
+
 				if ( dialog.wasCanceled() )
 					return new LazyVisitor();
 
 				final String basePath = dialog.getNextString();
 
+				@SuppressWarnings( "unchecked" )
+				final Vector< Checkbox > boxes = dialog.getCheckboxes();
+				IJ.log( "" + boxes.get( 0 ) );
+
 				final ListVisitor lv = new ListVisitor();
-				lv.addVisitor( new CorrelationFitVisitor( "", "", ",", 0 ) );
-				lv.addVisitor( new ScalingFactorsVisitor( "", "", "," ) );
-				lv.addVisitor( new LUTVisitor( "", "", "," ) );
+				if ( boxes.get( 0 ).getState() )
+				{
+					final CorrelationFitVisitor v = new CorrelationFitVisitor( basePath, "", ",", 0 );
+					v.setRelativeFilePattern( "correlation-fit/", options.nIterations, ".csv" );
+					lv.addVisitor( v );
+				}
+				if ( boxes.get( 1 ).getState() )
+				{
+					final ScalingFactorsVisitor v = new ScalingFactorsVisitor( basePath, "", "," );
+					v.setRelativeFilePattern( "scaling-factors/", options.nIterations, ".csv" );
+					lv.addVisitor( v );
+				}
+				if ( boxes.get( 2 ).getState() )
+				{
+					final LUTVisitor v = new LUTVisitor( basePath, "", "," );
+					v.setRelativeFilePattern( "lut/", options.nIterations, ".csv" );
+					lv.addVisitor( v );
+				}
+				if ( boxes.get( 3 ).getState() )
+				{
+					final MatrixVisitor v = new MatrixVisitor( basePath, "", options.comparisonRange );
+					v.setRelativeFilePattern( "matrices/", options.nIterations, ".tif" );
+					lv.addVisitor( v );
+				}
 
 				final ArrayList< Visitor > vs = lv.getVisitors();
-				final String[] relativePatternsBase = {
-						"correlation-fit/", "scaling-factors/", "lut/"
-				};
-				for ( int i = 0; i < relativePatternsBase.length; ++i )
-				{
-					final FileSaverVisitor v = ( FileSaverVisitor ) vs.get( i );
-					v.setRelativeFilePattern( relativePatternsBase[ i ], options.nIterations, ".csv" );
-					v.setBasePath( basePath );
-				}
+				if ( vs.size() == 0 )
+					return new LazyVisitor();
+
 				return lv;
 			}
 		};

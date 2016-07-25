@@ -31,7 +31,7 @@ import net.imglib2.view.TransformView;
 import net.imglib2.view.Views;
 
 /**
- * 
+ *
  * @author Philipp Hanslovsky &lt;hanslovskyp@janelia.hhmi.org&gt;
  *
  */
@@ -56,7 +56,7 @@ public class InferFromMatrix
 	{
 
 		@Override
-		public void regularize( double[] coordinates, Options options )
+		public void regularize( final double[] coordinates, final Options options )
 		{
 			// do not do anything
 		}
@@ -72,7 +72,7 @@ public class InferFromMatrix
 
 		private final double[] dummy;
 
-		protected ModelRegularization( Model< ? > m, double[] regularizationValues, double[] weights )
+		protected ModelRegularization( final Model< ? > m, final double[] regularizationValues, final double[] weights )
 		{
 			this.m = m;
 			this.regularizationValues = regularizationValues;
@@ -83,9 +83,9 @@ public class InferFromMatrix
 		protected abstract double[] extractRelevantCoordinates( double[] coordinates );
 
 		@Override
-		public void regularize( double[] coordinates, Options options ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
+		public void regularize( final double[] coordinates, final Options options ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
 		{
-			double[] relevantCoordinates = extractRelevantCoordinates( coordinates );
+			final double[] relevantCoordinates = extractRelevantCoordinates( coordinates );
 			m.fit( new double[][] { relevantCoordinates }, new double[][] { regularizationValues }, weights );
 
 			for ( int i = 0; i < coordinates.length; ++i )
@@ -101,14 +101,14 @@ public class InferFromMatrix
 	{
 		private final double[] relevantCoordinates;
 
-		public BorderRegularization( Model< ? > m, int length )
+		public BorderRegularization( final Model< ? > m, final int length )
 		{
 			super( m, new double[] { 0, length - 1 }, new double[] { 1.0, 1.0 } );
 			this.relevantCoordinates = new double[ 2 ];
 		}
 
 		@Override
-		protected double[] extractRelevantCoordinates( double[] coordinates )
+		protected double[] extractRelevantCoordinates( final double[] coordinates )
 		{
 			relevantCoordinates[ 0 ] = coordinates[ 0 ];
 			relevantCoordinates[ 1 ] = coordinates[ coordinates.length - 1 ];
@@ -118,28 +118,28 @@ public class InferFromMatrix
 
 	public static class IdentityRegularization extends ModelRegularization
 	{
-		public IdentityRegularization( Model< ? > m, int length )
+		public IdentityRegularization( final Model< ? > m, final int length )
 		{
 			super( m, range( 0, length, 1 ), constVals( length, 1.0 ) );
 		}
 
 		@Override
-		protected double[] extractRelevantCoordinates( double[] coordinates )
+		protected double[] extractRelevantCoordinates( final double[] coordinates )
 		{
 			return coordinates;
 		}
 
-		public static double[] range( int start, int stop, int step )
+		public static double[] range( int start, final int stop, final int step )
 		{
-			double[] result = new double[ ( stop - start ) / step ];
+			final double[] result = new double[ ( stop - start ) / step ];
 			for ( int i = 0; i < result.length; ++i, start += step )
 				result[ i ] = start;
 			return result;
 		}
 
-		public static double[] constVals( int length, double val )
+		public static double[] constVals( final int length, final double val )
 		{
-			double[] result = new double[ length ];
+			final double[] result = new double[ length ];
 			for ( int i = 0; i < result.length; ++i )
 				result[ i ] = val;
 			return result;
@@ -179,17 +179,15 @@ public class InferFromMatrix
 		final int nMatrixDim = inputMatrix.numDimensions();
 		final double[] scalingFactors = new double[ n ];
 		for ( int i = 0; i < scalingFactors.length; i++ )
-		{
 			scalingFactors[ i ] = 1.0;
-		}
 
 		double[] permutedLut = lut.clone(); // sorted lut
 		final double[] scalingFactorsPrevious = scalingFactors.clone();
 		ArraySortedIndices.sort( permutedLut, permutationLut, inverse );
 
-		ArrayImg< T, ? > inputScaledStrip = new ArrayImgFactory< T >().create( new long[] { 2 * options.comparisonRange + 1, n }, inputMatrix.randomAccess().get() );
+		final ArrayImg< T, ? > inputScaledStrip = new ArrayImgFactory< T >().create( new long[] { 2 * options.comparisonRange + 1, n }, inputMatrix.randomAccess().get() );
 
-		RandomAccessibleInterval< T > inputScaledMatrix = MatrixStripConversion.stripToMatrix( inputScaledStrip, inputMatrix.randomAccess().get() );
+		final RandomAccessibleInterval< T > inputScaledMatrix = MatrixStripConversion.stripToMatrix( inputScaledStrip, inputMatrix.randomAccess().get() );
 		for ( Cursor< T > source = Views.flatIterable( inputMatrix ).cursor(), target = Views.flatIterable( inputScaledMatrix ).cursor(); source.hasNext(); )
 			target.next().set( source.next() );
 
@@ -224,16 +222,16 @@ public class InferFromMatrix
 			// scaling factors always in permuted order
 
 			final PermutationTransform permutation = new PermutationTransform( inverse, nMatrixDim, nMatrixDim ); // need
-																													// to
-																													// create
-																													// Transform
-																													// into
-																													// source?
+			// to
+			// create
+			// Transform
+			// into
+			// source?
 			final IntervalView< T > matrix = Views.interval( new TransformView< T >( inputMatrix, permutation ), inputMatrix );
-			IntervalView< T > scaledMatrix = Views.interval( new TransformView< T >( inputScaledMatrix, permutation ), inputScaledMatrix );
+			final IntervalView< T > scaledMatrix = Views.interval( new TransformView< T >( inputScaledMatrix, permutation ), inputScaledMatrix );
 
 			if ( iteration == 0 )
-				visitor.act( iteration, matrix, lut, permutationLut, inverse, scalingFactors, null );
+				visitor.act( iteration, matrix, scaledMatrix, lut, permutationLut, inverse, scalingFactors, null );
 
 			final double[] shifts = this.getMediatedShifts(
 					matrix,
@@ -245,7 +243,7 @@ public class InferFromMatrix
 
 			this.applyShifts(
 					permutedLut, // rewrite interface to use view on permuted
-									// lut? probably not
+					// lut? probably not
 					shifts,
 					startingCoordinates,
 					permutation.copyToDimension( 1, 1 ),
@@ -265,7 +263,7 @@ public class InferFromMatrix
 			ArraySortedIndices.sort( permutedLut, permutationLut, inverse );
 			updateArray( scalingFactorsPrevious, scalingFactors, permutationLut );
 
-			visitor.act( iteration + 1, matrix, lut, permutationLut, inverse, scalingFactors, null );
+			visitor.act( iteration + 1, matrix, scaledMatrix, lut, permutationLut, inverse, scalingFactors, null );
 
 		}
 
@@ -285,7 +283,7 @@ public class InferFromMatrix
 		final LUTRealTransform transform = new LUTRealTransform( lut, nMatrixDimensions, nMatrixDimensions );
 
 		// use scaled matrix
-		RandomAccessibleInterval< double[] > fits = correlationFit.estimateFromMatrix( scaledMatrix, lut, transform, options );
+		final RandomAccessibleInterval< double[] > fits = correlationFit.estimateFromMatrix( scaledMatrix, lut, transform, options );
 
 		// use original matrix to estimate scaling factors
 		EstimateScalingFactors.estimateQuadraticFromMatrix( matrix,
@@ -297,13 +295,13 @@ public class InferFromMatrix
 				options.scalingFactorEstimationIterations );
 
 		// write scaled matrix to scaledMatrix
-		RandomAccess< T > matrixRA = matrix.randomAccess();
-		RandomAccess< T > scaledMatrixRA = scaledMatrix.randomAccess();
+		final RandomAccess< T > matrixRA = matrix.randomAccess();
+		final RandomAccess< T > scaledMatrixRA = scaledMatrix.randomAccess();
 		for ( int z = 0; z < lut.length; ++z )
 		{
 			matrixRA.setPosition( z, 0 );
 			scaledMatrixRA.setPosition( z, 0 );
-			int max = Math.min( lut.length, z + options.comparisonRange + 1 );
+			final int max = Math.min( lut.length, z + options.comparisonRange + 1 );
 			for ( int k = Math.max( 0, z - options.comparisonRange ); k < max; ++k )
 			{
 				matrixRA.setPosition( k, 1 );
@@ -364,14 +362,12 @@ public class InferFromMatrix
 	public void updateArray( final double[] source, final double[] target, final int[] permutation )
 	{
 		for ( int i = 0; i < target.length; i++ )
-		{
 			target[ permutation[ i ] ] = source[ i ];
-		}
 	}
 
 	public static void mediateShifts(
-			Map< Long, ArrayList< Double > > shifts,
-			double[] mediatedShifts )
+			final Map< Long, ArrayList< Double > > shifts,
+			final double[] mediatedShifts )
 	{
 		for ( int i = 0; i < mediatedShifts.length; ++i )
 		{
