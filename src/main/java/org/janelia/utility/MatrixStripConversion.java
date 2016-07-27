@@ -35,7 +35,7 @@ public class MatrixStripConversion
 		final ExtendedRandomAccessibleInterval< T, RandomAccessibleInterval< T > > extended = Views.extendValue( matrix, dummy );
 		final AbstractShearTransform tf = new ShearTransform( 2, 0, 1 );
 		final long h = matrix.dimension( 1 );
-		final FinalInterval interval = new FinalInterval( new long[] { -range, 0 }, new long[] { range, h } );
+		final FinalInterval interval = new FinalInterval( new long[] { -range, 0 }, new long[] { range, h - 1 } );
 		final IntervalView< T > transformed = Views.offsetInterval( new TransformView<>( extended, tf ), interval );
 		return transformed;
 	}
