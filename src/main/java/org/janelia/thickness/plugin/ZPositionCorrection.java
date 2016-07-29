@@ -207,7 +207,7 @@ public class ZPositionCorrection implements PlugIn
 		options.scalingFactorEstimationIterations = ( int ) dialog.getNextNumber();
 		options.scalingFactorRegularizerWeight = dialog.getNextNumber();
 		options.withReorder = dialog.getNextBoolean();
-		options.forceMonotonicity = !options.withReorder;
+		options.forceMonotonicity = true;
 		options.minimumSectionThickness = 1e-9;
 		options.regularizationType = InferFromMatrix.RegularizationType.BORDER;
 
