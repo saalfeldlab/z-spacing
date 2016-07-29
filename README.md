@@ -1,4 +1,5 @@
 [![](http://jenkins.imagej.net/job/z-spacing/lastBuild/badge/icon)](http://jenkins.imagej.net/job/z-spacing)
+[![](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/saalfeldlab/z-spacing?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 # Z-Spacing Correction
 
