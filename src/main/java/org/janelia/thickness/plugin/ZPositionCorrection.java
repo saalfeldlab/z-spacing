@@ -202,7 +202,7 @@ public class ZPositionCorrection implements PlugIn
 		options.scalingFactorEstimationIterations = ( int ) dialog.getNextNumber();
 		options.scalingFactorRegularizerWeight = dialog.getNextNumber();
 		options.withReorder = dialog.getNextBoolean();
-		options.forceMonotonicity = !options.withReorder;
+		options.forceMonotonicity = true;
 		options.minimumSectionThickness = 1e-9;
 		options.regularizationType = InferFromMatrix.RegularizationType.BORDER;
 
@@ -377,10 +377,10 @@ public class ZPositionCorrection implements PlugIn
 	public static void main( final String[] args )
 	{
 		new ImageJ();
-//		ImagePlus imp = new ImagePlus("/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/data/data.tif");
-//		ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/forPhilipp/substacks/03/data/" );
+		final ImagePlus imp = new ImagePlus( "/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/data/data.tif" );
+//		final ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/forPhilipp/substacks/03/data/" );
 //		ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/davi_toy_set/data/seq" );
-		final ImagePlus imp = new ImagePlus( "/data/hanslovskyp/strip-example-small.tif" );
+//		final ImagePlus imp = new ImagePlus( "/data/hanslovskyp/strip-example-small.tif" );
 		imp.show();
 		new ZPositionCorrection().run( "" );
 	}
