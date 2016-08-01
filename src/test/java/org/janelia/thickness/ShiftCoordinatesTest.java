@@ -156,7 +156,7 @@ public class ShiftCoordinatesTest
 		}
 	}
 
-	private Img< DoubleType > scaleMatrix( final Img< DoubleType > matrix, final double[] scalingFactors )
+	private static Img< DoubleType > scaleMatrix( final Img< DoubleType > matrix, final double[] scalingFactors )
 	{
 		final long[] dim = new long[ matrix.numDimensions() ];
 		matrix.dimensions( dim );
