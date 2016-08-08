@@ -30,6 +30,10 @@ import org.janelia.thickness.lut.SingleDimensionPermutationTransform;
 import org.janelia.utility.MatrixStripConversion;
 import org.janelia.utility.arrays.ArraySortedIndices;
 
+import bdv.tools.brightness.MinMaxGroup;
+import bdv.util.AxisOrder;
+import bdv.util.Bdv;
+import bdv.util.BdvFunctions;
 import fiji.util.gui.GenericDialogPlus;
 import ij.IJ;
 import ij.ImageJ;
@@ -44,6 +48,7 @@ import ij.process.ImageConverter;
 import mpicbg.ij.util.Filter;
 import mpicbg.models.IllDefinedDataPointsException;
 import mpicbg.models.NotEnoughDataPointsException;
+import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
@@ -260,7 +265,7 @@ public class ZPositionCorrection implements PlugIn
 		{
 
 			IJ.log( Arrays.toString( transform ) );
-			boolean renderTransformedStack = false;
+			boolean showTransformedStack = false;
 
 			final double[] sortedTransform = transform.clone();
 			final int[] forward = new int[ sortedTransform.length ];
@@ -285,41 +290,41 @@ public class ZPositionCorrection implements PlugIn
 
 			ImageJFunctions.show( transformedMatrix, "Warped matrix" );
 
-			double renderingZScale = 1.0;
-			final GenericDialogPlus renderDialog = new GenericDialogPlus( "Rendering." );
-			renderDialog.addCheckbox( "Render stack?", renderTransformedStack );
+			double stackZScale = 1.0;
+			final GenericDialogPlus renderDialog = new GenericDialogPlus( "Show result." );
+			renderDialog.addCheckbox( "Show transformed stack?", showTransformedStack );
 			if ( inputIsMatrix )
 				renderDialog.addFileField( "Input path (use current image if empty)", "" );
-			renderDialog.addNumericField( "Scale result stack", renderingZScale, 4 );
+			renderDialog.addNumericField( "Scale result stack", stackZScale, 4 );
 			renderDialog.showDialog();
 
 			if ( renderDialog.wasCanceled() )
 				return;
 
-			renderTransformedStack = renderDialog.getNextBoolean();
-			renderingZScale = renderDialog.getNextNumber();
+			showTransformedStack = renderDialog.getNextBoolean();
+			stackZScale = renderDialog.getNextNumber();
 
-			if ( renderTransformedStack )
+			if ( showTransformedStack )
 			{
 				final ImagePlus stackImp = inputIsMatrix ? getFileFromOption( renderDialog.getNextString() ) : input;
 				new ImageConverter( stackImp ).convertToGray32();
+				final double displayRangeMin = stackImp.getDisplayRangeMin();
+				final double displayRangeMax = stackImp.getDisplayRangeMax();
 				final RandomAccessibleInterval< FloatType > stack = ImageJFunctions.wrapFloat( stackImp );
 
 				final SingleDimensionPermutationTransform permutation1D = new SingleDimensionPermutationTransform( permutationArray, 3, 3, 2 );
 				final SingleDimensionLUTRealTransform lut1D = new SingleDimensionLUTRealTransform( sortedTransform, 3, 3, 2 );
 
-				final ImageStack transformedStack =
-						generateStack(
-								generateTransformed( stack, permutation1D, lut1D, new FloatType( Float.NaN ) ),
-								stackImp.getWidth(),
-								stackImp.getHeight(),
-								stackImp.getStackSize(),
-								renderingZScale );
-
-				final ImagePlus resultImp = new ImagePlus( "Warped image stack", transformedStack );
-				resultImp.show();
-
-				IJ.log( "Rendered warped image stack." );
+				final RealRandomAccessible< FloatType > transformed = generateTransformed( stack, permutation1D, lut1D, new FloatType( Float.NaN ) );
+				final Scale3D scaleTransform = new Scale3D( 1.0, 1.0, stackZScale );
+				final RealTransformRealRandomAccessible< FloatType, InverseRealTransform > scaled = RealViews.transformReal( transformed, scaleTransform );
+				final long[] dim = new long[ stack.numDimensions() ];
+				stack.dimensions( dim );
+				dim[ 2 ] *= stackZScale;
+				final Bdv bdv = BdvFunctions.show( scaled, new FinalInterval( dim ), "Transformed stack.", Bdv.options().axisOrder( AxisOrder.XYZ ) );
+				for ( final MinMaxGroup minMax : bdv.getBdvHandle().getSetupAssignments().getMinMaxGroups() )
+					minMax.setRange( displayRangeMin, displayRangeMax );
+				IJ.log( "Showing warped image stack." );
 			}
 
 		}
@@ -377,9 +382,9 @@ public class ZPositionCorrection implements PlugIn
 	public static void main( final String[] args )
 	{
 		new ImageJ();
-		final ImagePlus imp = new ImagePlus( "/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/data/data.tif" );
-//		final ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/forPhilipp/substacks/03/data/" );
-//		ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/davi_toy_set/data/seq" );
+//		final ImagePlus imp = new ImagePlus( "/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/data/data.tif" );
+		final ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/forPhilipp/substacks/03/data/" );
+//		final ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/davi_toy_set/data/seq" );
 //		final ImagePlus imp = new ImagePlus( "/data/hanslovskyp/strip-example-small.tif" );
 		imp.show();
 		new ZPositionCorrection().run( "" );
