@@ -16,17 +16,18 @@ def make_hist(data, **kwargs):
 	m = np.min(means-1*stds)
 	M = np.max(means+1*stds)
 
-	return plt.hist(data, range=(m, M), **kwargs)
+	return means, stds, plt.hist(data, range=(m, M), **kwargs)
 
 trove_data = np.genfromtxt('with-trove.csv', delimiter=',') / 1e9
 map_data = np.genfromtxt('with-map.csv', delimiter=',') / 1e9
+array_data = np.genfromtxt('with-array.csv', delimiter=',') / 1e9
 
 ax = plt.subplot(1, 2, 1)
-make_hist([map_data[100:,0], trove_data[100:,0]], label=('map', 'trove'))
+means, stds, hist = make_hist((map_data[100:,0], trove_data[100:,0], array_data[100:,0]), label=('map', 'trove', 'array'))
 plt.legend()
 
 ax = plt.subplot(1, 2, 2)
-make_hist([map_data[100:,1], trove_data[100:,1]], label=('map', 'trove'))
+means, stds, hist = make_hist((map_data[100:,1], trove_data[100:,1], array_data[100:,1]), label=('map', 'trove', 'array'))
 plt.legend()
 
 
