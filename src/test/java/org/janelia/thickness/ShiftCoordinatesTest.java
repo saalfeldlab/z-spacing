@@ -4,8 +4,6 @@ import org.janelia.thickness.inference.Options;
 import org.junit.Assert;
 import org.junit.Test;
 
-import gnu.trove.iterator.TDoubleIterator;
-import gnu.trove.list.array.TDoubleArrayList;
 import net.imglib2.Cursor;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessibleInterval;
@@ -71,20 +69,22 @@ public class ShiftCoordinatesTest
 		final Options o = Options.generateDefaultOptions();
 		o.comparisonRange = range;
 
-		final TDoubleArrayList[] shiftsArray = new TDoubleArrayList[ size ];
-		for ( int i = 0; i < size; ++i )
-			shiftsArray[ i ] = new TDoubleArrayList();
+		final double[] shiftsArray = new double[ size * 2 * range ];
+		final int[] nShiftsCollected = new int[ size ];
+		final int stride = 2 * range;
 
-		ShiftCoordinates.collectShiftsFromMatrix( coordinates, scaleMatrix( matrix, scalingFactors ), scalingFactors, fits, shiftsArray, o );
+		ShiftCoordinates.collectShiftsFromMatrix( coordinates, scaleMatrix( matrix, scalingFactors ), scalingFactors, fits, shiftsArray, nShiftsCollected, o );
 		for ( int z = 0; z < size; ++z )
 		{
-			final TDoubleArrayList lshifts = shiftsArray[ z ];
+			final int offset = stride * z;
+			final int nColl = nShiftsCollected[ z ];
+
 			final long missing = z > range ? z < size - range ? 0 : range - ( size - 1 - z ) : range - z;
 			final long expectedNumberOfVotes = 2 * range - missing;
 
-			Assert.assertEquals( expectedNumberOfVotes, lshifts.size() );
-			for ( final TDoubleIterator l = lshifts.iterator(); l.hasNext(); )
-				Assert.assertEquals( 0.0, l.next(), 0.0 );
+			Assert.assertEquals( expectedNumberOfVotes, nColl );
+			for ( int i = 0; i < nColl; ++i )
+				Assert.assertEquals( 0.0, shiftsArray[ offset + i ], 0.0 );
 		}
 	}
 
@@ -134,23 +134,25 @@ public class ShiftCoordinatesTest
 			scalingFactors[ z ] = 1.0;
 		}
 
-		final TDoubleArrayList[] shiftsArray = new TDoubleArrayList[ size ];
-		for ( int i = 0; i < size; ++i )
-			shiftsArray[ i ] = new TDoubleArrayList();
+		final double[] shiftsArray = new double[ size * 2 * range ];
+		final int[] nShiftsCollected = new int[ size ];
+		final int stride = 2 * range;
 
 		final Options o = Options.generateDefaultOptions();
 		o.comparisonRange = range;
-		ShiftCoordinates.collectShiftsFromMatrix( coordinates, scaleMatrix( matrix, scalingFactors ), scalingFactors, fits, shiftsArray, o );
+		ShiftCoordinates.collectShiftsFromMatrix( coordinates, scaleMatrix( matrix, scalingFactors ), scalingFactors, fits, shiftsArray, nShiftsCollected, o );
 		for ( int z = 0; z < size; ++z )
 		{
-			final TDoubleArrayList lshifts = shiftsArray[ z ];
+			final int offset = stride * z;
+			final int nColl = nShiftsCollected[ z ];
+
 			final long expectedNumberOfNonZeroVotes = Math.max( range - Math.abs( ( z >= rupture ? z + 1 : z ) - rupture ), 0 );
 
 			int numberOfNonZeroVotes = 0;
 			int numberOfZeroVotes = 0;
-			for ( final TDoubleIterator lIt = lshifts.iterator(); lIt.hasNext(); )
+			for ( int i = 0; i < nColl; ++i )
 			{
-				final double l = lIt.next();
+				final double l = shiftsArray[ offset + i ];
 				if ( l == 0.0 )
 					++numberOfZeroVotes;
 				else
@@ -159,7 +161,7 @@ public class ShiftCoordinatesTest
 					++numberOfNonZeroVotes;
 				}
 			}
-			Assert.assertEquals( lshifts.size(), numberOfZeroVotes + numberOfNonZeroVotes );
+			Assert.assertEquals( nColl, numberOfZeroVotes + numberOfNonZeroVotes );
 			Assert.assertEquals( expectedNumberOfNonZeroVotes, numberOfNonZeroVotes );
 		}
 	}

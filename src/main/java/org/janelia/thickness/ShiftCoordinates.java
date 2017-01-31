@@ -3,7 +3,6 @@ package org.janelia.thickness;
 import org.janelia.thickness.inference.Options;
 import org.janelia.thickness.lut.LUTRealTransform;
 
-import gnu.trove.list.array.TDoubleArrayList;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
@@ -23,9 +22,11 @@ public class ShiftCoordinates
 			final RandomAccessibleInterval< T > correlations,
 			final double[] multipliers,
 			final RandomAccessibleInterval< double[] > localFits,
-			final TDoubleArrayList[] shiftsArray,
+			final double[] shiftsArray, final int[] nShiftsCollected,
 			final Options options )
 	{
+
+		final int stride = 2 * options.comparisonRange;
 
 		final RandomAccess< T > corrAccess1 = correlations.randomAccess();
 		final RandomAccess< T > corrAccess2 = correlations.randomAccess();
@@ -66,8 +67,6 @@ public class ShiftCoordinates
 					{
 
 						minMeasurement1 = measurement;
-						final TDoubleArrayList localShifts = shiftsArray[ up ];
-
 						/*
 						 * TODO inverts because LUTRealTransform can only
 						 * increasing
@@ -86,7 +85,7 @@ public class ShiftCoordinates
 
 							/* current location */
 							final double shift = up < i ? rel - reference[ 0 ] : rel + reference[ 0 ];
-							localShifts.add( shift );
+							shiftsArray[ stride * up + nShiftsCollected[ up ]++ ] = shift;
 						}
 					}
 				}
@@ -104,8 +103,6 @@ public class ShiftCoordinates
 					{
 
 						minMeasurement2 = measurement;
-						final TDoubleArrayList localShifts = shiftsArray[ down ];
-
 						/*
 						 * TODO inverts because LUTRealTransform can only
 						 * increasing
@@ -123,7 +120,7 @@ public class ShiftCoordinates
 							final double rel = coordinates[ i ] - coordinates[ down ];
 							/* current location */
 							final double shift = down < i ? rel - reference[ 0 ] : rel + reference[ 0 ];
-							localShifts.add( shift );
+							shiftsArray[ stride * down + nShiftsCollected[ down ]++ ] = shift;
 						}
 					}
 				}

@@ -11,8 +11,6 @@ import org.janelia.utility.MatrixStripConversion;
 import org.janelia.utility.arrays.ArraySortedIndices;
 import org.janelia.utility.arrays.ReplaceNaNs;
 
-import gnu.trove.iterator.TDoubleIterator;
-import gnu.trove.list.array.TDoubleArrayList;
 import mpicbg.models.AffineModel1D;
 import mpicbg.models.IllDefinedDataPointsException;
 import mpicbg.models.Model;
@@ -215,9 +213,8 @@ public class InferFromMatrix
 		}
 		}
 
-		final TDoubleArrayList[] shiftsArray = new TDoubleArrayList[ n ];
-		for ( int i = 0; i < n; ++i )
-			shiftsArray[i] = new TDoubleArrayList();
+		final double[] shiftsArray = new double[ n * 2 * options.comparisonRange ];
+		final int[] nShiftsCollected = new int[ n ];
 
 		for ( int iteration = 0; iteration < options.nIterations; ++iteration )
 		{
@@ -236,8 +233,8 @@ public class InferFromMatrix
 			if ( iteration == 0 )
 				visitor.act( iteration, matrix, scaledMatrix, lut, permutationLut, inverse, scalingFactors, correlationFitsStore[ 0 ] );
 
-			for ( final TDoubleArrayList sa : shiftsArray )
-				sa.clear();
+			for ( int i = 0; i < nShiftsCollected.length; ++i )
+				nShiftsCollected[ i ] = 0;
 
 			final double[] shifts = this.getMediatedShifts(
 					matrix,
@@ -247,6 +244,7 @@ public class InferFromMatrix
 					iteration,
 					correlationFitsStore,
 					shiftsArray,
+					nShiftsCollected,
 					options );
 
 			this.applyShifts(
@@ -285,7 +283,8 @@ public class InferFromMatrix
 			final double[] scalingFactors,
 			final int iteration,
 			final RandomAccessibleInterval< double[] >[] correlationFitsStore,
-			final TDoubleArrayList[] shiftsArray,
+			final double[] shiftsArray,
+			final int[] nShiftsCollected,
 			final Options options ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
 	{
 
@@ -330,10 +329,11 @@ public class InferFromMatrix
 				scalingFactors,
 				fits,
 				shiftsArray,
+				nShiftsCollected,
 				options );
 
 		final double[] mediatedShifts = new double[ lut.length ];
-		mediateShifts( shiftsArray, mediatedShifts );
+		mediateShifts( shiftsArray, nShiftsCollected, mediatedShifts );
 
 		return mediatedShifts;
 	}
@@ -377,21 +377,23 @@ public class InferFromMatrix
 	}
 
 	public static void mediateShifts(
-			final TDoubleArrayList[] shifts,
+			final double[] shifts,
+			final int[] nShiftsCollected,
 			final double[] mediatedShifts )
 	{
+		final int stride = shifts.length / nShiftsCollected.length;
 		for ( int i = 0; i < mediatedShifts.length; ++i )
 		{
 
-			final TDoubleArrayList localShifts = shifts[ i ];
+			final int offset = stride * i;
+			final int nColl = nShiftsCollected[ i ];
 
 			double shift = 0.0;
 
-			if ( localShifts != null )
 			{
-				for ( final TDoubleIterator l = localShifts.iterator(); l.hasNext(); )
-					shift += l.next();
-				shift /= localShifts.size();
+				for ( int s = 0; s < nColl; ++s )
+					shift += shifts[ offset + s ];
+				shift /= nColl;
 			}
 
 			mediatedShifts[ i ] = shift;
