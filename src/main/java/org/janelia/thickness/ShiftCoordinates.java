@@ -1,11 +1,9 @@
 package org.janelia.thickness;
 
-import java.util.ArrayList;
-import java.util.TreeMap;
-
 import org.janelia.thickness.inference.Options;
 import org.janelia.thickness.lut.LUTRealTransform;
 
+import gnu.trove.list.array.TDoubleArrayList;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
@@ -13,33 +11,32 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.view.Views;
 
 /**
- * 
+ *
  * @author Philipp Hanslovsky &lt;hanslovskyp@janelia.hhmi.org&gt;
  *
  */
 public class ShiftCoordinates
 {
 
-	public static < T extends RealType< T > > TreeMap< Long, ArrayList< Double > > collectShiftsFromMatrix(
+	public static < T extends RealType< T > > void collectShiftsFromMatrix(
 			final double[] coordinates,
 			final RandomAccessibleInterval< T > correlations,
 			final double[] multipliers,
 			final RandomAccessibleInterval< double[] > localFits,
-			Options options )
+			final TDoubleArrayList[] shiftsArray,
+			final Options options )
 	{
 
 		final RandomAccess< T > corrAccess1 = correlations.randomAccess();
 		final RandomAccess< T > corrAccess2 = correlations.randomAccess();
-
-		final TreeMap< Long, ArrayList< Double > > weightedShifts = new TreeMap< Long, ArrayList< Double > >();
 
 		final double[] reference = new double[ 1 ];
 
 		final Cursor< double[] > cursor = Views.iterable( localFits ).cursor();
 
 		// i is reference index, k is comparison index
-		long width = correlations.dimension( 0 );
-		long height = correlations.dimension( 1 );
+		final long width = correlations.dimension( 0 );
+		final long height = correlations.dimension( 1 );
 		for ( int i = 0; i < height; ++i )
 		{
 
@@ -52,7 +49,7 @@ public class ShiftCoordinates
 			double minMeasurement2 = Double.MAX_VALUE;
 
 			// start at 1 to avoid using values on diagonal
-			int startDist = 1;
+			final int startDist = 1;
 			for ( int dist = startDist, up = i + startDist, down = i - startDist; dist <= options.comparisonRange; ++dist, ++up, --down )
 			{
 
@@ -60,8 +57,8 @@ public class ShiftCoordinates
 				{
 					corrAccess1.setPosition( up, 0 );
 
-					double measurement = corrAccess1.get().getRealDouble();
-					if ( Double.isNaN( measurement ) || measurement <= options.minimumCorrelationValue || ( options.forceMonotonicity && measurement >= minMeasurement1 ) )
+					final double measurement = corrAccess1.get().getRealDouble();
+					if ( Double.isNaN( measurement ) || measurement <= options.minimumCorrelationValue || options.forceMonotonicity && measurement >= minMeasurement1 )
 					{
 
 					}
@@ -69,12 +66,7 @@ public class ShiftCoordinates
 					{
 
 						minMeasurement1 = measurement;
-						ArrayList< Double > localShifts = weightedShifts.get( ( long ) up );
-						if ( localShifts == null )
-						{
-							localShifts = new ArrayList< Double >();
-							weightedShifts.put( ( long ) up, localShifts );
-						}
+						final TDoubleArrayList localShifts = shiftsArray[ up ];
 
 						/*
 						 * TODO inverts because LUTRealTransform can only
@@ -93,7 +85,7 @@ public class ShiftCoordinates
 							final double rel = coordinates[ i ] - coordinates[ up ];
 
 							/* current location */
-							final double shift = ( up < i ) ? rel - reference[ 0 ] : rel + reference[ 0 ];
+							final double shift = up < i ? rel - reference[ 0 ] : rel + reference[ 0 ];
 							localShifts.add( shift );
 						}
 					}
@@ -103,8 +95,8 @@ public class ShiftCoordinates
 				{
 					corrAccess2.setPosition( down, 0 );
 
-					double measurement = corrAccess2.get().getRealDouble();
-					if ( Double.isNaN( measurement ) || measurement <= options.minimumCorrelationValue || ( options.forceMonotonicity && measurement >= minMeasurement2 ) )
+					final double measurement = corrAccess2.get().getRealDouble();
+					if ( Double.isNaN( measurement ) || measurement <= options.minimumCorrelationValue || options.forceMonotonicity && measurement >= minMeasurement2 )
 					{
 
 					}
@@ -112,12 +104,7 @@ public class ShiftCoordinates
 					{
 
 						minMeasurement2 = measurement;
-						ArrayList< Double > localShifts = weightedShifts.get( ( long ) down );
-						if ( localShifts == null )
-						{
-							localShifts = new ArrayList< Double >();
-							weightedShifts.put( ( long ) down, localShifts );
-						}
+						final TDoubleArrayList localShifts = shiftsArray[ down ];
 
 						/*
 						 * TODO inverts because LUTRealTransform can only
@@ -135,14 +122,13 @@ public class ShiftCoordinates
 							// coordinate system of i
 							final double rel = coordinates[ i ] - coordinates[ down ];
 							/* current location */
-							final double shift = ( down < i ) ? rel - reference[ 0 ] : rel + reference[ 0 ];
+							final double shift = down < i ? rel - reference[ 0 ] : rel + reference[ 0 ];
 							localShifts.add( shift );
 						}
 					}
 				}
 			}
 		}
-		return weightedShifts;
 	}
 
 }

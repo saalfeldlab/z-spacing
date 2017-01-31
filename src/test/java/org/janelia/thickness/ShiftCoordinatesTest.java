@@ -1,13 +1,11 @@
 package org.janelia.thickness;
 
-import java.util.ArrayList;
-import java.util.Map.Entry;
-import java.util.TreeMap;
-
 import org.janelia.thickness.inference.Options;
 import org.junit.Assert;
 import org.junit.Test;
 
+import gnu.trove.iterator.TDoubleIterator;
+import gnu.trove.list.array.TDoubleArrayList;
 import net.imglib2.Cursor;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessibleInterval;
@@ -58,7 +56,7 @@ public class ShiftCoordinatesTest
 		}
 
 		for ( int dz = 0; dz < fit.length; ++dz )
-			fit[ dz ] = -( ( maxSimilarity ) - dz * step );
+			fit[ dz ] = -( maxSimilarity - dz * step );
 
 		final double[] coordinates = new double[ size ];
 		final double[] scalingFactors = new double[ size ];
@@ -72,17 +70,21 @@ public class ShiftCoordinatesTest
 
 		final Options o = Options.generateDefaultOptions();
 		o.comparisonRange = range;
-		final TreeMap< Long, ArrayList< Double > > shifts = ShiftCoordinates.collectShiftsFromMatrix( coordinates, scaleMatrix( matrix, scalingFactors ), scalingFactors, fits, o );
-		for ( final Entry< Long, ArrayList< Double > > entry : shifts.entrySet() )
+
+		final TDoubleArrayList[] shiftsArray = new TDoubleArrayList[ size ];
+		for ( int i = 0; i < size; ++i )
+			shiftsArray[ i ] = new TDoubleArrayList();
+
+		ShiftCoordinates.collectShiftsFromMatrix( coordinates, scaleMatrix( matrix, scalingFactors ), scalingFactors, fits, shiftsArray, o );
+		for ( int z = 0; z < size; ++z )
 		{
-			final long z = entry.getKey();
-			final ArrayList< Double > lshifts = entry.getValue();
-			final long missing = z > range ? ( z < size - range ? 0 : range - ( ( size - 1 ) - z ) ) : range - z;
+			final TDoubleArrayList lshifts = shiftsArray[ z ];
+			final long missing = z > range ? z < size - range ? 0 : range - ( size - 1 - z ) : range - z;
 			final long expectedNumberOfVotes = 2 * range - missing;
 
 			Assert.assertEquals( expectedNumberOfVotes, lshifts.size() );
-			for ( final double l : lshifts )
-				Assert.assertEquals( 0.0, l, 0.0 );
+			for ( final TDoubleIterator l = lshifts.iterator(); l.hasNext(); )
+				Assert.assertEquals( 0.0, l.next(), 0.0 );
 		}
 	}
 
@@ -116,13 +118,13 @@ public class ShiftCoordinatesTest
 			final long x = c.getLongPosition( 0 );
 			final long y = c.getLongPosition( 1 );
 			final long dx = Math.abs( x - y );
-			final double diminish = ( x < rupture && y >= rupture ) || ( y < rupture && x >= rupture ) ? diminishingFactor * step : 0;
+			final double diminish = x < rupture && y >= rupture || y < rupture && x >= rupture ? diminishingFactor * step : 0;
 			final double sim = dx <= range ? maxSimilarity - dx * step - diminish : Double.NaN;
 			c.get().set( sim );
 		}
 
 		for ( int dz = 0; dz < fit.length; ++dz )
-			fit[ dz ] = -( ( maxSimilarity ) - dz * step );
+			fit[ dz ] = -( maxSimilarity - dz * step );
 
 		final double[] coordinates = new double[ size ];
 		final double[] scalingFactors = new double[ size ];
@@ -132,18 +134,23 @@ public class ShiftCoordinatesTest
 			scalingFactors[ z ] = 1.0;
 		}
 
+		final TDoubleArrayList[] shiftsArray = new TDoubleArrayList[ size ];
+		for ( int i = 0; i < size; ++i )
+			shiftsArray[ i ] = new TDoubleArrayList();
+
 		final Options o = Options.generateDefaultOptions();
 		o.comparisonRange = range;
-		final TreeMap< Long, ArrayList< Double > > shifts = ShiftCoordinates.collectShiftsFromMatrix( coordinates, scaleMatrix( matrix, scalingFactors ), scalingFactors, fits, o );
-		for ( final Entry< Long, ArrayList< Double > > entry : shifts.entrySet() )
+		ShiftCoordinates.collectShiftsFromMatrix( coordinates, scaleMatrix( matrix, scalingFactors ), scalingFactors, fits, shiftsArray, o );
+		for ( int z = 0; z < size; ++z )
 		{
-			final long z = entry.getKey();
-			final ArrayList< Double > lshifts = entry.getValue();
+			final TDoubleArrayList lshifts = shiftsArray[ z ];
 			final long expectedNumberOfNonZeroVotes = Math.max( range - Math.abs( ( z >= rupture ? z + 1 : z ) - rupture ), 0 );
 
 			int numberOfNonZeroVotes = 0;
 			int numberOfZeroVotes = 0;
-			for ( final double l : lshifts )
+			for ( final TDoubleIterator lIt = lshifts.iterator(); lIt.hasNext(); )
+			{
+				final double l = lIt.next();
 				if ( l == 0.0 )
 					++numberOfZeroVotes;
 				else
@@ -151,6 +158,7 @@ public class ShiftCoordinatesTest
 					Assert.assertEquals( z < rupture ? -diminishingFactor : diminishingFactor, l, 1e-10 );
 					++numberOfNonZeroVotes;
 				}
+			}
 			Assert.assertEquals( lshifts.size(), numberOfZeroVotes + numberOfNonZeroVotes );
 			Assert.assertEquals( expectedNumberOfNonZeroVotes, numberOfNonZeroVotes );
 		}

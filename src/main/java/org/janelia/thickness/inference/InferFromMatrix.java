@@ -1,9 +1,5 @@
 package org.janelia.thickness.inference;
 
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.TreeMap;
-
 import org.janelia.thickness.EstimateScalingFactors;
 import org.janelia.thickness.ShiftCoordinates;
 import org.janelia.thickness.inference.fits.AbstractCorrelationFit;
@@ -15,6 +11,8 @@ import org.janelia.utility.MatrixStripConversion;
 import org.janelia.utility.arrays.ArraySortedIndices;
 import org.janelia.utility.arrays.ReplaceNaNs;
 
+import gnu.trove.iterator.TDoubleIterator;
+import gnu.trove.list.array.TDoubleArrayList;
 import mpicbg.models.AffineModel1D;
 import mpicbg.models.IllDefinedDataPointsException;
 import mpicbg.models.Model;
@@ -217,6 +215,10 @@ public class InferFromMatrix
 		}
 		}
 
+		final TDoubleArrayList[] shiftsArray = new TDoubleArrayList[ n ];
+		for ( int i = 0; i < n; ++i )
+			shiftsArray[i] = new TDoubleArrayList();
+
 		for ( int iteration = 0; iteration < options.nIterations; ++iteration )
 		{
 
@@ -228,11 +230,14 @@ public class InferFromMatrix
 			// Transform
 			// into
 			// source?
-			final IntervalView< T > matrix = Views.interval( new TransformView< T >( inputMatrix, permutation ), inputMatrix );
-			final IntervalView< T > scaledMatrix = Views.interval( new TransformView< T >( inputScaledMatrix, permutation ), inputScaledMatrix );
+			final IntervalView< T > matrix = Views.interval( new TransformView< >( inputMatrix, permutation ), inputMatrix );
+			final IntervalView< T > scaledMatrix = Views.interval( new TransformView< >( inputScaledMatrix, permutation ), inputScaledMatrix );
 
 			if ( iteration == 0 )
 				visitor.act( iteration, matrix, scaledMatrix, lut, permutationLut, inverse, scalingFactors, correlationFitsStore[ 0 ] );
+
+			for ( final TDoubleArrayList sa : shiftsArray )
+				sa.clear();
 
 			final double[] shifts = this.getMediatedShifts(
 					matrix,
@@ -241,6 +246,7 @@ public class InferFromMatrix
 					scalingFactors,
 					iteration,
 					correlationFitsStore,
+					shiftsArray,
 					options );
 
 			this.applyShifts(
@@ -256,7 +262,7 @@ public class InferFromMatrix
 			if ( !options.withReorder )
 				preventReorder( permutedLut, options ); //
 
-//    		if ( options.withRegularization )
+			//    		if ( options.withRegularization )
 			regularizer.regularize( permutedLut, options );
 
 			updateArray( permutedLut, lut, inverse );
@@ -279,6 +285,7 @@ public class InferFromMatrix
 			final double[] scalingFactors,
 			final int iteration,
 			final RandomAccessibleInterval< double[] >[] correlationFitsStore,
+			final TDoubleArrayList[] shiftsArray,
 			final Options options ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
 	{
 
@@ -317,16 +324,16 @@ public class InferFromMatrix
 		}
 
 		// use scaled matrix to collect shifts
-		final TreeMap< Long, ArrayList< Double > > shifts =
-				ShiftCoordinates.collectShiftsFromMatrix(
-						lut,
-						scaledMatrix,
-						scalingFactors,
-						fits,
-						options );
+		ShiftCoordinates.collectShiftsFromMatrix(
+				lut,
+				scaledMatrix,
+				scalingFactors,
+				fits,
+				shiftsArray,
+				options );
 
 		final double[] mediatedShifts = new double[ lut.length ];
-		mediateShifts( shifts, mediatedShifts );
+		mediateShifts( shiftsArray, mediatedShifts );
 
 		return mediatedShifts;
 	}
@@ -370,20 +377,20 @@ public class InferFromMatrix
 	}
 
 	public static void mediateShifts(
-			final Map< Long, ArrayList< Double > > shifts,
+			final TDoubleArrayList[] shifts,
 			final double[] mediatedShifts )
 	{
 		for ( int i = 0; i < mediatedShifts.length; ++i )
 		{
 
-			final ArrayList< Double > localShifts = shifts.get( ( long ) i );
+			final TDoubleArrayList localShifts = shifts[ i ];
 
 			double shift = 0.0;
 
 			if ( localShifts != null )
 			{
-				for ( final Double l : localShifts )
-					shift += l;
+				for ( final TDoubleIterator l = localShifts.iterator(); l.hasNext(); )
+					shift += l.next();
 				shift /= localShifts.size();
 			}
 
