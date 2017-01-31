@@ -292,10 +292,12 @@ public class InferFromMatrix
 		final LUTRealTransform transform = new LUTRealTransform( lut, nMatrixDimensions, nMatrixDimensions );
 
 		// use scaled matrix
+		// TODO about 1/4 of runtime happens here
 		final RandomAccessibleInterval< double[] > fits = correlationFit.estimateFromMatrix( scaledMatrix, lut, transform, options );
 		correlationFitsStore[ 0 ] = fits;
 
 		// use original matrix to estimate scaling factors
+		// TODO more than half of runtime happens here
 		EstimateScalingFactors.estimateQuadraticFromMatrix( matrix,
 				scalingFactors,
 				lut,
