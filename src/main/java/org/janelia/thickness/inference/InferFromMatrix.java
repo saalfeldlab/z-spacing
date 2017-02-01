@@ -233,8 +233,8 @@ public class InferFromMatrix
 		}
 		}
 
-		final double[] shiftsArray = new double[ n * 2 * options.comparisonRange ];
-		final int[] nShiftsCollected = new int[ n ];
+		final double[] shiftsArray = new double[ n ];
+		final double[] weightSums = new double[ n ];
 
 		for ( int iteration = 0; iteration < options.nIterations; ++iteration )
 		{
@@ -253,8 +253,8 @@ public class InferFromMatrix
 			if ( iteration == 0 )
 				visitor.act( iteration, matrix, scaledMatrix, lut, permutationLut, inverse, scalingFactors, correlationFitsStore[ 0 ] );
 
-			for ( int i = 0; i < nShiftsCollected.length; ++i )
-				nShiftsCollected[ i ] = 0;
+			Arrays.fill( shiftsArray, 0.0 );
+			Arrays.fill( weightSums, 0.0 );;
 
 			final double[] shifts = this.getMediatedShifts(
 					matrix,
@@ -264,7 +264,7 @@ public class InferFromMatrix
 					iteration,
 					correlationFitsStore,
 					shiftsArray,
-					nShiftsCollected,
+					weightSums,
 					estimateWeights,
 					shiftWeights,
 					options );
@@ -306,7 +306,7 @@ public class InferFromMatrix
 			final int iteration,
 			final RandomAccessibleInterval< double[] >[] correlationFitsStore,
 			final double[] shiftsArray,
-			final int[] nShiftsCollected,
+			final double[] weightSums,
 			final double[] estimateWeights,
 			final double[] shiftWeights,
 			final Options options ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
@@ -356,11 +356,12 @@ public class InferFromMatrix
 				scalingFactors,
 				fits,
 				shiftsArray,
-				nShiftsCollected,
+				weightSums,
+				shiftWeights,
 				options );
 
 		final double[] mediatedShifts = new double[ lut.length ];
-		mediateShifts( shiftsArray, nShiftsCollected, mediatedShifts );
+		mediateShifts( shiftsArray, weightSums, mediatedShifts );
 
 		return mediatedShifts;
 	}
@@ -405,26 +406,11 @@ public class InferFromMatrix
 
 	public static void mediateShifts(
 			final double[] shifts,
-			final int[] nShiftsCollected,
+			final double[] weightSums,
 			final double[] mediatedShifts )
 	{
-		final int stride = shifts.length / nShiftsCollected.length;
 		for ( int i = 0; i < mediatedShifts.length; ++i )
-		{
-
-			final int offset = stride * i;
-			final int nColl = nShiftsCollected[ i ];
-
-			double shift = 0.0;
-
-			{
-				for ( int s = 0; s < nColl; ++s )
-					shift += shifts[ offset + s ];
-				shift /= nColl;
-			}
-
-			mediatedShifts[ i ] = shift;
-		}
+			mediatedShifts[ i ] = shifts[ i ] / weightSums[ i ];
 	}
 
 }

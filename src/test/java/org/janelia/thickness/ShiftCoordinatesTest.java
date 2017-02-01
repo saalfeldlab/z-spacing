@@ -1,5 +1,7 @@
 package org.janelia.thickness;
 
+import java.util.Arrays;
+
 import org.janelia.thickness.inference.Options;
 import org.junit.Assert;
 import org.junit.Test;
@@ -69,100 +71,26 @@ public class ShiftCoordinatesTest
 		final Options o = Options.generateDefaultOptions();
 		o.comparisonRange = range;
 
-		final double[] shiftsArray = new double[ size * 2 * range ];
-		final int[] nShiftsCollected = new int[ size ];
-		final int stride = 2 * range;
+		final double[] shiftsArray = new double[ size ];
+		final double[] weightSums = new double[ size ];
+		final double[] shiftWeights = Arrays.stream( new double[ size ] ).map( d -> 1.0 ).toArray();
 
-		ShiftCoordinates.collectShiftsFromMatrix( coordinates, scaleMatrix( matrix, scalingFactors ), scalingFactors, fits, shiftsArray, nShiftsCollected, o );
+		ShiftCoordinates.collectShiftsFromMatrix(
+				coordinates,
+				scaleMatrix( matrix, scalingFactors ),
+				scalingFactors,
+				fits,
+				shiftsArray,
+				weightSums,
+				shiftWeights,
+				o );
 		for ( int z = 0; z < size; ++z )
 		{
-			final int offset = stride * z;
-			final int nColl = nShiftsCollected[ z ];
-
 			final long missing = z > range ? z < size - range ? 0 : range - ( size - 1 - z ) : range - z;
 			final long expectedNumberOfVotes = 2 * range - missing;
 
-			Assert.assertEquals( expectedNumberOfVotes, nColl );
-			for ( int i = 0; i < nColl; ++i )
-				Assert.assertEquals( 0.0, shiftsArray[ offset + i ], 0.0 );
-		}
-	}
-
-	@Test
-	public void testKnownShift()
-	{
-
-		final int size = 20;
-
-		final int range = 5;
-
-		final double maxSimilarity = 1.0;
-
-		final double minSimilarity = 0.5;
-
-		final ArrayImg< DoubleType, DoubleArray > matrix = ArrayImgs.doubles( size, size );
-
-		final double[] fit = new double[ range + 1 ];
-
-		final RandomAccessibleInterval< double[] > fits = ConstantUtils.constantRandomAccessibleInterval( fit, 1, new FinalInterval( size ) );
-
-		final int rupture = size / 2;
-
-		final double diminishingFactor = 0.9; // > 0, < 1
-
-		final ArrayCursor< DoubleType > c = matrix.cursor();
-		final double step = ( maxSimilarity - minSimilarity ) / range;
-		while ( c.hasNext() )
-		{
-			c.fwd();
-			final long x = c.getLongPosition( 0 );
-			final long y = c.getLongPosition( 1 );
-			final long dx = Math.abs( x - y );
-			final double diminish = x < rupture && y >= rupture || y < rupture && x >= rupture ? diminishingFactor * step : 0;
-			final double sim = dx <= range ? maxSimilarity - dx * step - diminish : Double.NaN;
-			c.get().set( sim );
-		}
-
-		for ( int dz = 0; dz < fit.length; ++dz )
-			fit[ dz ] = -( maxSimilarity - dz * step );
-
-		final double[] coordinates = new double[ size ];
-		final double[] scalingFactors = new double[ size ];
-		for ( int z = 0; z < size; ++z )
-		{
-			coordinates[ z ] = z;
-			scalingFactors[ z ] = 1.0;
-		}
-
-		final double[] shiftsArray = new double[ size * 2 * range ];
-		final int[] nShiftsCollected = new int[ size ];
-		final int stride = 2 * range;
-
-		final Options o = Options.generateDefaultOptions();
-		o.comparisonRange = range;
-		ShiftCoordinates.collectShiftsFromMatrix( coordinates, scaleMatrix( matrix, scalingFactors ), scalingFactors, fits, shiftsArray, nShiftsCollected, o );
-		for ( int z = 0; z < size; ++z )
-		{
-			final int offset = stride * z;
-			final int nColl = nShiftsCollected[ z ];
-
-			final long expectedNumberOfNonZeroVotes = Math.max( range - Math.abs( ( z >= rupture ? z + 1 : z ) - rupture ), 0 );
-
-			int numberOfNonZeroVotes = 0;
-			int numberOfZeroVotes = 0;
-			for ( int i = 0; i < nColl; ++i )
-			{
-				final double l = shiftsArray[ offset + i ];
-				if ( l == 0.0 )
-					++numberOfZeroVotes;
-				else
-				{
-					Assert.assertEquals( z < rupture ? -diminishingFactor : diminishingFactor, l, 1e-10 );
-					++numberOfNonZeroVotes;
-				}
-			}
-			Assert.assertEquals( nColl, numberOfZeroVotes + numberOfNonZeroVotes );
-			Assert.assertEquals( expectedNumberOfNonZeroVotes, numberOfNonZeroVotes );
+			Assert.assertEquals( expectedNumberOfVotes, ( int ) weightSums[ z ] );
+			Assert.assertEquals( 0.0, shiftsArray[ z ], 0.0 );
 		}
 	}
 

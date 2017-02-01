@@ -22,7 +22,9 @@ public class ShiftCoordinates
 			final RandomAccessibleInterval< T > correlations,
 			final double[] multipliers,
 			final RandomAccessibleInterval< double[] > localFits,
-			final double[] shiftsArray, final int[] nShiftsCollected,
+			final double[] shiftsArray,
+			final double[] weightSums,
+			final double[] shiftWeights,
 			final Options options )
 	{
 
@@ -51,6 +53,7 @@ public class ShiftCoordinates
 
 			// start at 1 to avoid using values on diagonal
 			final int startDist = 1;
+			final double w = shiftWeights[ i ];
 			for ( int dist = startDist, up = i + startDist, down = i - startDist; dist <= options.comparisonRange; ++dist, ++up, --down )
 			{
 
@@ -85,7 +88,8 @@ public class ShiftCoordinates
 
 							/* current location */
 							final double shift = up < i ? rel - reference[ 0 ] : rel + reference[ 0 ];
-							shiftsArray[ stride * up + nShiftsCollected[ up ]++ ] = shift;
+							shiftsArray[ up ] += shift * w;
+							weightSums[ up ] += w;
 						}
 					}
 				}
@@ -120,7 +124,8 @@ public class ShiftCoordinates
 							final double rel = coordinates[ i ] - coordinates[ down ];
 							/* current location */
 							final double shift = down < i ? rel - reference[ 0 ] : rel + reference[ 0 ];
-							shiftsArray[ stride * down + nShiftsCollected[ down ]++ ] = shift;
+							shiftsArray[ down ] += shift;
+							weightSums[ down ] += w;
 						}
 					}
 				}
