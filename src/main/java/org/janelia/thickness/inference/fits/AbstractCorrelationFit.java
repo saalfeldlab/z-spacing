@@ -23,7 +23,8 @@ public abstract class AbstractCorrelationFit
 			final RandomAccessibleInterval< T > correlations,
 			final double[] coordinates,
 			final AbstractLUTRealTransform transform,
-			Options options )
+			final double[] estimateWeights,
+			final Options options )
 	{
 		final int range = options.comparisonRange;
 		final boolean forceMonotonicity = options.forceMonotonicity;
@@ -45,24 +46,26 @@ public abstract class AbstractCorrelationFit
 		{
 			access1.setPosition( z, 1 );
 			access1.setPosition( z, 0 );
-			
+
 			transform.apply( access1, access1 );
 			access2.setPosition( access1 );
 			double currentMin1 = Double.MAX_VALUE;
 			double currentMin2 = Double.MAX_VALUE;
+			// should w go in pairwise?
+			final double w = estimateWeights[ z ];
 			for ( int k = 0; k <= range; ++k, access1.fwd( 0 ), access2.bck( 0 ) )
 			{
 				final double a1 = access1.get().getRealDouble();
 				final double a2 = access2.get().getRealDouble();
-				if ( !Double.isNaN( a1 ) && ( a1 > 0.0 ) && ( !forceMonotonicity || ( a1 < currentMin1 ) ) )
+				if ( !Double.isNaN( a1 ) && a1 > 0.0 && ( !forceMonotonicity || a1 < currentMin1 ) )
 				{
 					currentMin1 = a1;
-					add( z, k, a1 );
+					add( z, k, a1, w );
 				}
-				if ( !Double.isNaN( a2 ) && ( a2 > 0.0 ) && ( !forceMonotonicity || ( a2 < currentMin2 ) ) )
+				if ( !Double.isNaN( a2 ) && a2 > 0.0 && ( !forceMonotonicity || a2 < currentMin2 ) )
 				{
 					currentMin2 = a2;
-					add( z, k, a2 );
+					add( z, k, a2, w );
 				}
 			}
 		}
@@ -71,7 +74,7 @@ public abstract class AbstractCorrelationFit
 	}
 
 
-	protected abstract void add( int z, int dz, double value );
+	protected abstract void add( int z, int dz, double value, double weight );
 
 	protected abstract void init( int size );
 

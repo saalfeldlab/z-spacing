@@ -174,6 +174,8 @@ public class InferFromMatrix
 				startingCoordinates,
 				new double[ 0 ],
 				Arrays.stream( new double[ startingCoordinates.length ] ).map( d -> 1.0 ).toArray(),
+				Arrays.stream( new double[ startingCoordinates.length ] ).map( d -> 1.0 ).toArray(),
+				Arrays.stream( new double[ startingCoordinates.length ] ).map( d -> 1.0 ).toArray(),
 				visitor,
 				options );
 	}
@@ -183,6 +185,8 @@ public class InferFromMatrix
 			final double[] startingCoordinates,
 			final double[] functionEstimate,
 			final double[] scalingFactors,
+			final double[] estimateWeights,
+			final double[] shiftWeights,
 			final Visitor visitor,
 			final Options options ) throws Exception
 	{
@@ -261,6 +265,8 @@ public class InferFromMatrix
 					correlationFitsStore,
 					shiftsArray,
 					nShiftsCollected,
+					estimateWeights,
+					shiftWeights,
 					options );
 
 			this.applyShifts(
@@ -301,6 +307,8 @@ public class InferFromMatrix
 			final RandomAccessibleInterval< double[] >[] correlationFitsStore,
 			final double[] shiftsArray,
 			final int[] nShiftsCollected,
+			final double[] estimateWeights,
+			final double[] shiftWeights,
 			final Options options ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
 	{
 
@@ -309,7 +317,8 @@ public class InferFromMatrix
 
 		// use scaled matrix
 		// TODO about 1/4 of runtime happens here
-		final RandomAccessibleInterval< double[] > fits = correlationFit.estimateFromMatrix( scaledMatrix, lut, transform, options );
+		final RandomAccessibleInterval< double[] > fits =
+				correlationFit.estimateFromMatrix( scaledMatrix, lut, transform, estimateWeights, options );
 		correlationFitsStore[ 0 ] = fits;
 
 		// use original matrix to estimate scaling factors

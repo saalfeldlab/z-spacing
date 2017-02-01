@@ -33,58 +33,58 @@ public class LocalCorrelationFitAverage extends AbstractCorrelationFit
 
 	ArrayRandomAccess< DoubleType > measurementsAccess;
 
-	int[][] nSamples;
+	double[][] nSamples;
 
 	double[] transformCoordinate;
 
 
-	public LocalCorrelationFitAverage( int dimension, Options o )
+	public LocalCorrelationFitAverage( final int dimension, final Options o )
 	{
 		estimateWindowRadius = o.estimateWindowRadius < 1 ? dimension : Math.min( o.estimateWindowRadius, dimension );
-		int nFits = Math.max( dimension / estimateWindowRadius, 1 );
-		double[] translation = new double[] { estimateWindowRadius };
-		double[] scale = new double[] { estimateWindowRadius };
+		final int nFits = Math.max( dimension / estimateWindowRadius, 1 );
+		final double[] translation = new double[] { estimateWindowRadius };
+		final double[] scale = new double[] { estimateWindowRadius };
 		scaleAndTranslation = new ScaleAndTranslation( scale, translation );
 		summedMeasurements = ArrayImgs.doubles( nFits, o.comparisonRange + 1 );
 		measurementsAccess = summedMeasurements.randomAccess();
-		nSamples = new int[ nFits ][ o.comparisonRange + 1 ];
+		nSamples = new double[ nFits ][ o.comparisonRange + 1 ];
 		transformCoordinate = new double[ 1 ];
 	}
 
 	@Override
-	protected void add( int z, int dz, double value )
+	protected void add( final int z, final int dz, final double value, final double weight )
 	{
 		transformCoordinate[ 0 ] = z;
 		scaleAndTranslation.applyInverse( transformCoordinate, transformCoordinate );
 		if ( transformCoordinate[0] <= 0.0 )
-			addLocal( 0, dz, value );
+			addLocal( 0, dz, value, weight );
 		else if ( transformCoordinate[ 0 ] >= nSamples.length - 1 )
-			addLocal( nSamples.length - 1, dz, value );
+			addLocal( nSamples.length - 1, dz, value, weight );
 		else
 		{
-			int lower = ( int ) Math.floor( transformCoordinate[ 0 ] );
-			addLocal( lower, dz, value );
-			addLocal( lower + 1, dz, value );
+			final int lower = ( int ) Math.floor( transformCoordinate[ 0 ] );
+			addLocal( lower, dz, value, weight );
+			addLocal( lower + 1, dz, value, weight );
 		}
 
 	}
 
-	private void addLocal( int localZ, int dz, double value )
+	private void addLocal( final int localZ, final int dz, final double value, final double weight )
 	{
 		measurementsAccess.setPosition( localZ, 0 );
 		measurementsAccess.setPosition( dz, 1 );
-		measurementsAccess.get().add( new DoubleType( value ) );
-		nSamples[ localZ ][ dz ] += 1;
+		measurementsAccess.get().add( new DoubleType( value * weight ) );
+		nSamples[ localZ ][ dz ] += weight;
 	}
 
 	@Override
-	protected void init( int size )
+	protected void init( final int size )
 	{
-		ArrayCursor< DoubleType > c = summedMeasurements.cursor();
-		int sizePlusOne = size + 1;
+		final ArrayCursor< DoubleType > c = summedMeasurements.cursor();
+		final int sizePlusOne = size + 1;
 		for ( int n = 0; n < nSamples.length; ++n )
 		{
-			int[] ns = nSamples[n];
+			final double[] ns = nSamples[ n ];
 			for ( int r = 0; r < sizePlusOne; ++r )
 			{
 				ns[ r ] = 0;
@@ -94,15 +94,15 @@ public class LocalCorrelationFitAverage extends AbstractCorrelationFit
 	}
 
 	@Override
-	protected RandomAccessibleInterval< double[] > estimate( int size )
+	protected RandomAccessibleInterval< double[] > estimate( final int size )
 	{
 
 		{
-			ArrayRandomAccess< DoubleType > ra = summedMeasurements.randomAccess();
+			final ArrayRandomAccess< DoubleType > ra = summedMeasurements.randomAccess();
 			for ( int n = 0; n < nSamples.length; ++n )
 			{
 				ra.setPosition( n, 0 );
-				int[] ns = nSamples[ n ];
+				final double[] ns = nSamples[ n ];
 				for ( int r = 0; r < ns.length; ++r )
 				{
 					ra.setPosition( r, 1 );
@@ -112,22 +112,22 @@ public class LocalCorrelationFitAverage extends AbstractCorrelationFit
 		}
 
 
-		CompositeIntervalView< DoubleType, RealComposite< DoubleType > > collapsed =
+		final CompositeIntervalView< DoubleType, RealComposite< DoubleType > > collapsed =
 				Views.collapseReal( summedMeasurements );
 
-		RealRandomAccessible< RealComposite< DoubleType > > interpolated =
+		final RealRandomAccessible< RealComposite< DoubleType > > interpolated =
 				Views.interpolate( Views.extendBorder( collapsed ), new NLinearInterpolatorFactory<>() );
 
-		FinalInterval fi = new FinalInterval( size );
-		IntervalView< RealComposite< DoubleType > > transformed =
+		final FinalInterval fi = new FinalInterval( size );
+		final IntervalView< RealComposite< DoubleType > > transformed =
 				Views.interval( Views.raster( RealViews.transformReal( interpolated, scaleAndTranslation ) ), fi );
 
-		Cursor< RealComposite< DoubleType > > t = transformed.cursor();
-		ArrayList< double[] > list = new ArrayList<>();
+		final Cursor< RealComposite< DoubleType > > t = transformed.cursor();
+		final ArrayList< double[] > list = new ArrayList<>();
 		for ( int n = 0; n < size; ++n )
 		{
-			RealComposite< DoubleType > c = t.next();
-			double[] target = new double[ nSamples[ 0 ].length ];
+			final RealComposite< DoubleType > c = t.next();
+			final double[] target = new double[ nSamples[ 0 ].length ];
 			target[ 0 ] = -1;
 			for ( int i = 1; i < target.length; ++i )
 				target[ i ] = -c.get( i ).get();
