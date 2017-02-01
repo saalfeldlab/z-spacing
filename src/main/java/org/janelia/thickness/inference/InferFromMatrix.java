@@ -1,5 +1,7 @@
 package org.janelia.thickness.inference;
 
+import java.util.Arrays;
+
 import org.janelia.thickness.EstimateScalingFactors;
 import org.janelia.thickness.ShiftCoordinates;
 import org.janelia.thickness.inference.fits.AbstractCorrelationFit;
@@ -167,15 +169,29 @@ public class InferFromMatrix
 			final Visitor visitor,
 			final Options options ) throws Exception
 	{
+		return estimateZCoordinates(
+				inputMatrix,
+				startingCoordinates,
+				new double[ 0 ],
+				Arrays.stream( new double[ startingCoordinates.length ] ).map( d -> 1.0 ).toArray(),
+				visitor,
+				options );
+	}
+
+	public < T extends RealType< T > & NativeType< T > > double[] estimateZCoordinates(
+			final RandomAccessibleInterval< T > inputMatrix,
+			final double[] startingCoordinates,
+			final double[] functionEstimate,
+			final double[] scalingFactors,
+			final Visitor visitor,
+			final Options options ) throws Exception
+	{
 
 		final double[] lut = startingCoordinates.clone();
 		final int n = ( int ) inputMatrix.dimension( 0 );
 		final int[] permutationLut = new int[ n ];
 		final int[] inverse = permutationLut.clone();
 		final int nMatrixDim = inputMatrix.numDimensions();
-		final double[] scalingFactors = new double[ n ];
-		for ( int i = 0; i < scalingFactors.length; i++ )
-			scalingFactors[ i ] = 1.0;
 		final RandomAccessibleInterval< double[] >[] correlationFitsStore = new RandomAccessibleInterval[] { null };
 
 		double[] permutedLut = lut.clone(); // sorted lut
@@ -297,7 +313,7 @@ public class InferFromMatrix
 		correlationFitsStore[ 0 ] = fits;
 
 		// use original matrix to estimate scaling factors
-		// TODO more than half of runtime happens here
+		// TODO more than half of runtime happens here -- only option to keep number of iterations low?
 		EstimateScalingFactors.estimateQuadraticFromMatrix( matrix,
 				scalingFactors,
 				lut,

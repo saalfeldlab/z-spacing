@@ -12,7 +12,7 @@ import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.Views;
 
 /**
- * 
+ *
  * @author Philipp Hanslovsky &lt;hanslovskyp@janelia.hhmi.org&gt;
  *
  */
@@ -41,7 +41,8 @@ public class EstimateScalingFactors
 			for ( int n = 0; fitCursor.hasNext(); ++n )
 			{
 
-				// is this allocation expensive?
+				// is this allocation expensive? should this occur one loop
+				// further outside?
 				final double[] oldScalingFactors = scalingFactors.clone();
 
 				corrAccess.setPosition( n, 0 );
@@ -69,7 +70,7 @@ public class EstimateScalingFactors
 					enumeratorSum += prod * fitVal;
 					denominatorSum += prod * prod;
 				}
-				final double result = enumeratorSum / denominatorSum * inverseRegularizerWeight + regularizerWeight;
+				final double result = enumeratorSum / denominatorSum * inverseRegularizerWeight + regularizerWeight * oldScalingFactors[ n ];
 				if ( !Double.isNaN( result ) )
 					scalingFactors[ n ] = result;
 			}
