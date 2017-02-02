@@ -22,8 +22,11 @@ import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.TransformView;
 import net.imglib2.view.Views;
@@ -203,6 +206,12 @@ public class InferFromMatrix
 		ArraySortedIndices.sort( permutedLut, permutationLut, inverse );
 
 		final ArrayImg< T, ? > inputScaledStrip = new ArrayImgFactory< T >().create( new long[] { 2 * options.comparisonRange + 1, n }, inputMatrix.randomAccess().get() );
+		final ArrayImg< DoubleType, DoubleArray > estimateWeightPairs = ArrayImgs.doubles( 2 * options.comparisonRange + 1, n );
+		for ( final DoubleType e : estimateWeightPairs )
+			e.setReal( Double.NaN );
+
+		fillWeightStrip( estimateWeightPairs, estimateWeights, new DoubleType() );
+		final RandomAccessibleInterval< DoubleType > estimateWeightMatrix = MatrixStripConversion.stripToMatrix( estimateWeightPairs, new DoubleType() );
 
 		final RandomAccessibleInterval< T > inputScaledMatrix = MatrixStripConversion.stripToMatrix( inputScaledStrip, inputMatrix.randomAccess().get() );
 		for ( Cursor< T > source = Views.flatIterable( inputMatrix ).cursor(), target = Views.flatIterable( inputScaledMatrix ).cursor(); source.hasNext(); )
@@ -239,6 +248,7 @@ public class InferFromMatrix
 		for ( int iteration = 0; iteration < options.nIterations; ++iteration )
 		{
 
+			final long t0 = System.nanoTime();
 			// scaling factors always in permuted order
 
 			final PermutationTransform permutation = new PermutationTransform( inverse, nMatrixDim, nMatrixDim ); // need
@@ -265,7 +275,7 @@ public class InferFromMatrix
 					correlationFitsStore,
 					shiftsArray,
 					weightSums,
-					estimateWeights,
+					estimateWeightMatrix,
 					shiftWeights,
 					options );
 
@@ -290,6 +300,8 @@ public class InferFromMatrix
 			permutedLut = lut.clone();
 			ArraySortedIndices.sort( permutedLut, permutationLut, inverse );
 			updateArray( scalingFactorsPrevious, scalingFactors, permutationLut );
+			final long t1 = System.nanoTime();
+			//			System.out.println( "time: " + ( t1 - t0 ) );
 
 			visitor.act( iteration + 1, matrix, scaledMatrix, lut, permutationLut, inverse, scalingFactors, correlationFitsStore[ 0 ] );
 
@@ -307,7 +319,7 @@ public class InferFromMatrix
 			final RandomAccessibleInterval< double[] >[] correlationFitsStore,
 			final double[] shiftsArray,
 			final double[] weightSums,
-			final double[] estimateWeights,
+			final RandomAccessibleInterval< DoubleType > estimateWeightMatrix,
 			final double[] shiftWeights,
 			final Options options ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
 	{
@@ -318,7 +330,7 @@ public class InferFromMatrix
 		// use scaled matrix
 		// TODO about 1/4 of runtime happens here
 		final RandomAccessibleInterval< double[] > fits =
-				correlationFit.estimateFromMatrix( scaledMatrix, lut, transform, estimateWeights, options );
+				correlationFit.estimateFromMatrix( scaledMatrix, lut, transform, estimateWeightMatrix, options );
 		correlationFitsStore[ 0 ] = fits;
 
 		// use original matrix to estimate scaling factors
@@ -411,6 +423,34 @@ public class InferFromMatrix
 	{
 		for ( int i = 0; i < mediatedShifts.length; ++i )
 			mediatedShifts[ i ] = shifts[ i ] / weightSums[ i ];
+	}
+
+	public static < T extends RealType< T > > void fillWeightStrip( final RandomAccessibleInterval< T > strip, final double[] weights, final T t )
+	{
+
+		final int n = weights.length;
+		final int range = ( int ) ( strip.dimension( 0 ) / 2 );
+
+		for ( final T s : Views.flatIterable( strip ) )
+			s.setReal( Double.NaN );
+
+		{
+			final RandomAccess< T > access = MatrixStripConversion.stripToMatrix( strip, t ).randomAccess();
+			for ( int z1 = 0; z1 < n; ++z1 )
+			{
+				access.setPosition( z1, 1 );
+				final double w1 = weights[ z1 ];
+				for ( int z2 = z1 - range; z2 <= z1 + range; ++z2 )
+				{
+					if ( z2 < 0 )
+						continue;
+					else if ( z2 >= n )
+						break;
+					access.setPosition( z2, 0 );
+					access.get().setReal( w1 * weights[ z2 ] );
+				}
+			}
+		}
 	}
 
 }
