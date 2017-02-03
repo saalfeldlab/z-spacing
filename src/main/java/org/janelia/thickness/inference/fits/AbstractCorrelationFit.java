@@ -11,7 +11,6 @@ import net.imglib2.realtransform.InverseRealTransform;
 import net.imglib2.realtransform.RealTransformRealRandomAccessible;
 import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.view.Views;
 
 /**
@@ -20,11 +19,11 @@ import net.imglib2.view.Views;
 public abstract class AbstractCorrelationFit
 {
 
-	public < T extends RealType< T > > RandomAccessibleInterval< double[] > estimateFromMatrix(
+	public < T extends RealType< T >, W extends RealType< W > > RandomAccessibleInterval< double[] > estimateFromMatrix(
 			final RandomAccessibleInterval< T > correlations,
 			final double[] coordinates,
 			final AbstractLUTRealTransform transform,
-			final RandomAccessibleInterval< DoubleType > estimateWeightMatrix,
+			final RandomAccessibleInterval< W > estimateWeightMatrix,
 			final Options options )
 	{
 		final int range = options.comparisonRange;
@@ -37,15 +36,15 @@ public abstract class AbstractCorrelationFit
 		final RealTransformRealRandomAccessible< T, InverseRealTransform > transformedCorrelations = RealViews.transformReal( extendedInterpolatedCorrelations, transform );
 
 		// TODO extend border or value (nan)?
-		final RealRandomAccessible< DoubleType > extendedInterpolatedWeights = Views.interpolate( Views.extendBorder( estimateWeightMatrix ), new NLinearInterpolatorFactory<>() );
+		final RealRandomAccessible< W > extendedInterpolatedWeights = Views.interpolate( Views.extendBorder( estimateWeightMatrix ), new NLinearInterpolatorFactory<>() );
 
-		final RealTransformRealRandomAccessible< DoubleType, InverseRealTransform > transformedWeights = RealViews.transformReal( extendedInterpolatedWeights, transform );
+		final RealTransformRealRandomAccessible< W, InverseRealTransform > transformedWeights = RealViews.transformReal( extendedInterpolatedWeights, transform );
 
 		final RealRandomAccess< T > access1 = transformedCorrelations.realRandomAccess();
 		final RealRandomAccess< T > access2 = transformedCorrelations.realRandomAccess();
 
-		final RealRandomAccess< DoubleType > wAccess1 = transformedWeights.realRandomAccess();
-		final RealRandomAccess< DoubleType > wAccess2 = transformedWeights.realRandomAccess();
+		final RealRandomAccess< W > wAccess1 = transformedWeights.realRandomAccess();
+		final RealRandomAccess< W > wAccess2 = transformedWeights.realRandomAccess();
 
 		init( range );
 
@@ -69,12 +68,12 @@ public abstract class AbstractCorrelationFit
 				if ( !Double.isNaN( a1 ) && a1 > 0.0 && ( !forceMonotonicity || a1 < currentMin1 ) )
 				{
 					currentMin1 = a1;
-					add( z, k, a1, wAccess1.get().get() );
+					add( z, k, a1, wAccess1.get().getRealDouble() );
 				}
 				if ( !Double.isNaN( a2 ) && a2 > 0.0 && ( !forceMonotonicity || a2 < currentMin2 ) )
 				{
 					currentMin2 = a2;
-					add( z, k, a2, wAccess2.get().get() );
+					add( z, k, a2, wAccess2.get().getRealDouble() );
 				}
 			}
 		}

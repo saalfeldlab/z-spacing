@@ -22,11 +22,10 @@ import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgFactory;
-import net.imglib2.img.array.ArrayImgs;
-import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
+import net.imglib2.util.ConstantUtils;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.TransformView;
 import net.imglib2.view.Views;
@@ -177,18 +176,18 @@ public class InferFromMatrix
 				startingCoordinates,
 				new double[ 0 ],
 				Arrays.stream( new double[ startingCoordinates.length ] ).map( d -> 1.0 ).toArray(),
-				Arrays.stream( new double[ startingCoordinates.length ] ).map( d -> 1.0 ).toArray(),
+				ConstantUtils.constantRandomAccessibleInterval( new DoubleType( 1.0 ), inputMatrix.numDimensions(), inputMatrix ),
 				Arrays.stream( new double[ startingCoordinates.length ] ).map( d -> 1.0 ).toArray(),
 				visitor,
 				options );
 	}
 
-	public < T extends RealType< T > & NativeType< T > > double[] estimateZCoordinates(
+	public < T extends RealType< T > & NativeType< T >, W extends RealType< W > > double[] estimateZCoordinates(
 			final RandomAccessibleInterval< T > inputMatrix,
 			final double[] startingCoordinates,
 			final double[] functionEstimate,
 			final double[] scalingFactors,
-			final double[] estimateWeights,
+			final RandomAccessibleInterval< W > estimateWeights,
 			final double[] shiftWeights,
 			final Visitor visitor,
 			final Options options ) throws Exception
@@ -206,12 +205,6 @@ public class InferFromMatrix
 		ArraySortedIndices.sort( permutedLut, permutationLut, inverse );
 
 		final ArrayImg< T, ? > inputScaledStrip = new ArrayImgFactory< T >().create( new long[] { 2 * options.comparisonRange + 1, n }, inputMatrix.randomAccess().get() );
-		final ArrayImg< DoubleType, DoubleArray > estimateWeightPairs = ArrayImgs.doubles( 2 * options.comparisonRange + 1, n );
-		for ( final DoubleType e : estimateWeightPairs )
-			e.setReal( Double.NaN );
-
-		fillWeightStrip( estimateWeightPairs, estimateWeights, new DoubleType() );
-		final RandomAccessibleInterval< DoubleType > estimateWeightMatrix = MatrixStripConversion.stripToMatrix( estimateWeightPairs, new DoubleType() );
 
 		final RandomAccessibleInterval< T > inputScaledMatrix = MatrixStripConversion.stripToMatrix( inputScaledStrip, inputMatrix.randomAccess().get() );
 		for ( Cursor< T > source = Views.flatIterable( inputMatrix ).cursor(), target = Views.flatIterable( inputScaledMatrix ).cursor(); source.hasNext(); )
@@ -275,7 +268,7 @@ public class InferFromMatrix
 					correlationFitsStore,
 					shiftsArray,
 					weightSums,
-					estimateWeightMatrix,
+					estimateWeights,
 					shiftWeights,
 					options );
 
@@ -310,7 +303,7 @@ public class InferFromMatrix
 		return lut;
 	}
 
-	public < T extends RealType< T > > double[] getMediatedShifts(
+	public < T extends RealType< T >, W extends RealType< W > > double[] getMediatedShifts(
 			final RandomAccessibleInterval< T > matrix,
 			final RandomAccessibleInterval< T > scaledMatrix,
 			final double[] lut,
@@ -319,7 +312,7 @@ public class InferFromMatrix
 			final RandomAccessibleInterval< double[] >[] correlationFitsStore,
 			final double[] shiftsArray,
 			final double[] weightSums,
-			final RandomAccessibleInterval< DoubleType > estimateWeightMatrix,
+			final RandomAccessibleInterval< W > estimateWeightMatrix,
 			final double[] shiftWeights,
 			final Options options ) throws NotEnoughDataPointsException, IllDefinedDataPointsException
 	{
@@ -452,5 +445,4 @@ public class InferFromMatrix
 			}
 		}
 	}
-
 }
