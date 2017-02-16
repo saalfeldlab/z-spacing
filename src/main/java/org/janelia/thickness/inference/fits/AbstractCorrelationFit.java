@@ -61,7 +61,7 @@ public abstract class AbstractCorrelationFit
 			double currentMin1 = Double.MAX_VALUE;
 			double currentMin2 = Double.MAX_VALUE;
 			// should w go in pairwise?
-			for ( int k = 0; k <= range; ++k, access1.fwd( 0 ), access2.bck( 0 ), wAccess1.fwd( 0 ), wAccess1.bck( 0 ) )
+			for ( int k = 0; k <= range; ++k, access1.fwd( 0 ), access2.bck( 0 ), wAccess1.fwd( 0 ), wAccess2.bck( 0 ) )
 			{
 				final double a1 = access1.get().getRealDouble();
 				final double a2 = access2.get().getRealDouble();
