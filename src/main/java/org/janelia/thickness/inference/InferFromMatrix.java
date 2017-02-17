@@ -334,7 +334,8 @@ public class InferFromMatrix
 				fits,
 				options.scalingFactorRegularizerWeight,
 				options.comparisonRange,
-				options.scalingFactorEstimationIterations );
+				options.scalingFactorEstimationIterations,
+				estimateWeightMatrix );
 
 		// write scaled matrix to scaledMatrix
 		final RandomAccess< T > matrixRA = matrix.randomAccess();

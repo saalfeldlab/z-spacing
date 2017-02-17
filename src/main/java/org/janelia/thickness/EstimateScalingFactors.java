@@ -19,19 +19,21 @@ import net.imglib2.view.Views;
 public class EstimateScalingFactors
 {
 
-	public static < T extends RealType< T > > void estimateQuadraticFromMatrix(
+	public static < T extends RealType< T >, W extends RealType< W > > void estimateQuadraticFromMatrix(
 			final RandomAccessibleInterval< T > correlations,
 			final double[] scalingFactors,
 			final double[] coordinates,
 			final RandomAccessibleInterval< double[] > localFits,
 			final double regularizerWeight,
 			final int comparisonRange,
-			final int nIterations )
+			final int nIterations,
+			final RandomAccessibleInterval< W > pairwiseWeights )
 	{
 
 		final double inverseRegularizerWeight = 1 - regularizerWeight;
 
 		final RandomAccess< T > corrAccess = correlations.randomAccess();
+		final RandomAccess< W > wAccess = pairwiseWeights.randomAccess();
 
 		for ( int iter = 0; iter < nIterations; ++iter )
 		{
@@ -46,6 +48,7 @@ public class EstimateScalingFactors
 				final double[] oldScalingFactors = scalingFactors.clone();
 
 				corrAccess.setPosition( n, 0 );
+				wAccess.setPosition( n, 0 );
 
 				final double[] lf = fitCursor.next();
 				final RealRandomAccessible< DoubleType > interpolatedFit = Views.interpolate( Views.extendValue( ArrayImgs.doubles( lf, lf.length ), new DoubleType( Double.NaN ) ), new NLinearInterpolatorFactory< DoubleType >() );
@@ -59,6 +62,7 @@ public class EstimateScalingFactors
 					if ( i == n )
 						continue;
 					corrAccess.setPosition( i, 1 );
+					wAccess.setPosition( i, 1 );
 					ra.setPosition( Math.abs( coordinates[ i ] - coordinates[ n ] ), 0 );
 					// fits are negative because LUTRealtransform requires
 					// increasing function
@@ -66,7 +70,8 @@ public class EstimateScalingFactors
 					final double measure = corrAccess.get().getRealDouble();
 					if ( Double.isNaN( fitVal ) || Double.isNaN( measure ) || measure <= 0.0 )
 						continue;
-					final double prod = oldScalingFactors[ i ] * measure;
+					final double w = wAccess.get().getRealDouble();
+					final double prod = w * oldScalingFactors[ i ] * measure;
 					enumeratorSum += prod * fitVal;
 					denominatorSum += prod * prod;
 				}

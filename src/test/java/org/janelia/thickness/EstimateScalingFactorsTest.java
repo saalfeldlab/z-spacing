@@ -82,7 +82,7 @@ public class EstimateScalingFactorsTest
 			scalingFactors[ z ] = 1.0;
 			coordinates[ z ] = z;
 		}
-		EstimateScalingFactors.estimateQuadraticFromMatrix( matrix, scalingFactors, coordinates, localFits, regularizerWeight, comparisonRange, nIterations );
+		EstimateScalingFactors.estimateQuadraticFromMatrix( matrix, scalingFactors, coordinates, localFits, regularizerWeight, comparisonRange, nIterations, ConstantUtils.constantRandomAccessibleInterval( new DoubleType( 1.0 ), 2, matrix ) );
 		return scalingFactors;
 	}
 
