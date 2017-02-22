@@ -71,9 +71,11 @@ public class EstimateScalingFactors
 					if ( Double.isNaN( fitVal ) || Double.isNaN( measure ) || measure <= 0.0 )
 						continue;
 					final double w = wAccess.get().getRealDouble();
-					final double prod = w * oldScalingFactors[ i ] * measure;
-					enumeratorSum += prod * fitVal;
-					denominatorSum += prod * prod;
+					final double prod = oldScalingFactors[ i ] * measure;
+					final double h = w * prod;
+
+					enumeratorSum += h * fitVal;
+					denominatorSum += h * prod;
 				}
 				final double result = enumeratorSum / denominatorSum * inverseRegularizerWeight + regularizerWeight * oldScalingFactors[ n ];
 				if ( !Double.isNaN( result ) )
