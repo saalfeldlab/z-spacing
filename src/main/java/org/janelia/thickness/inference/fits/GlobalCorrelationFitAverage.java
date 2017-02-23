@@ -9,7 +9,7 @@ import net.imglib2.util.ConstantUtils;
 import net.imglib2.view.Views;
 
 /**
- * @author Philipp Hanslovsky &lt;hanslovskyp@janelia.hhmi.org&gt;
+ * @author Philipp Hanslovsky
  *
  */
 public class GlobalCorrelationFitAverage extends AbstractCorrelationFit
@@ -19,8 +19,11 @@ public class GlobalCorrelationFitAverage extends AbstractCorrelationFit
 
 	private double[] weightSum;
 
-	/* (non-Javadoc)
-	 * @see org.janelia.thickness.inference.fits.AbstractCorrelationFit#add(int, int, double)
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see org.janelia.thickness.inference.fits.AbstractCorrelationFit#add(int,
+	 * int, double)
 	 */
 	@Override
 	protected void add( final int z, final int dz, final double value, final double weight )
@@ -29,8 +32,11 @@ public class GlobalCorrelationFitAverage extends AbstractCorrelationFit
 		weightSum[ dz ] += weight;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.janelia.thickness.inference.fits.AbstractCorrelationFit#clear(int)
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see
+	 * org.janelia.thickness.inference.fits.AbstractCorrelationFit#clear(int)
 	 */
 	@Override
 	protected void init( final int size )
@@ -39,8 +45,11 @@ public class GlobalCorrelationFitAverage extends AbstractCorrelationFit
 		weightSum = new double[ size + 1 ];
 	}
 
-	/* (non-Javadoc)
-	 * @see org.janelia.thickness.inference.fits.AbstractCorrelationFit#estimate()
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see
+	 * org.janelia.thickness.inference.fits.AbstractCorrelationFit#estimate()
 	 */
 	@Override
 	protected RandomAccessibleInterval< double[] > estimate( final int size )
