@@ -1,15 +1,20 @@
 /**
- * 
+ *
  */
 package org.janelia.thickness.inference;
 
-import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.Serializable;
 import java.lang.reflect.Field;
+
+import org.apache.commons.io.FileUtils;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonSyntaxException;
 
 /**
  * @author Philipp Hanslovsky &lt;hanslovskyp@janelia.hhmi.org&gt;
@@ -19,7 +24,7 @@ public class Options implements Serializable
 {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 3591334824905556420L;
 
@@ -39,15 +44,16 @@ public class Options implements Serializable
 		result.forceMonotonicity = false;
 		result.estimateWindowRadius = -1;
 		result.minimumCorrelationValue = 0.0;
+		result.estimateRegularizer = 0.0;
 		return result;
 	}
 
 	public Double scalingFactorRegularizerWeight; // m_regularized = m *
-															// ( 1 - w ) + 1 * w
+	// ( 1 - w ) + 1 * w
 
 	public Double coordinateUpdateRegularizerWeight; // coordinate_regularized =
-														// predicted * ( 1 - w )
-														// + original * w
+	// predicted * ( 1 - w )
+	// + original * w
 
 	public Double shiftProportion; // actual_shift = shift * shiftProportion
 
@@ -71,76 +77,13 @@ public class Options implements Serializable
 
 	public Double minimumCorrelationValue;
 
-	public static Options read( final String filename )
+	public Double estimateRegularizer;
+
+	public static Options read( final String filename ) throws JsonSyntaxException, JsonIOException, FileNotFoundException
 	{
-		final String defaultString = String.format( "Options.read( \"%s\" )", filename );
-		final Options result = Options.generateDefaultOptions();
-		try
-		{
-			final BufferedReader br = new BufferedReader( new FileReader( filename ) );
-			try
-			{
-				String line = br.readLine();
-				while ( line != null )
-				{
-					final String[] option = line.split( "\\s+" );
-					if ( option.length != 2 )
-					{
-						System.err.println( String.format( "%s: ignoring \"%s\" (not a valid option line).", defaultString, line ) );
-						line = br.readLine();
-						continue;
-					}
-
-					try
-					{
-						final Field f = result.getClass().getDeclaredField( option[ 0 ] );
-						final Object var = f.get( result );
-						if ( var instanceof Double )
-							f.set( result, Double.valueOf( option[ 1 ] ).doubleValue() );
-						else if ( var instanceof Integer )
-							f.set( result, Integer.valueOf( option[ 1 ] ).intValue() );
-						else if ( var instanceof Boolean )
-							f.set( result, Boolean.valueOf( option[ 1 ] ).booleanValue() );
-						else
-							System.err.println( String.format( "%s: ignoring \"%s\" (%s not a valid type (%s) ).", defaultString, line, option[ 0 ], var.getClass().toString() ) );
-					}
-					catch ( final IllegalArgumentException e )
-					{
-						System.err.println( String.format( "%s: ignoring \"%s\" (cannot set %s to %s)", defaultString, line, option[ 0 ], option[ 1 ] ) );
-					}
-					catch ( final IllegalAccessException e )
-					{
-						System.err.println( String.format( "%s: ignoring \"%s\" (cannot access Options object)", defaultString, line ) );
-						e.printStackTrace();
-					}
-					catch ( final NoSuchFieldException e )
-					{
-						System.err.println( String.format( "%s: ignoring \"%s\" (not a valid field).", defaultString, line ) );
-					}
-					catch ( final SecurityException e )
-					{
-						System.err.println( String.format( "%s: ignoring \"%s\" (SecurityException).", defaultString, line ) );
-						e.printStackTrace();
-					}
-					finally
-					{
-						line = br.readLine();
-					}
-				}
-			}
-			catch ( final IOException e )
-			{
-				System.err.println( String.format( "%s: Could not read line.", defaultString ) );
-				e.printStackTrace();
-			}
-		}
-		catch ( final FileNotFoundException e )
-		{
-			System.err.println( String.format( "%s: File not found - return default options.", defaultString ) );
-			return result;
-		}
-
-		return result;
+		final Gson gson = new Gson();
+		final Options opt = gson.fromJson( new FileReader( filename ), Options.class );
+		return opt;
 	}
 
 	@Override
@@ -202,12 +145,11 @@ public class Options implements Serializable
 		return sb.toString();
 	}
 
-	public void toFile( final String filename ) throws FileNotFoundException
+	public void toFile( final String filename ) throws IOException
 	{
-		final String optionString = this.toString();
-		final PrintWriter outFile = new PrintWriter( filename );
-		outFile.println( optionString );
-		outFile.close();
+		final Gson gson = new Gson();
+		final String json = gson.toJson( this );
+		FileUtils.writeStringToFile( new File( filename ), json );
 	}
 
 	@Override
@@ -217,9 +159,12 @@ public class Options implements Serializable
 		{
 			for ( final Field f : this.getClass().getDeclaredFields() )
 			{
+				if ( f.getName().equals( "serialVersionUID" ) )
+					continue;
 				try
 				{
-					if ( !f.get( this ).equals( f.get( other ) ) ) { return false; }
+					if ( !f.get( this ).equals( f.get( other ) ) )
+						return false;
 				}
 				catch ( final IllegalArgumentException e )
 				{
@@ -240,7 +185,7 @@ public class Options implements Serializable
 			return false;
 	}
 
-	public static void main( final String[] args )
+	public static void main( final String[] args ) throws JsonSyntaxException, JsonIOException, FileNotFoundException
 	{
 		final String fn = "/data/hanslovskyp/khaled_2014_10_24/range=5_2014-10-27 11:22:17.651999/options";
 		final Options options = Options.read( fn );
