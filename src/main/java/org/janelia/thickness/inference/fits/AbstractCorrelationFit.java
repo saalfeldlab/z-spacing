@@ -14,7 +14,7 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.view.Views;
 
 /**
- * @author Philipp Hanslovsky &lt;hanslovskyp@janelia.hhmi.org&gt;
+ * @author Philipp Hanslovsky
  */
 public abstract class AbstractCorrelationFit
 {
