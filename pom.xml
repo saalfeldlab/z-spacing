@@ -24,8 +24,8 @@
 	</organization>
 	<licenses>
 		<license>
-			<name>GNU General Public License v3+</name>
-			<url>https://www.gnu.org/licenses/gpl.html</url>
+			<name>GNU General Public License v2+</name>
+			<url>https://www.gnu.org/licenses/old-licenses/gpl-2.0.html</url>
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
@@ -87,7 +87,7 @@
 
 	<properties>
 		<package-name>org.janelia.thickness</package-name>
-		<license.licenseName>gpl_v3</license.licenseName>
+		<license.licenseName>gpl_v2</license.licenseName>
 		<license.copyrightOwners>Howard Hughes Medical Institute.</license.copyrightOwners>
 	</properties>
 
