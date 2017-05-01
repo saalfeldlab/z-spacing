@@ -12,7 +12,7 @@
 
 	<groupId>sc.fiji</groupId>
 	<artifactId>z_spacing</artifactId>
-	<version>1.0.3-SNAPSHOT</version>
+	<version>1.0.3</version>
 
 	<name>Z spacing</name>
 	<description>Z spacing plugin for Fiji.</description>
