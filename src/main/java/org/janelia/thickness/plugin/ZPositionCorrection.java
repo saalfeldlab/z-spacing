@@ -2,6 +2,7 @@ package org.janelia.thickness.plugin;
 
 import java.awt.Checkbox;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -16,6 +17,7 @@ import org.janelia.thickness.inference.Options;
 import org.janelia.thickness.inference.fits.AbstractCorrelationFit;
 import org.janelia.thickness.inference.fits.GlobalCorrelationFitAverage;
 import org.janelia.thickness.inference.fits.LocalCorrelationFitAverage;
+import org.janelia.thickness.inference.visitor.AverageShiftFitVisitor;
 import org.janelia.thickness.inference.visitor.CorrelationFitVisitor;
 import org.janelia.thickness.inference.visitor.LUTVisitor;
 import org.janelia.thickness.inference.visitor.LazyVisitor;
@@ -81,61 +83,69 @@ public class ZPositionCorrection implements PlugIn
 	{
 		addVisitor( "lazy", new LazyVisitor() );
 
-		final VisitorFactory factory = new VisitorFactory()
-		{
-			@Override
-			public Visitor create( final RandomAccessibleInterval< DoubleType > matrix, final Options options )
+		final VisitorFactory factory = ( matrix, options ) -> {
+			final GenericDialogPlus dialog = new GenericDialogPlus( "Choose output directory for visitor!" );
+			dialog.addDirectoryField( "Output directory", System.getProperty( "user.home" ) );
+			dialog.addCheckboxGroup(
+					4,
+					1,
+					new String[] { "Fit", "Scaling Factors", "Coordinate Transformation", "Matrix" },
+					new boolean[] { false, false, false, false } );
+			dialog.showDialog();
+
+			if ( dialog.wasCanceled() )
+				return new LazyVisitor();
+
+			final String basePath = dialog.getNextString();
+
+			@SuppressWarnings( "unchecked" )
+			final Vector< Checkbox > boxes = dialog.getCheckboxes();
+			IJ.log( "" + boxes.get( 0 ) );
+
+			final ListVisitor lv = new ListVisitor();
+			if ( boxes.get( 0 ).getState() )
 			{
-				final GenericDialogPlus dialog = new GenericDialogPlus( "Choose output directory for visitor!" );
-				dialog.addDirectoryField( "Output directory", System.getProperty( "user.home" ) );
-				dialog.addCheckboxGroup(
-						4,
-						1,
-						new String[] { "Fit", "Scaling Factors", "Coordinate Transformation", "Matrix" },
-						new boolean[] { false, false, false, false } );
-				dialog.showDialog();
-
-				if ( dialog.wasCanceled() )
-					return new LazyVisitor();
-
-				final String basePath = dialog.getNextString();
-
-				@SuppressWarnings( "unchecked" )
-				final Vector< Checkbox > boxes = dialog.getCheckboxes();
-				IJ.log( "" + boxes.get( 0 ) );
-
-				final ListVisitor lv = new ListVisitor();
-				if ( boxes.get( 0 ).getState() )
-				{
-					final CorrelationFitVisitor v = new CorrelationFitVisitor( basePath, "", ",", 0 );
-					v.setRelativeFilePattern( "correlation-fit/", options.nIterations, ".csv" );
-					lv.addVisitor( v );
-				}
-				if ( boxes.get( 1 ).getState() )
-				{
-					final ScalingFactorsVisitor v = new ScalingFactorsVisitor( basePath, "", "," );
-					v.setRelativeFilePattern( "scaling-factors/", options.nIterations, ".csv" );
-					lv.addVisitor( v );
-				}
-				if ( boxes.get( 2 ).getState() )
-				{
-					final LUTVisitor v = new LUTVisitor( basePath, "", "," );
-					v.setRelativeFilePattern( "lut/", options.nIterations, ".csv" );
-					lv.addVisitor( v );
-				}
-				if ( boxes.get( 3 ).getState() )
-				{
-					final MatrixVisitor v = new MatrixVisitor( basePath, "", options.comparisonRange );
-					v.setRelativeFilePattern( "matrices/", options.nIterations, ".tif" );
-					lv.addVisitor( v );
-				}
-
-				final ArrayList< Visitor > vs = lv.getVisitors();
-				if ( vs.size() == 0 )
-					return new LazyVisitor();
-
-				return lv;
+				final CorrelationFitVisitor v1 = new CorrelationFitVisitor( basePath, "", ",", 0 );
+				v1.setRelativeFilePattern( "correlation-fit/", options.nIterations, ".csv" );
+				lv.addVisitor( v1 );
 			}
+			if ( boxes.get( 1 ).getState() )
+			{
+				final ScalingFactorsVisitor v2 = new ScalingFactorsVisitor( basePath, "", "," );
+				v2.setRelativeFilePattern( "scaling-factors/", options.nIterations, ".csv" );
+				lv.addVisitor( v2 );
+			}
+			if ( boxes.get( 2 ).getState() )
+			{
+				final LUTVisitor v3 = new LUTVisitor( basePath, "", "," );
+				v3.setRelativeFilePattern( "lut/", options.nIterations, ".csv" );
+				lv.addVisitor( v3 );
+			}
+			if ( boxes.get( 3 ).getState() )
+			{
+				final MatrixVisitor v4 = new MatrixVisitor( basePath, "", options.comparisonRange );
+				v4.setRelativeFilePattern( "matrices/", options.nIterations, ".tif" );
+				lv.addVisitor( v4 );
+			}
+
+			{
+				try
+				{
+					final AverageShiftFitVisitor v5 = new AverageShiftFitVisitor( basePath + "/average-shifts/shift" );
+					lv.addVisitor( v5 );
+				}
+				catch ( final IOException e )
+				{
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+
+			final ArrayList< Visitor > vs = lv.getVisitors();
+			if ( vs.size() == 0 )
+				return new LazyVisitor();
+
+			return lv;
 		};
 		addVisitor( "variables", factory );
 	}
@@ -170,13 +180,14 @@ public class ZPositionCorrection implements PlugIn
 		final GenericDialogPlus dialog = new GenericDialogPlus( "Correct layer z-positions" );
 		dialog.addMessage( "Data source settings : " );
 		dialog.addFileField( "Input path (use current image if empty)", "" );
-		dialog.addChoice( "Type of input data : ", new String[] { "Matrix", "Image Stack" }, "Image Stack" );
+		dialog.addChoice( "Type of input data : ", new String[] { "Matrix", "Image Stack" }, "Matrix" );
 		dialog.addMessage( "Inference settings : " );
 		dialog.addMessage( "Section neighbor range :" );
 		dialog.addNumericField( "test_maximally :", options.comparisonRange, 0, 6, "layers" );
 		dialog.addMessage( "Optimizer :" );
 		dialog.addNumericField( "outer_iterations :", options.nIterations, 0, 6, "" );
 		dialog.addNumericField( "outer_regularization :", 1.0 - options.shiftProportion, 2, 6, "" );
+		dialog.addNumericField( "distance_regularization", options.pairwisePotentialRegularizer, 2, 6, "" );
 		dialog.addNumericField( "inner_iterations :", options.scalingFactorEstimationIterations, 0, 6, "" );
 		dialog.addNumericField( "inner_regularization :", options.scalingFactorRegularizerWeight, 2, 6, "" );
 		dialog.addCheckbox( " allow_reordering", options.withReorder );
@@ -203,7 +214,9 @@ public class ZPositionCorrection implements PlugIn
 
 		options.comparisonRange = ( int ) dialog.getNextNumber();
 		options.nIterations = ( int ) dialog.getNextNumber();
-		options.shiftProportion = 1.0 - dialog.getNextNumber();
+		options.shiftProportion = dialog.getNextNumber(); // 1.0 -
+															// dialog.getNextNumber();
+		options.pairwisePotentialRegularizer = dialog.getNextNumber();
 		options.scalingFactorEstimationIterations = ( int ) dialog.getNextNumber();
 		options.scalingFactorRegularizerWeight = dialog.getNextNumber();
 		options.withReorder = dialog.getNextBoolean();
@@ -333,7 +346,7 @@ public class ZPositionCorrection implements PlugIn
 
 	public static RandomAccessibleInterval< DoubleType > wrapDouble( final ImagePlus input )
 	{
-		return new ConvertedRandomAccessibleInterval< FloatType, DoubleType >( ImageJFunctions.wrapFloat( input ), new RealDoubleConverter< FloatType >(), new DoubleType() );
+		return new ConvertedRandomAccessibleInterval< >( ImageJFunctions.wrapFloat( input ), new RealDoubleConverter< FloatType >(), new DoubleType() );
 	}
 
 	public static ImagePlus normalize( final ImagePlus input )
@@ -383,7 +396,8 @@ public class ZPositionCorrection implements PlugIn
 	{
 		new ImageJ();
 //		final ImagePlus imp = new ImagePlus( "/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/data/data.tif" );
-		final ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/forPhilipp/substacks/03/data/" );
+//		final ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/forPhilipp/substacks/03/data/" );
+		final ImagePlus imp = new ImagePlus( "/data/hanslovskyp/forPhilipp/substacks/03/matrix.tif" );
 //		final ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/davi_toy_set/data/seq" );
 //		final ImagePlus imp = new ImagePlus( "/data/hanslovskyp/strip-example-small.tif" );
 		imp.show();
@@ -412,24 +426,18 @@ public class ZPositionCorrection implements PlugIn
 		final ImageStack stack = xyScale == 1.0 ? stackSource : downsampleStack( stackSource, xyScale );
 		final int height = input.getStackSize();
 		final int nThreads = Runtime.getRuntime().availableProcessors();
-		final ArrayList< Callable< Void > > callables = new ArrayList< Callable< Void > >();
+		final ArrayList< Callable< Void > > callables = new ArrayList< >();
 		for ( int i = 0; i < height; ++i )
 		{
 			final int finalI = i;
-			callables.add( new Callable< Void >()
-			{
-
-				@Override
-				public Void call() throws Exception
+			callables.add( () -> {
+				for ( int k = finalI + 1; k - finalI <= range && k < height; ++k )
 				{
-					for ( int k = finalI + 1; k - finalI <= range && k < height; ++k )
-					{
-						final float val = new RealSumFloatNCC( ( float[] ) stack.getProcessor( finalI + 1 ).getPixels(), ( float[] ) stack.getProcessor( k + 1 ).getPixels() ).call().floatValue();
-						matrix.setf( finalI, k, val );
-						matrix.setf( k, finalI, val );
-					}
-					return null;
+					final float val = new RealSumFloatNCC( ( float[] ) stack.getProcessor( finalI + 1 ).getPixels(), ( float[] ) stack.getProcessor( k + 1 ).getPixels() ).call().floatValue();
+					matrix.setf( finalI, k, val );
+					matrix.setf( k, finalI, val );
 				}
+				return null;
 			} );
 		}
 		final ExecutorService es = Executors.newFixedThreadPool( nThreads );
@@ -468,7 +476,7 @@ public class ZPositionCorrection implements PlugIn
 
 	public static ImagePlus getFileFromOption( final String path )
 	{
-		return path.equals( "" ) ? IJ.getImage() : ( new File( path ).isDirectory() ? FolderOpener.open( path ) : new ImagePlus( path ) );
+		return path.equals( "" ) ? IJ.getImage() : new File( path ).isDirectory() ? FolderOpener.open( path ) : new ImagePlus( path );
 	}
 
 	public static < T extends RealType< T > > RealRandomAccessible< T > generateTransformed(
@@ -478,7 +486,7 @@ public class ZPositionCorrection implements PlugIn
 			final T dummy )
 	{
 		dummy.setReal( Double.NaN );
-		final IntervalView< T > permuted = Views.interval( new TransformView< T >( input, permutation ), input );
+		final IntervalView< T > permuted = Views.interval( new TransformView< >( input, permutation ), input );
 		final RealRandomAccessible< T > interpolated = Views.interpolate( Views.extendValue( permuted, dummy ), new NLinearInterpolatorFactory< T >() );
 		return RealViews.transformReal( interpolated, lut );
 	}
@@ -505,7 +513,7 @@ public class ZPositionCorrection implements PlugIn
 		final ImageStack stack = new ImageStack( width, height, size );
 		final int nThreads = Runtime.getRuntime().availableProcessors();
 		final ExecutorService es = Executors.newFixedThreadPool( nThreads );
-		final ArrayList< Callable< Void > > callables = new ArrayList< Callable< Void > >();
+		final ArrayList< Callable< Void > > callables = new ArrayList< >();
 		for ( int z = 0; z < size; ++z )
 		{
 			final int zeroBased = z;
@@ -514,25 +522,19 @@ public class ZPositionCorrection implements PlugIn
 
 			access.setPosition( zeroBased, 2 ); // set z
 
-			callables.add( new Callable< Void >()
-			{
-
-				@Override
-				public Void call() throws Exception
+			callables.add( () -> {
+				final FloatProcessor fp = new FloatProcessor( width, height );
+				for ( int x = 0; x < width; ++x )
 				{
-					final FloatProcessor fp = new FloatProcessor( width, height );
-					for ( int x = 0; x < width; ++x )
+					access.setPosition( x, 0 );
+					for ( int y = 0; y < height; ++y )
 					{
-						access.setPosition( x, 0 );
-						for ( int y = 0; y < height; ++y )
-						{
-							access.setPosition( y, 1 );
-							fp.setf( x, y, access.get().getRealFloat() );
-						}
+						access.setPosition( y, 1 );
+						fp.setf( x, y, access.get().getRealFloat() );
 					}
-					stack.setProcessor( fp, oneBased );
-					return null;
 				}
+				stack.setProcessor( fp, oneBased );
+				return null;
 			} );
 		}
 
