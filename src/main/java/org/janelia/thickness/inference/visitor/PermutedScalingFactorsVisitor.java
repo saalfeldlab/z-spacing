@@ -38,12 +38,13 @@ public class PermutedScalingFactorsVisitor extends CSVVisitor
 			final int[] permutation,
 			final int[] inversePermutation,
 			final double[] scalingFactors,
-			final RandomAccessibleInterval< double[] > estimatedFit )
+			final RandomAccessibleInterval< double[] > estimatedFit,
+			final double averageShift )
 	{
 
 		final ArrayImg< DoubleType, DoubleArray > coordinateImage = ArrayImgs.doubles( scalingFactors, scalingFactors.length );
 		final PermutationTransform transform = new PermutationTransform( permutation, 1, 1 );
-		final IntervalView< DoubleType > permuted = Views.interval( new TransformView< DoubleType >( coordinateImage, transform ), coordinateImage );
+		final IntervalView< DoubleType > permuted = Views.interval( new TransformView< >( coordinateImage, transform ), coordinateImage );
 
 		try
 		{

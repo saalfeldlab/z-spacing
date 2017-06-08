@@ -19,5 +19,6 @@ public interface Visitor
 			int[] permutation,
 			int[] inversePermutation,
 			double[] multipliers,
-			RandomAccessibleInterval< double[] > estimatedFit );
+			RandomAccessibleInterval< double[] > estimatedFit,
+			double averageShift );
 }

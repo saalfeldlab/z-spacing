@@ -19,7 +19,7 @@ public class ListVisitor implements Visitor
 	public ListVisitor()
 	{
 		super();
-		this.visitors = new ArrayList< Visitor >();
+		this.visitors = new ArrayList< >();
 	}
 
 	public ListVisitor( final ArrayList< Visitor > visitors )
@@ -47,10 +47,11 @@ public class ListVisitor implements Visitor
 			final int[] permutation,
 			final int[] inversePermutation,
 			final double[] multipliers,
-			final RandomAccessibleInterval< double[] > estimatedFit )
+			final RandomAccessibleInterval< double[] > estimatedFit,
+			final double averageShift )
 	{
 		for ( final Visitor v : visitors )
-			v.act( iteration, matrix, scaledMatrix, lut, permutation, inversePermutation, multipliers, estimatedFit );
+			v.act( iteration, matrix, scaledMatrix, lut, permutation, inversePermutation, multipliers, estimatedFit, averageShift );
 	}
 
 }

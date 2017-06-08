@@ -80,7 +80,8 @@ public class CorrelationFitVisitor extends CSVVisitor
 			final int[] permutation,
 			final int[] inversePermutation,
 			final double[] multipliers,
-			final RandomAccessibleInterval< double[] > estimatedFits )
+			final RandomAccessibleInterval< double[] > estimatedFits,
+			final double averageShift )
 	{
 
 		if ( estimatedFits == null )

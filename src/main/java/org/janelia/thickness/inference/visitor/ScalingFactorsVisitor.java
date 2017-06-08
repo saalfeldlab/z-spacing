@@ -64,7 +64,8 @@ public class ScalingFactorsVisitor extends CSVVisitor
 			final int[] permutation,
 			final int[] inversePermutation,
 			final double[] scalingFactors,
-			final RandomAccessibleInterval< double[] > estimatedFit )
+			final RandomAccessibleInterval< double[] > estimatedFit,
+			final double averageShift )
 	{
 		try
 		{

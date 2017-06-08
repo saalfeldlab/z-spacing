@@ -40,7 +40,8 @@ public class MatrixVisitor extends FileSaverVisitor
 			final int[] permutation,
 			final int[] inversePermutation,
 			final double[] multipliers,
-			final RandomAccessibleInterval< double[] > estimatedFit )
+			final RandomAccessibleInterval< double[] > estimatedFit,
+			final double averageShift )
 	{
 		final T dummy = scaledMatrix.randomAccess().get().createVariable();
 		dummy.setReal( Double.NaN );

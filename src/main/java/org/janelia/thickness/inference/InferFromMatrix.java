@@ -254,7 +254,7 @@ public class InferFromMatrix
 			final IntervalView< T > scaledMatrix = Views.interval( new TransformView< >( inputScaledMatrix, permutation ), inputScaledMatrix );
 
 			if ( iteration == 0 )
-				visitor.act( iteration, matrix, scaledMatrix, lut, permutationLut, inverse, scalingFactors, correlationFitsStore[ 0 ] );
+				visitor.act( iteration, matrix, scaledMatrix, lut, permutationLut, inverse, scalingFactors, correlationFitsStore[ 0 ], 0.0 );
 
 			Arrays.fill( shiftsArray, 0.0 );
 			Arrays.fill( weightSums, 0.0 );;
@@ -296,7 +296,7 @@ public class InferFromMatrix
 			final long t1 = System.nanoTime();
 			//			System.out.println( "time: " + ( t1 - t0 ) );
 
-			visitor.act( iteration + 1, matrix, scaledMatrix, lut, permutationLut, inverse, scalingFactors, correlationFitsStore[ 0 ] );
+			visitor.act( iteration + 1, matrix, scaledMatrix, lut, permutationLut, inverse, scalingFactors, correlationFitsStore[ 0 ], avgShift );
 
 		}
 
