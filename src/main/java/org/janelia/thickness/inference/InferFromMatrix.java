@@ -272,7 +272,7 @@ public class InferFromMatrix
 					shiftWeights,
 					options );
 
-			this.applyShifts(
+			final double avgShift = this.applyShifts(
 					permutedLut, // rewrite interface to use view on permuted
 					// lut? probably not
 					shifts,
@@ -372,7 +372,7 @@ public class InferFromMatrix
 		return mediatedShifts;
 	}
 
-	public void applyShifts(
+	public double applyShifts(
 			final double[] coordinates,
 			final double[] shifts,
 			final double[] regularizerCoordinates,
@@ -382,13 +382,83 @@ public class InferFromMatrix
 
 		final double inverseCoordinateUpdateRegularizerWeight = 1 - options.coordinateUpdateRegularizerWeight;
 
-		for ( int i = 0; i < coordinates.length; ++i )
+		// final double[] c0 = coordinates.clone();
+		//
+		// for ( int i = 0; i < 10; ++i ) {
+		// final double[] oldCoordinates = coordinates.clone();
+		//
+		// for ( int k = 0; k < shifts.length; ++k ) {
+		// double regShift = 0.0;
+		// double weightSum = 0.0;
+		// for ( int l = Math.max( 0, k - 60 ); l < Math.min( shifts.length, k +
+		// 60 + 1 ); ++l )
+		// {
+		// final int diff = l - k;
+		// final double weight = Math.exp( -diff * diff );
+		//// final double weight = 1.0;
+		//// System.out.println( " WUT WUT " + l + " " + k + " " + weight );
+		// if ( weight < 1e-6 || l == k )
+		// continue;
+		// regShift += ( coordinates[ l ] - c0[ l ] ) * weight;
+		// weightSum += weight;
+		// }
+		//// System.out.println( regShift + " " + weightSum );
+		// regShift /= weightSum;
+		// regShift += c0[ k ];
+		// final double shift = shifts[ k];
+		// coordinates[ k ] = Double.isNaN( shift ) ? regShift :
+		// options.shiftProportion * ( shift + c0[ k ] ) + ( 1 -
+		// options.shiftProportion ) * regShift;
+		// }
+		// }
+		// final double inverseCoordinateUpdateRegularizerWeight = 1 -
+		// options.coordinateUpdateRegularizerWeight;
+		//
+		double averageShift = 0.0;
+		int averageShiftContributors = 0;
+
+//		for ( int i = 0; i < shifts.length; ++i )
+//			shifts[ i ] *= options.shiftProportion;
+
+		for ( final double shift : shifts )
 		{
-			double val = coordinates[ i ];
-			val += options.shiftProportion * shifts[ i ];
-			val = options.coordinateUpdateRegularizerWeight * regularizerCoordinates[ permutation.applyInverse( i ) ] + inverseCoordinateUpdateRegularizerWeight * val;
-			coordinates[ i ] = val;
+			if ( Double.isNaN( shift ) )
+				continue;
+			averageShift += shift;
+			averageShiftContributors += 1;
 		}
+
+		averageShift /= averageShiftContributors;
+
+		if ( averageShiftContributors == 0 )
+			return averageShift;
+//			for ( int i = 0; i < coordinates.length; ++i )
+//				coordinates[ i ] += shifts[ i ];
+		else
+			for ( int i = 0; i < coordinates.length; ++i )
+			{
+				// System.out.println( "OGE " + i + " " + shifts[ i ] + " " +
+				// averageShift );
+				final double shift = shifts[ i ];
+				final double actualShift;
+				if ( Double.isNaN( shift ) )
+					actualShift = options.pairwisePotentialRegularizer * averageShift / ( options.pairwisePotentialRegularizer + options.shiftProportion );
+				else
+					actualShift = ( shift + options.pairwisePotentialRegularizer * averageShift ) / ( 1 + options.pairwisePotentialRegularizer + options.shiftProportion );
+//				coordinates[ i ] += Double.isNaN( shift ) ? averageShift : ( 1 - options.pairwisePotentialRegularizer ) * shift + options.pairwisePotentialRegularizer * averageShift;
+				coordinates[ i ] += actualShift;
+			}
+		return averageShift;
+
+		// for ( int i = 0; i < coordinates.length; ++i )
+		// {
+		// double val = coordinates[ i ];
+		// val += options.shiftProportion * shifts[ i ];
+		// val = options.coordinateUpdateRegularizerWeight *
+		// regularizerCoordinates[ permutation.applyInverse( i ) ] +
+		// inverseCoordinateUpdateRegularizerWeight * val;
+		// coordinates[ i ] = val;
+		// }
 
 	}
 
