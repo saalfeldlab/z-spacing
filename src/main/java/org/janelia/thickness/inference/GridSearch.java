@@ -12,6 +12,7 @@ import org.janelia.thickness.inference.fits.GlobalCorrelationFitAverage;
 import org.janelia.thickness.inference.visitor.AverageShiftFitVisitor;
 import org.janelia.thickness.inference.visitor.LUTVisitor;
 import org.janelia.thickness.inference.visitor.ListVisitor;
+import org.janelia.thickness.inference.visitor.MatrixVisitor;
 
 import ij.ImagePlus;
 import net.imglib2.RandomAccessibleInterval;
@@ -24,7 +25,7 @@ public class GridSearch
 	public static void main( final String[] args ) throws Exception
 	{
 
-		final int nIterations = 1000;
+		final int nIterations = 2000;
 
 		final String path = "/data/hanslovskyp/forPhilipp/substacks/03/matrix.tif";
 
@@ -32,7 +33,7 @@ public class GridSearch
 
 //		ImageJFunctions.show( matrix );
 
-		final ExecutorService es = Executors.newFixedThreadPool( 3 );
+		final ExecutorService es = Executors.newFixedThreadPool( Runtime.getRuntime().availableProcessors() - 1 );
 
 
 		final ArrayList< Callable< Void > > tasks = new ArrayList<>();
@@ -53,10 +54,13 @@ public class GridSearch
 				final double[] startingCoordinates = IntStream.range( 0, ( int ) matrix.dimension( 0 ) ).mapToDouble( i -> i ).toArray();
 				final ListVisitor vis = new ListVisitor();
 				final String basePath = String.format( System.getProperty( "user.home" ) + "/z-spacing-gridsearch/%.1f-%.1f", shiftProportion, reg );
-				final LUTVisitor v3 = new LUTVisitor( basePath, "", "," );
-				v3.setRelativeFilePattern( "lut/", opts.nIterations, ".csv" );
-				vis.addVisitor( v3 );
+				final LUTVisitor lutVisitor = new LUTVisitor( basePath, "", "," );
+				lutVisitor.setRelativeFilePattern( "lut/", opts.nIterations, ".csv" );
+				final MatrixVisitor matrixVisitor = new MatrixVisitor( basePath, "", opts.comparisonRange );
+				matrixVisitor.setRelativeFilePattern( "matrices/", opts.nIterations, ".tif" );
+				vis.addVisitor( lutVisitor );
 				vis.addVisitor( new AverageShiftFitVisitor( basePath + "/average-shifts/shift" ) );
+				vis.addVisitor( matrixVisitor );
 				final InferFromMatrix inf = new InferFromMatrix( new GlobalCorrelationFitAverage() );
 				tasks.add( () -> {
 					inf.estimateZCoordinates( matrix, startingCoordinates, vis, opts );
