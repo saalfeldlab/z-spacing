@@ -145,7 +145,7 @@ class SubplotAnimation( animation.TimedAnimation ):
             d[ 2 ].set_xdata( np.arange( n_sections ) )
             d[ 2 ].set_ydata( np.arange( n_sections ) )
             d[ 3 ].set_xdata( np.arange( iterations ) )
-            d[ 3 ].set_ydata( d[ 0 ].avg_shifts[:iterations] )
+            d[ 3 ].set_ydata( d[ 0 ].avg_shifts[ :iterations ] )
             d[ 1 ][ 0 ].plot( np.arange( n_sections ), np.arange( n_sections ), color='black', alpha=0.3 )
             d[ 1 ][ 0 ].get_xaxis().set_ticks( [] )
             d[ 1 ][ 0 ].get_yaxis().set_ticks( [] )
