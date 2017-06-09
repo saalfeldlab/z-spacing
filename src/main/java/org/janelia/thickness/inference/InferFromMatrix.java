@@ -276,6 +276,7 @@ public class InferFromMatrix
 					permutedLut, // rewrite interface to use view on permuted
 					// lut? probably not
 					shifts,
+					weightSums,
 					startingCoordinates,
 					permutation.copyToDimension( 1, 1 ),
 					options );
@@ -375,91 +376,39 @@ public class InferFromMatrix
 	public double applyShifts(
 			final double[] coordinates,
 			final double[] shifts,
+			final double[] weightSums,
 			final double[] regularizerCoordinates,
 			final PermutationTransform permutation,
 			final Options options )
 	{
-
-		final double inverseCoordinateUpdateRegularizerWeight = 1 - options.coordinateUpdateRegularizerWeight;
-
-		// final double[] c0 = coordinates.clone();
-		//
-		// for ( int i = 0; i < 10; ++i ) {
-		// final double[] oldCoordinates = coordinates.clone();
-		//
-		// for ( int k = 0; k < shifts.length; ++k ) {
-		// double regShift = 0.0;
-		// double weightSum = 0.0;
-		// for ( int l = Math.max( 0, k - 60 ); l < Math.min( shifts.length, k +
-		// 60 + 1 ); ++l )
-		// {
-		// final int diff = l - k;
-		// final double weight = Math.exp( -diff * diff );
-		//// final double weight = 1.0;
-		//// System.out.println( " WUT WUT " + l + " " + k + " " + weight );
-		// if ( weight < 1e-6 || l == k )
-		// continue;
-		// regShift += ( coordinates[ l ] - c0[ l ] ) * weight;
-		// weightSum += weight;
-		// }
-		//// System.out.println( regShift + " " + weightSum );
-		// regShift /= weightSum;
-		// regShift += c0[ k ];
-		// final double shift = shifts[ k];
-		// coordinates[ k ] = Double.isNaN( shift ) ? regShift :
-		// options.shiftProportion * ( shift + c0[ k ] ) + ( 1 -
-		// options.shiftProportion ) * regShift;
-		// }
-		// }
-		// final double inverseCoordinateUpdateRegularizerWeight = 1 -
-		// options.coordinateUpdateRegularizerWeight;
-		//
 		double averageShift = 0.0;
 		int averageShiftContributors = 0;
 
-//		for ( int i = 0; i < shifts.length; ++i )
-//			shifts[ i ] *= options.shiftProportion;
-
-		for ( final double shift : shifts )
+		for ( int i = 0; i < shifts.length; ++i )
 		{
-			if ( Double.isNaN( shift ) )
+			final double shift = shifts[ i ];
+			if ( Double.isNaN( shift ) ) {
+				interpolateShift( shifts, i );
 				continue;
+			}
 			averageShift += shift;
 			averageShiftContributors += 1;
 		}
 
 		averageShift /= averageShiftContributors;
-
-		if ( averageShiftContributors == 0 )
+		if ( averageShiftContributors < 2 )
 			return averageShift;
-//			for ( int i = 0; i < coordinates.length; ++i )
-//				coordinates[ i ] += shifts[ i ];
 		else
 			for ( int i = 0; i < coordinates.length; ++i )
 			{
-				// System.out.println( "OGE " + i + " " + shifts[ i ] + " " +
-				// averageShift );
+				// TODO normalize by local average only instead of average?
+				final double otherShift = averageShift;
 				final double shift = shifts[ i ];
-				final double actualShift;
-				if ( Double.isNaN( shift ) )
-					actualShift = options.pairwisePotentialRegularizer * averageShift / ( options.pairwisePotentialRegularizer + options.shiftProportion );
-				else
-					actualShift = ( shift + options.pairwisePotentialRegularizer * averageShift ) / ( 1 + options.pairwisePotentialRegularizer + options.shiftProportion );
-//				coordinates[ i ] += Double.isNaN( shift ) ? averageShift : ( 1 - options.pairwisePotentialRegularizer ) * shift + options.pairwisePotentialRegularizer * averageShift;
+				final double w = 1.0;
+				final double actualShift = ( w * shift + options.pairwisePotentialRegularizer * otherShift ) / ( w + options.pairwisePotentialRegularizer + options.shiftProportion );
 				coordinates[ i ] += actualShift;
 			}
 		return averageShift;
-
-		// for ( int i = 0; i < coordinates.length; ++i )
-		// {
-		// double val = coordinates[ i ];
-		// val += options.shiftProportion * shifts[ i ];
-		// val = options.coordinateUpdateRegularizerWeight *
-		// regularizerCoordinates[ permutation.applyInverse( i ) ] +
-		// inverseCoordinateUpdateRegularizerWeight * val;
-		// coordinates[ i ] = val;
-		// }
-
 	}
 
 	public void preventReorder(
@@ -515,5 +464,45 @@ public class InferFromMatrix
 				}
 			}
 		}
+	}
+
+	public static double interpolateShift( final double[] shifts, final int i )
+	{
+		double lowerShift = 0.0, upperShift = 0.0;
+		int lowerIndex = -1, upperIndex = -1;
+		for ( int down = i - 1; down >= 0; --down )
+		{
+			final double s = shifts[ down ];
+			if ( !Double.isNaN( s ) )
+			{
+				lowerIndex = down;
+				lowerShift = s;
+				break;
+			}
+		}
+		for ( int up = i + 1; up < shifts.length; ++up )
+		{
+			final double s = shifts[ up ];
+			if ( !Double.isNaN( s ) )
+			{
+				upperIndex = up;
+				upperShift = s;
+				break;
+			}
+		}
+
+		final double s;
+		if ( lowerIndex == -1 )
+			s = upperShift;
+		else if ( upperIndex == -1 )
+			s = lowerShift;
+		else
+		{
+			final double wLower = upperIndex - i;
+			final double wUpper = i - lowerIndex;
+			s = ( wLower * lowerShift + wUpper * upperShift ) / ( wLower + wUpper );
+		}
+		shifts[ i ] = s;
+		return s;
 	}
 }
