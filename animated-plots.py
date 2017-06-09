@@ -138,11 +138,11 @@ class SubplotAnimation(animation.TimedAnimation):
             l.set_data([], [])
 
 # pattern = '/home/phil/workspace/z-spacing-graphical-model/run-%.1f-%.1f'
-pattern = os.path.expanduser( '~/z-spacing-gridsearch/%.1f-%.1f' )
+pattern = os.path.expanduser( '~/z-spacing-gridsearch-chopped/%.1f-%.1f' )
 
 dampings = np.arange( 0, 5, 1 ) / 1.0
 regs = np.arange( 0, 5, 1 ) / 2.0
 
-ani = SubplotAnimation( dampings, regs, pattern, 2001, interval=20, blit=True )
-ani.save('../gridsearch.mp4', dpi=150 )
-# plt.show()
+ani = SubplotAnimation( dampings, regs, pattern, 501, interval=5, blit=True )
+# ani.save('../gridsearch.mp4', dpi=150 )
+plt.show()
