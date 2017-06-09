@@ -27,7 +27,7 @@ public class GridSearch
 
 		final int nIterations = 2000;
 
-		final String path = "/data/hanslovskyp/forPhilipp/substacks/03/matrix.tif";
+		final String path = "/data/hanslovskyp/forPhilipp/substacks/03/matrix-chopped.tif";
 
 		final RandomAccessibleInterval< FloatType > matrix = ImageJFunctions.wrapReal( new ImagePlus( path ) );
 
@@ -53,7 +53,7 @@ public class GridSearch
 				opts.regularizationType = InferFromMatrix.RegularizationType.BORDER;
 				final double[] startingCoordinates = IntStream.range( 0, ( int ) matrix.dimension( 0 ) ).mapToDouble( i -> i ).toArray();
 				final ListVisitor vis = new ListVisitor();
-				final String basePath = String.format( System.getProperty( "user.home" ) + "/z-spacing-gridsearch/%.1f-%.1f", shiftProportion, reg );
+				final String basePath = String.format( System.getProperty( "user.home" ) + "/z-spacing-gridsearch-chopped/%.1f-%.1f", shiftProportion, reg );
 				final LUTVisitor lutVisitor = new LUTVisitor( basePath, "", "," );
 				lutVisitor.setRelativeFilePattern( "lut/", opts.nIterations, ".csv" );
 				final MatrixVisitor matrixVisitor = new MatrixVisitor( basePath, "", opts.comparisonRange );
