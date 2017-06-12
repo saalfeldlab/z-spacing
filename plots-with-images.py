@@ -42,10 +42,9 @@ RealViews = autoclass( 'net.imglib2.realtransform.RealViews' )
 
 class Experiment( object ):
    
-    def __init__( self, damping, regularization, iterations, base_dir ):
+    def __init__( self, damping, iterations, base_dir ):
         super( Experiment, self ).__init__()
         self.damping = damping
-        self.regularization = regularization
         self.iterations = iterations
         self.base_dir = base_dir
         self.avg_shifts = np.genfromtxt( '%s/average-shifts/shift' % base_dir )
@@ -70,7 +69,8 @@ class Experiment( object ):
 
         target = np.empty( ( self.mat0.shape[ 0 ], self.mat0.shape[ 0 ] ) )
         util.Helpers.burnIn( transformed, util.to_imglib( target ) )
-        return target[ ::-1, ... ]
+        # set to ::-1 if matrix needs to be inversed
+        return target[ ::1, ... ]
 
     def matrix_no_imglib( self, t ):
 
@@ -126,18 +126,20 @@ class DiscreteSlider( widgets.Slider ):
 
 
 class SubplotAnimation():
-    def __init__( self, dampings, regularizations, pattern, iterations, **kwargs ):
+    def __init__( self, dampings, pattern, iterations, **kwargs ):
 
 
 	    
         self.fig = plt.figure( figsize=(15,9))
         # self.fig.suptitle( '0' )
 
-        outer = gridspec.GridSpec( len( dampings ), len( regularizations ), wspace=0.1, hspace=0.3) #, height_ratios=(10,1) )
+        nCols = int( np.ceil( np.sqrt( len( dampings ) ) ) )
+        nRows = int( np.ceil( len( dampings ) / nCols ) )
+
+        outer = gridspec.GridSpec( nRows, nCols, wspace=0.1, hspace=0.3 )
         self.outer = outer
         
         self.sliderax = self.fig.add_axes( [ 0.2, 0.02, 0.6, 0.03 ], axisbg='yellow' )
-        # self.sliderax = plt.Subplot( self.fig, self.outer[ len( regularizations ), : ] )
 
         def make_inner( subplot_spec ):
             inner_grid = gridspec.GridSpecFromSubplotSpec(2, 2, subplot_spec=subplot_spec, height_ratios=(6,1) )
@@ -152,15 +154,14 @@ class SubplotAnimation():
             return ax1, ax2, ax3
 
         self.data =[(
-            Experiment( damping, regularization, iterations, pattern % ( damping, regularization ) ),
-            # self.fig.add_subplot( len( regularizations ), len( dampings ), i0 * len( regularizations ) + ( i1+1 ) ),
-            make_inner( outer[  i1 * len( regularizations ) + ( i0 ) ] ),
+            Experiment( damping, iterations, pattern % ( damping ) ),
+            make_inner( outer[  i1 ] ),
             Line2D( [], [], color='blue', alpha=0.7 ),
             Line2D( [], [], color='cyan', alpha=0.3 ),
             [],
             Line2D( [], [], color='magenta', alpha=0.7, marker=markers.CARETDOWN )
             )
-	        for i1, damping in enumerate( dampings ) for i0, regularization in enumerate( regularizations ) ]
+	        for i1, damping in enumerate( dampings ) ]
 
         n_sections = self.data[ 0 ][ 0 ].lut( 0 ).size
 
@@ -172,6 +173,12 @@ class SubplotAnimation():
 
         min_maxes = np.array( [ ( d[ 0 ].avg_shifts.min(), d[ 0 ].avg_shifts.max() ) for d in self.data ] )
         min_max = ( np.min( min_maxes), np.max( min_maxes ) )
+
+        X, Y = np.meshgrid( np.arange( 0, n_sections ), np.arange( 0, n_sections ) )
+        self.X = X
+        self.Y = Y
+
+        self.lw = 1
 
         for d in self.data:
             d[ 2 ].set_xdata( np.arange( n_sections ) )
@@ -188,7 +195,8 @@ class SubplotAnimation():
             d[ 1 ][ 2 ].set_ylim( *min_max )
             d[ 1 ][ 2 ].add_line( d[ 3 ] )
             d[ 1 ][ 2 ].add_line( d[ 5 ] )
-            d[ 4 ].append( d[ 1 ][ 1 ].imshow( d[ 0 ].matrix( 0 ), cmap=self.cmap ) ) # image.AxesImage( d[ 1 ][ 1 ] ) )
+            d[ 4 ].append( d[ 1 ][ 1 ].contour( X, Y, d[ 0 ].matrix( 0 ), 30, cmap=self.cmap, linewidths=self.lw ) ) # image.AxesImage( d[ 1 ][ 1 ] ) )
+            # d[ 4 ].append( d[ 1 ][ 1 ].imshow( d[ 0 ].matrix( 0 ), cmap=self.cmap ) ) # image.AxesImage( d[ 1 ][ 1 ] ) )
             d[ 1 ][ 1 ].get_xaxis().set_ticks( [] )
             d[ 1 ][ 1 ].get_yaxis().set_ticks( [] )
             d[ 1 ][ 1 ].get_xaxis().set_visible( False )
@@ -196,6 +204,8 @@ class SubplotAnimation():
 
             d[ 1 ][ 0 ].set_aspect( 'equal' )
             d[ 1 ][ 1 ].set_aspect( 'equal' )
+
+            d[ 1 ][ 2 ].set_title( 'parameter=%0.4f' % d[ 0 ].damping )
 
             for ax in d[ 1 ]:
                 plt.sca( ax )
@@ -234,7 +244,12 @@ class SubplotAnimation():
             d[ 5 ].set_xdata( ts )
             d[ 5 ].set_ydata( avgs )
             matrix = d[ 0 ].matrix( framedata )
-            d[ 4 ][ 0 ].set_data( matrix )
+            if d[ 4 ][ 0 ]:
+                for c in d[ 4 ][ 0 ].collections:
+                    c.remove()
+                # d[ 4 ][ 0 ].remove()
+            d[ 4 ][ 0 ] = d[ 1 ][ 1 ].contour( self.X, self.Y, matrix, 20, cmap=self.cmap, linewidths=self.lw )
+            # d[ 4 ][ 0 ].set_data( matrix )
             # d[ 1 ][ 1 ].imshow( matrix, cmap = self.cmap )
 
 
@@ -258,14 +273,13 @@ class SubplotAnimation():
     #         l.set_data([], [])
 
 # pattern = '/home/phil/workspace/z-spacing-graphical-model/run-%.1f-%.1f'
-pattern = os.path.expanduser( '~/z-spacing-gridsearch-chopped/%.1f-%.1f' )
+pattern = os.path.expanduser( '~/z-spacing-gridsearch-chopped-single-parameter/%.4f' )
 
 # dampings = np.arange( 0, 5, 1 ) / 1.0
 # regs = np.arange( 0, 5, 1 ) / 2.0
 
-dampings = [ 0.0, 1.0, 2.0 ]
-regs = [ 0.5, 2.0 ]
+dampings = [ 0.1, 0.18, 0.26, 0.30 ][:]
 
-ani = SubplotAnimation( dampings, regs, pattern, 1101 )
-# ani.save('../gridsearch.mp4', dpi=150 )
+ani = SubplotAnimation( dampings, pattern, 2001 )
+# ani.save('../gridsearch-single-parameter.mp4', dpi=150 )
 plt.show()

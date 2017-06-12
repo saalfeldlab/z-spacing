@@ -20,10 +20,9 @@ import os
 import sys
 
 class Experiment( object ):
-    def __init__( self, damping, regularization, iterations, base_dir ):
+    def __init__( self, damping, iterations, base_dir ):
         super( Experiment, self ).__init__()
         self.damping = damping
-        self.regularization = regularization
         self.iterations = iterations
         self.base_dir = base_dir
         self.avg_shifts = np.genfromtxt( '%s/average-shifts/shift' % base_dir )
@@ -37,7 +36,7 @@ class Experiment( object ):
 
 
 class SubplotAnimation(animation.TimedAnimation):
-    def __init__( self, dampings, regularizations, pattern, iterations, **kwargs ):
+    def __init__( self, dampings, pattern, iterations, **kwargs ):
 
 
 	    
@@ -46,7 +45,11 @@ class SubplotAnimation(animation.TimedAnimation):
 
         total = gridspec.GridSpec( 2, 1, height_ratios = ( 10, 1 ) )
 
-        outer = gridspec.GridSpec( len( dampings ), len( regularizations ), wspace=0.1, hspace=0.3 )
+        nCols = int( np.ceil( np.sqrt( len( dampings ) ) ) )
+        nRows = int( np.ceil( len( dampings ) / nCols ) )
+                             
+
+        outer = gridspec.GridSpec( nRows, nCols, wspace=0.1, hspace=0.3 )
 
         def make_inner( subplot_spec ):
             inner_grid = gridspec.GridSpecFromSubplotSpec(2, 1, subplot_spec=subplot_spec, height_ratios=(2,1) )
@@ -59,14 +62,13 @@ class SubplotAnimation(animation.TimedAnimation):
             return ax1, ax2
 
         self.data =[(
-            Experiment( damping, regularization, iterations, pattern % ( damping, regularization ) ),
-            # self.fig.add_subplot( len( regularizations ), len( dampings ), i0 * len( regularizations ) + ( i1+1 ) ),
-            make_inner( outer[  i1 * len( regularizations ) + ( i0 ) ] ),
+            Experiment( damping, iterations, pattern % ( damping ) ),
+            make_inner( outer[  i1 ] ),
             Line2D( [], [], color='blue', alpha=0.7 ),
             Line2D( [], [], color='cyan', alpha=0.3 ),
             Line2D( [], [], color='magenta', alpha=0.9 )
             )
-	        for i1, damping in enumerate( dampings ) for i0, regularization in enumerate( regularizations ) ]
+	        for i1, damping in enumerate( dampings ) ]
 
         n_sections = self.data[ 0 ][ 0 ].lut( 0 ).size
 
@@ -92,12 +94,7 @@ class SubplotAnimation(animation.TimedAnimation):
             d[ 1 ][ 1 ].add_line( d[ 3 ] )
             d[ 1 ][ 1 ].add_line( d[ 4 ] )
 
-            if d[ 0 ].damping == dampings[ 0 ]:
-                d[ 1 ][ 0 ].set_xlabel( 'reg=%.1f' % d[ 0 ].regularization )
-                d[ 1 ][ 0 ].xaxis.set_label_position( 'top' )
-
-            if d[ 0 ].regularization == regularizations[ 0 ]:
-                d[ 1 ][ 0 ].set_ylabel( '%.1f' % d[ 0 ].damping )
+            d[ 1 ][ 0 ].set_title( 'parameter=%0.4f' % d[ 0 ].damping )
 
         self.t = np.arange( iterations )
 
@@ -138,11 +135,10 @@ class SubplotAnimation(animation.TimedAnimation):
             l.set_data([], [])
 
 # pattern = '/home/phil/workspace/z-spacing-graphical-model/run-%.1f-%.1f'
-pattern = os.path.expanduser( '~/z-spacing-gridsearch-chopped/%.1f-%.1f' )
+pattern = os.path.expanduser( '~/z-spacing-gridsearch-chopped-single-parameter/%.4f' )
 
-dampings = np.arange( 0, 5, 1 ) / 1.0
-regs = np.arange( 0, 5, 1 ) / 2.0
+dampings = np.arange( 0.1, 1.0, 0.04 )
 
-ani = SubplotAnimation( dampings, regs, pattern, 501, interval=5, blit=True )
-# ani.save('../gridsearch.mp4', dpi=150 )
-plt.show()
+ani = SubplotAnimation( dampings, pattern, 2001, interval=20, blit=True )
+ani.save('../gridsearch-chopped-single-parameter.mp4', dpi=150 )
+# plt.show()
