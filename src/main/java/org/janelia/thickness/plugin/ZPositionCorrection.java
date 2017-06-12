@@ -187,7 +187,6 @@ public class ZPositionCorrection implements PlugIn
 		dialog.addMessage( "Optimizer :" );
 		dialog.addNumericField( "outer_iterations :", options.nIterations, 0, 6, "" );
 		dialog.addNumericField( "outer_regularization :", 1.0 - options.shiftProportion, 2, 6, "" );
-		dialog.addNumericField( "distance_regularization", options.pairwisePotentialRegularizer, 2, 6, "" );
 		dialog.addNumericField( "inner_iterations :", options.scalingFactorEstimationIterations, 0, 6, "" );
 		dialog.addNumericField( "inner_regularization :", options.scalingFactorRegularizerWeight, 2, 6, "" );
 		dialog.addCheckbox( " allow_reordering", options.withReorder );
@@ -214,9 +213,7 @@ public class ZPositionCorrection implements PlugIn
 
 		options.comparisonRange = ( int ) dialog.getNextNumber();
 		options.nIterations = ( int ) dialog.getNextNumber();
-		options.shiftProportion = dialog.getNextNumber(); // 1.0 -
-															// dialog.getNextNumber();
-		options.pairwisePotentialRegularizer = dialog.getNextNumber();
+		options.shiftProportion = 1.0 - dialog.getNextNumber();
 		options.scalingFactorEstimationIterations = ( int ) dialog.getNextNumber();
 		options.scalingFactorRegularizerWeight = dialog.getNextNumber();
 		options.withReorder = dialog.getNextBoolean();

@@ -19,9 +19,14 @@ import mpicbg.models.Model;
 import mpicbg.models.NotEnoughDataPointsException;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccess;
+import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.algorithm.gauss3.Gauss3;
+import net.imglib2.exception.IncompatibleTypeException;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.basictypeaccess.array.DoubleArray;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
@@ -276,7 +281,6 @@ public class InferFromMatrix
 					permutedLut, // rewrite interface to use view on permuted
 					// lut? probably not
 					shifts,
-					weightSums,
 					startingCoordinates,
 					permutation.copyToDimension( 1, 1 ),
 					options );
@@ -376,10 +380,9 @@ public class InferFromMatrix
 	public double applyShifts(
 			final double[] coordinates,
 			final double[] shifts,
-			final double[] weightSums,
 			final double[] regularizerCoordinates,
 			final PermutationTransform permutation,
-			final Options options )
+			final Options options ) throws IncompatibleTypeException
 	{
 		double averageShift = 0.0;
 		int averageShiftContributors = 0;
@@ -391,23 +394,22 @@ public class InferFromMatrix
 				interpolateShift( shifts, i );
 				continue;
 			}
-			averageShift += shift;
+			averageShift += Math.abs( shift );
 			averageShiftContributors += 1;
 		}
 
-		averageShift /= averageShiftContributors;
-		if ( averageShiftContributors < 2 )
-			return averageShift;
-		else
-			for ( int i = 0; i < coordinates.length; ++i )
-			{
-				// TODO normalize by local average only instead of average?
-				final double otherShift = averageShift;
-				final double shift = shifts[ i ];
-				final double w = 1.0;
-				final double actualShift = ( w * shift + options.pairwisePotentialRegularizer * otherShift ) / ( w + options.pairwisePotentialRegularizer + options.shiftProportion );
-				coordinates[ i ] += actualShift;
-			}
+		if ( averageShiftContributors > 1 )
+		{
+
+			averageShift /= averageShiftContributors;
+			final ArrayImg< DoubleType, DoubleArray > blub = ArrayImgs.doubles( shifts.clone(), shifts.length );
+			final RandomAccessible< DoubleType > source = Views.extendMirrorSingle( blub );
+
+			Gauss3.gauss( 0.5, source, ArrayImgs.doubles( shifts, shifts.length ) );
+
+			for ( int i = 0; i < shifts.length; ++i )
+				coordinates[ i ] += shifts[ i ] * options.shiftProportion;
+		}
 		return averageShift;
 	}
 

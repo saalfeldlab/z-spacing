@@ -45,7 +45,6 @@ public class Options implements Serializable
 		result.estimateWindowRadius = -1;
 		result.minimumCorrelationValue = 0.0;
 		result.estimateRegularizer = 0.0;
-		result.pairwisePotentialRegularizer = 0.0;
 		return result;
 	}
 
@@ -79,8 +78,6 @@ public class Options implements Serializable
 	public Double minimumCorrelationValue;
 
 	public Double estimateRegularizer;
-
-	public Double pairwisePotentialRegularizer;
 
 	public static Options read( final String filename ) throws JsonSyntaxException, JsonIOException, FileNotFoundException
 	{
