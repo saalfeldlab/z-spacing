@@ -11,7 +11,6 @@ import org.janelia.thickness.lut.LUTRealTransform;
 import org.janelia.thickness.lut.PermutationTransform;
 import org.janelia.utility.MatrixStripConversion;
 import org.janelia.utility.arrays.ArraySortedIndices;
-import org.janelia.utility.arrays.ReplaceNaNs;
 
 import mpicbg.models.AffineModel1D;
 import mpicbg.models.IllDefinedDataPointsException;
@@ -284,8 +283,6 @@ public class InferFromMatrix
 					startingCoordinates,
 					permutation.copyToDimension( 1, 1 ),
 					options );
-
-			ReplaceNaNs.replace( permutedLut );
 
 			if ( !options.withReorder )
 				preventReorder( permutedLut, options ); //
