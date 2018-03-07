@@ -20,7 +20,8 @@ public class MatrixStripConversion
 	public static < T extends Type< T > > RandomAccessibleInterval< T >
 	stripToMatrix( final RandomAccessibleInterval< T > strip, final T dummy )
 	{
-		final ExtendedRandomAccessibleInterval< T, RandomAccessibleInterval< T > > extended = Views.extendValue( strip, dummy );
+//		final ExtendedRandomAccessibleInterval< T, RandomAccessibleInterval< T > > extended = Views.extendValue( strip, dummy );
+		final ExtendedRandomAccessibleInterval< T, RandomAccessibleInterval< T > > extended = Views.extendValue( Views.expandBorder( strip, 1, 1 ), dummy );
 		final AbstractShearTransform tf = new ShearTransform( 2, 0, 1 ).inverse();
 		final long w = strip.dimension( 0 ) / 2;
 		final long h = strip.dimension( 1 );
