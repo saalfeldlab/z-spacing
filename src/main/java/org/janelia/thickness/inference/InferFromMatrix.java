@@ -393,9 +393,12 @@ public class InferFromMatrix
 		for ( int i = 0; i < coordinates.length; ++i )
 		{
 			double val = coordinates[ i ];
-			val += options.shiftProportion * shifts[ i ];
-			val = options.coordinateUpdateRegularizerWeight * regularizerCoordinates[ permutation.applyInverse( i ) ] + inverseCoordinateUpdateRegularizerWeight * val;
-			coordinates[ i ] = val;
+			double shift = shifts[ i ];
+			if ( Double.isFinite( shift ) ) {
+				val += options.shiftProportion * shifts[ i ];
+				val = options.coordinateUpdateRegularizerWeight * regularizerCoordinates[ permutation.applyInverse( i ) ] + inverseCoordinateUpdateRegularizerWeight * val;
+				coordinates[ i ] = val;
+			}
 		}
 
 	}
