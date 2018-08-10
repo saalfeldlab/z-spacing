@@ -50,9 +50,9 @@ public class InferFromMatrix
 		BORDER
 	}
 
-	public static interface Regularizer
+	public interface Regularizer
 	{
-		public void regularize( double[] coordinates, Options options ) throws Exception;
+		void regularize(double[] coordinates, Options options) throws Exception;
 	}
 
 	public static class NoRegularization implements Regularizer
