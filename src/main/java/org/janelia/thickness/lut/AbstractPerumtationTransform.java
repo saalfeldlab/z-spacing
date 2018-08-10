@@ -24,8 +24,6 @@ public abstract class AbstractPerumtationTransform implements
 	 *            must be a bijective permutation over its index set, i.e. for a
 	 *            lut of legnth n, the sorted content the array must be
 	 *            [0,...,n-1] which is the index set of the lut.
-	 * @param numSourceDimensions
-	 * @param numTargetDimensions
 	 */
 	public AbstractPerumtationTransform( final int[] lut )
 	{
