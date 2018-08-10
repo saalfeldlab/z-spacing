@@ -211,7 +211,7 @@ public class InferFromMatrix
 		T nanExtension = Util.getTypeFromInterval( inputMatrix ).createVariable();
 		nanExtension.setReal( Double.NaN );
 
-		final ArrayImg< T, ? > inputScaledStrip = new ArrayImgFactory< T >().create( new long[] { 2 * options.comparisonRange + 1, n }, nanExtension.createVariable() );
+		final ArrayImg< T, ? > inputScaledStrip = new ArrayImgFactory<>( nanExtension.createVariable() ).create( 2 * options.comparisonRange + 1, n );
 		
 		final RandomAccessibleInterval< T > inputScaledMatrix = MatrixStripConversion.stripToMatrix( inputScaledStrip, nanExtension.copy() );
 		for ( Cursor< T > source = Views.flatIterable( MatrixStripConversion.matrixToStrip( inputMatrix, options.comparisonRange, nanExtension.copy() ) ).cursor(), target = Views.flatIterable( inputScaledStrip ).cursor(); source.hasNext(); )
@@ -264,7 +264,7 @@ public class InferFromMatrix
 				visitor.act( iteration, matrix, scaledMatrix, lut, permutationLut, inverse, scalingFactors, correlationFitsStore[ 0 ] );
 
 			Arrays.fill( shiftsArray, 0.0 );
-			Arrays.fill( weightSums, 0.0 );;
+			Arrays.fill( weightSums, 0.0 );
 
 			final double[] shifts = this.getMediatedShifts(
 					matrix,
