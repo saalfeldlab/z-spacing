@@ -33,7 +33,7 @@ public abstract class AbstractLUTGrid implements InvertibleRealTransform
 												// the transform
 
 	/**
-	 * NOT THREADSAFE, AS TO MEMBER 'access' -> THINK ABOUT CHANGING IT!!
+	 * NOT THREADSAFE, AS TO MEMBER 'access' -- THINK ABOUT CHANGING IT!!
 	 */
 	protected final int lutMaxIndex; // max index of the look-up table
 
