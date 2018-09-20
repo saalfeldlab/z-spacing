@@ -18,6 +18,7 @@ import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.util.Intervals;
 import net.imglib2.util.Pair;
+import net.imglib2.util.Util;
 import net.imglib2.util.ValuePair;
 import org.janelia.thickness.inference.InferFromMatrix;
 import org.janelia.thickness.inference.Options;
@@ -668,7 +669,7 @@ public class ZPositionCorrection implements PlugIn
 			final double displayRangeMax = stackImp.getDisplayRangeMax();
 			final RandomAccessibleInterval< FloatType > stack = ImageJFunctions.wrapFloat( stackImp );
 			// TODO use more appropriate img type
-			final ArrayImg<FloatType, FloatArray> result = ArrayImgs.floats(Intervals.dimensionsAsLongArray(stack));
+			final RandomAccessibleInterval<FloatType> result = Util.getSuitableImgFactory(stack, new FloatType()).create(stack);
 
 			final SingleDimensionPermutationTransform permutation1D = new SingleDimensionPermutationTransform( permutationArray, 3, 3, 2 );
 			final SingleDimensionLUTRealTransform lut1D = new SingleDimensionLUTRealTransform( sortedTransform, 3, 3, 2 );
