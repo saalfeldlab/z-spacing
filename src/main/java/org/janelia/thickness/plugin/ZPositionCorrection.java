@@ -13,6 +13,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import ij.measure.Calibration;
+import net.imglib2.img.array.ArrayImg;
+import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.basictypeaccess.array.FloatArray;
+import net.imglib2.util.Intervals;
+import net.imglib2.util.Pair;
+import net.imglib2.util.ValuePair;
 import org.janelia.thickness.inference.InferFromMatrix;
 import org.janelia.thickness.inference.Options;
 import org.janelia.thickness.inference.fits.AbstractCorrelationFit;
@@ -267,7 +273,6 @@ public class ZPositionCorrection implements PlugIn
 		{
 
 			IJ.log( Arrays.toString( transform ) );
-			boolean showTransformedStack = true;
 
 			final double[] sortedTransform = transform.clone();
 
@@ -333,49 +338,17 @@ public class ZPositionCorrection implements PlugIn
 			}
 
 			double stackXScale = inputIsMatrix ? 1.0 : input.getCalibration().pixelWidth;
-			double stackYSacle = inputIsMatrix ? 1.0 : input.getCalibration().pixelHeight;
+			double stackYScale = inputIsMatrix ? 1.0 : input.getCalibration().pixelHeight;
 			double stackZScale = inputIsMatrix ? 1.0 : input.getCalibration().pixelDepth;
-			final GenericDialogPlus renderDialog = new GenericDialogPlus( "Show result." );
-			renderDialog.addCheckbox( "Show transformed stack?", showTransformedStack );
-			if ( inputIsMatrix )
-				renderDialog.addFileField( "Input path (use current image if empty)", "" );
-			renderDialog.addNumericField( "voxel size: x", stackXScale, 4 );
-			renderDialog.addNumericField( "voxel size: y", stackYSacle, 4 );
-			renderDialog.addNumericField( "voxel size: z", stackZScale, 4 );
-			renderDialog.showDialog();
+			final boolean showTransformedStack = true;
+			final Pair<ImagePlus, double[]> inputAndVoxelSizeBdv = askShowAsBdv(inputIsMatrix ? null : input, permutationArray, sortedTransform, stackXScale, stackYScale, stackZScale, showTransformedStack);
 
-			if ( renderDialog.wasCanceled() )
-				return;
+			stackXScale = inputAndVoxelSizeBdv.getB()[0];
+			stackYScale = inputAndVoxelSizeBdv.getB()[1];
+			stackZScale = inputAndVoxelSizeBdv.getB()[2];
 
-			showTransformedStack = renderDialog.getNextBoolean();
-			stackXScale = renderDialog.getNextNumber();
-			stackYSacle = renderDialog.getNextNumber();
-			stackZScale = renderDialog.getNextNumber();
-
-			if ( showTransformedStack )
-			{
-				final ImagePlus stackImp = inputIsMatrix ? getFileFromOption( renderDialog.getNextString() ) : input;
-				new ImageConverter( stackImp ).convertToGray32();
-				final double displayRangeMin = stackImp.getDisplayRangeMin();
-				final double displayRangeMax = stackImp.getDisplayRangeMax();
-				final RandomAccessibleInterval< FloatType > stack = ImageJFunctions.wrapFloat( stackImp );
-
-				final SingleDimensionPermutationTransform permutation1D = new SingleDimensionPermutationTransform( permutationArray, 3, 3, 2 );
-				final SingleDimensionLUTRealTransform lut1D = new SingleDimensionLUTRealTransform( sortedTransform, 3, 3, 2 );
-
-				final RealRandomAccessible< FloatType > transformed = generateTransformed( stack, permutation1D, lut1D, new FloatType( Float.NaN ) );
-				final Scale3D scaleTransform = new Scale3D( stackXScale, stackYSacle, stackZScale );
-				final RealTransformRealRandomAccessible< FloatType, InverseRealTransform > scaled = RealViews.transformReal( transformed, scaleTransform );
-				final long[] dim = new long[ stack.numDimensions() ];
-				stack.dimensions( dim );
-				dim[ 0 ] *= stackXScale;
-				dim[ 1 ] *= stackYSacle;
-				dim[ 2 ] *= stackZScale;
-				final Bdv bdv = BdvFunctions.show( scaled, new FinalInterval( dim ), "Transformed stack.", Bdv.options().axisOrder( AxisOrder.XYZ ) );
-				for ( final MinMaxGroup minMax : bdv.getBdvHandle().getSetupAssignments().getMinMaxGroups() )
-					minMax.setRange( displayRangeMin, displayRangeMax );
-				IJ.log( "Showing warped image stack." );
-			}
+			final boolean renderIntoImagePlus = true;
+			final Pair<ImagePlus, double[]> inputAndVoxelSizeRenderd = askRenderAsImgPlus(inputIsMatrix ? null : input, permutationArray, sortedTransform, stackXScale, stackYScale, stackZScale, renderIntoImagePlus);
 
 		}
 
@@ -602,6 +575,126 @@ public class ZPositionCorrection implements PlugIn
 		}
 
 		return stack;
+	}
+
+	private static Pair<ImagePlus,double[]> askShowAsBdv(
+			final ImagePlus input,
+			final int[] permutationArray,
+			final double[] sortedTransform,
+			double stackXScale,
+			double stackYScale,
+			double stackZScale,
+			boolean showTransformedStack)
+	{
+
+		final GenericDialogPlus renderDialog = new GenericDialogPlus( "Show result." );
+		renderDialog.addCheckbox( "Show transformed stack?", showTransformedStack );
+		if ( input == null )
+			renderDialog.addFileField( "Input path (use current image if empty)", "" );
+		renderDialog.addNumericField( "voxel size: x", stackXScale, 4 );
+		renderDialog.addNumericField( "voxel size: y", stackYScale, 4 );
+		renderDialog.addNumericField( "voxel size: z", stackZScale, 4 );
+		renderDialog.showDialog();
+
+		if ( renderDialog.wasCanceled() )
+			return new ValuePair<>(input, new double[] {stackXScale, stackYScale, stackZScale});
+
+		showTransformedStack = renderDialog.getNextBoolean();
+		stackXScale = renderDialog.getNextNumber();
+		stackYScale = renderDialog.getNextNumber();
+		stackZScale = renderDialog.getNextNumber();
+
+		if ( showTransformedStack )
+		{
+			final ImagePlus stackImp = input == null ? getFileFromOption( renderDialog.getNextString() ) : input;
+			new ImageConverter( stackImp ).convertToGray32();
+			final double displayRangeMin = stackImp.getDisplayRangeMin();
+			final double displayRangeMax = stackImp.getDisplayRangeMax();
+			final RandomAccessibleInterval< FloatType > stack = ImageJFunctions.wrapFloat( stackImp );
+
+			final SingleDimensionPermutationTransform permutation1D = new SingleDimensionPermutationTransform( permutationArray, 3, 3, 2 );
+			final SingleDimensionLUTRealTransform lut1D = new SingleDimensionLUTRealTransform( sortedTransform, 3, 3, 2 );
+
+			final RealRandomAccessible< FloatType > transformed = generateTransformed( stack, permutation1D, lut1D, new FloatType( Float.NaN ) );
+			final Scale3D scaleTransform = new Scale3D( stackXScale, stackYScale, stackZScale );
+			final RealTransformRealRandomAccessible< FloatType, InverseRealTransform > scaled = RealViews.transformReal( transformed, scaleTransform );
+			final long[] dim = new long[ stack.numDimensions() ];
+			stack.dimensions( dim );
+			dim[ 0 ] *= stackXScale;
+			dim[ 1 ] *= stackYScale;
+			dim[ 2 ] *= stackZScale;
+			final Bdv bdv = BdvFunctions.show( scaled, new FinalInterval( dim ), "Transformed stack.", Bdv.options().axisOrder( AxisOrder.XYZ ) );
+			for ( final MinMaxGroup minMax : bdv.getBdvHandle().getSetupAssignments().getMinMaxGroups() )
+				minMax.setRange( displayRangeMin, displayRangeMax );
+			IJ.log( "Showing warped image stack." );
+			return new ValuePair<>(stackImp, new double[] {stackXScale, stackYScale, stackZScale});
+		}
+		return new ValuePair<>(input, new double[] {stackXScale, stackYScale, stackZScale});
+	}
+
+	private static Pair<ImagePlus, double[]> askRenderAsImgPlus(
+			final ImagePlus input,
+			final int[] permutationArray,
+			final double[] sortedTransform,
+			double stackXScale,
+			double stackYScale,
+			double stackZScale,
+			boolean doRenderIntoImgPlus
+	)
+	{
+
+		final GenericDialogPlus renderDialog = new GenericDialogPlus( "Show result." );
+		renderDialog.addCheckbox( "Render into img plus?", doRenderIntoImgPlus );
+		if ( input == null )
+			renderDialog.addFileField( "Input path (use current image if empty)", "" );
+		renderDialog.addNumericField( "voxel size: x", stackXScale, 4 );
+		renderDialog.addNumericField( "voxel size: y", stackYScale, 4 );
+		renderDialog.addNumericField( "voxel size: z", stackZScale, 4 );
+		renderDialog.showDialog();
+
+		if ( renderDialog.wasCanceled() )
+			return new ValuePair<>(input, new double[] {stackXScale, stackYScale, stackZScale});
+
+		doRenderIntoImgPlus = renderDialog.getNextBoolean();
+		stackXScale = renderDialog.getNextNumber();
+		stackYScale = renderDialog.getNextNumber();
+		stackZScale = renderDialog.getNextNumber();
+
+		if ( doRenderIntoImgPlus )
+		{
+			final ImagePlus stackImp = input == null ? getFileFromOption( renderDialog.getNextString() ) : input;
+			new ImageConverter( stackImp ).convertToGray32();
+			final double displayRangeMin = stackImp.getDisplayRangeMin();
+			final double displayRangeMax = stackImp.getDisplayRangeMax();
+			final RandomAccessibleInterval< FloatType > stack = ImageJFunctions.wrapFloat( stackImp );
+			// TODO use more appropriate img type
+			final ArrayImg<FloatType, FloatArray> result = ArrayImgs.floats(Intervals.dimensionsAsLongArray(stack));
+
+			final SingleDimensionPermutationTransform permutation1D = new SingleDimensionPermutationTransform( permutationArray, 3, 3, 2 );
+			final SingleDimensionLUTRealTransform lut1D = new SingleDimensionLUTRealTransform( sortedTransform, 3, 3, 2 );
+
+			final RealRandomAccessible< FloatType > transformed = generateTransformed( stack, permutation1D, lut1D, new FloatType( Float.NaN ) );
+
+			IJ.log( "Rendering warped image into stack." );
+
+			Views.interval(Views.pair(Views.raster(transformed), result), result).forEach(p -> p.getB().set(p.getA()));
+
+			// TODO how can we avoid duplicate yet still set dimensions?
+			// TODO ImageJFunctions.wrap(...).setDimensions throws NPE
+			final ImagePlus imp = ImageJFunctions.wrap(result, "z-spacing warped stack").duplicate();
+			imp.show();
+			imp.setDisplayRange(displayRangeMin, displayRangeMax);
+			final Calibration calibration = stackImp.getCalibration().copy();
+			calibration.pixelWidth = stackXScale;
+			calibration.pixelHeight = stackYScale;
+			calibration.pixelDepth = stackZScale;
+			imp.setDimensions(1, (int) stack.dimension(2), 1);
+			imp.setCalibration(calibration);
+
+			IJ.log( "Rendered warped image stack." );
+			return new ValuePair<>(imp, new double[] {stackXScale, stackYScale, stackXScale});
+		}
+		return new ValuePair<>(input, new double[] {stackXScale, stackYScale, stackZScale});
 	}
 
 }
