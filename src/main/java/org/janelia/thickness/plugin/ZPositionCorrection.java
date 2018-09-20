@@ -12,6 +12,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import ij.measure.Calibration;
 import org.janelia.thickness.inference.InferFromMatrix;
 import org.janelia.thickness.inference.Options;
 import org.janelia.thickness.inference.fits.AbstractCorrelationFit;
@@ -266,7 +267,7 @@ public class ZPositionCorrection implements PlugIn
 		{
 
 			IJ.log( Arrays.toString( transform ) );
-			boolean showTransformedStack = false;
+			boolean showTransformedStack = true;
 
 			final double[] sortedTransform = transform.clone();
 
@@ -331,18 +332,24 @@ public class ZPositionCorrection implements PlugIn
 				}
 			}
 
-			double stackZScale = 1.0;
+			double stackXScale = inputIsMatrix ? 1.0 : input.getCalibration().pixelWidth;
+			double stackYSacle = inputIsMatrix ? 1.0 : input.getCalibration().pixelHeight;
+			double stackZScale = inputIsMatrix ? 1.0 : input.getCalibration().pixelDepth;
 			final GenericDialogPlus renderDialog = new GenericDialogPlus( "Show result." );
 			renderDialog.addCheckbox( "Show transformed stack?", showTransformedStack );
 			if ( inputIsMatrix )
 				renderDialog.addFileField( "Input path (use current image if empty)", "" );
-			renderDialog.addNumericField( "Scale result stack", stackZScale, 4 );
+			renderDialog.addNumericField( "voxel size: x", stackXScale, 4 );
+			renderDialog.addNumericField( "voxel size: y", stackYSacle, 4 );
+			renderDialog.addNumericField( "voxel size: z", stackZScale, 4 );
 			renderDialog.showDialog();
 
 			if ( renderDialog.wasCanceled() )
 				return;
 
 			showTransformedStack = renderDialog.getNextBoolean();
+			stackXScale = renderDialog.getNextNumber();
+			stackYSacle = renderDialog.getNextNumber();
 			stackZScale = renderDialog.getNextNumber();
 
 			if ( showTransformedStack )
@@ -357,10 +364,12 @@ public class ZPositionCorrection implements PlugIn
 				final SingleDimensionLUTRealTransform lut1D = new SingleDimensionLUTRealTransform( sortedTransform, 3, 3, 2 );
 
 				final RealRandomAccessible< FloatType > transformed = generateTransformed( stack, permutation1D, lut1D, new FloatType( Float.NaN ) );
-				final Scale3D scaleTransform = new Scale3D( 1.0, 1.0, stackZScale );
+				final Scale3D scaleTransform = new Scale3D( stackXScale, stackYSacle, stackZScale );
 				final RealTransformRealRandomAccessible< FloatType, InverseRealTransform > scaled = RealViews.transformReal( transformed, scaleTransform );
 				final long[] dim = new long[ stack.numDimensions() ];
 				stack.dimensions( dim );
+				dim[ 0 ] *= stackXScale;
+				dim[ 1 ] *= stackYSacle;
 				dim[ 2 ] *= stackZScale;
 				final Bdv bdv = BdvFunctions.show( scaled, new FinalInterval( dim ), "Transformed stack.", Bdv.options().axisOrder( AxisOrder.XYZ ) );
 				for ( final MinMaxGroup minMax : bdv.getBdvHandle().getSetupAssignments().getMinMaxGroups() )
@@ -424,8 +433,13 @@ public class ZPositionCorrection implements PlugIn
 	{
 		new ImageJ();
 //		final ImagePlus imp = new ImagePlus( "/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/data/data.tif" );
-		final ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/forPhilipp/substacks/03/data/" );
-//		final ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/davi_toy_set/data/seq" );
+//		final ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/forPhilipp/substacks/03/data/" );
+		final ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/davi_toy_set/data/seq" );
+		final Calibration calibration = imp.getCalibration().copy();
+		calibration.pixelWidth = 4.0;
+		calibration.pixelHeight = 4.0;
+		calibration.pixelDepth = 40.0;
+		imp.setCalibration(calibration);
 //		final ImagePlus imp = new ImagePlus( "/data/hanslovskyp/strip-example-small.tif" );
 		imp.show();
 		new ZPositionCorrection().run( "" );
