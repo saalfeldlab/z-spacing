@@ -79,7 +79,7 @@ public class ShiftCoordinates
 						lut.applyInverse( reference, reference );
 
 						// reference[0] > halfRange || ??
-						if ( !( reference[ 0 ] == Double.MAX_VALUE || reference[ 0 ] == -Double.MAX_VALUE ) )
+						if ( Double.isFinite( reference[ 0 ] ) && !( reference[ 0 ] == Double.MAX_VALUE || reference[ 0 ] == -Double.MAX_VALUE ) )
 						{
 
 							// rel: negative coordinates of k wrt to local
@@ -99,7 +99,7 @@ public class ShiftCoordinates
 					corrAccess2.setPosition( down, 0 );
 
 					final double measurement = corrAccess2.get().getRealDouble();
-					if ( Double.isNaN( measurement ) || measurement <= options.minimumCorrelationValue || options.forceMonotonicity && measurement >= minMeasurement2 )
+					if ( Double.isFinite( reference[ 0 ] ) && Double.isNaN( measurement ) || measurement <= options.minimumCorrelationValue || options.forceMonotonicity && measurement >= minMeasurement2 )
 					{
 
 					}

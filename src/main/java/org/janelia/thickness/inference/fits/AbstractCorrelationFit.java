@@ -3,9 +3,11 @@ package org.janelia.thickness.inference.fits;
 import org.janelia.thickness.inference.Options;
 import org.janelia.thickness.lut.AbstractLUTRealTransform;
 
+import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
+import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.realtransform.InverseRealTransform;
 import net.imglib2.realtransform.RealTransformRealRandomAccessible;
@@ -24,14 +26,15 @@ public abstract class AbstractCorrelationFit
 			final double[] coordinates,
 			final AbstractLUTRealTransform transform,
 			final RandomAccessibleInterval< W > estimateWeightMatrix,
-			final Options options )
+			final Options options,
+			InterpolatorFactory< T, RandomAccessible< T > > interpolatorFactory )
 	{
 		final int range = options.comparisonRange;
 		final boolean forceMonotonicity = options.forceMonotonicity;
 
 		final T correlationsNaNExtension = correlations.randomAccess().get().copy();
 		correlationsNaNExtension.setReal( Double.NaN );
-		final RealRandomAccessible< T > extendedInterpolatedCorrelations = Views.interpolate( Views.extendValue( correlations, correlationsNaNExtension ), new NLinearInterpolatorFactory<>() );
+		final RealRandomAccessible< T > extendedInterpolatedCorrelations = Views.interpolate( Views.extendValue( correlations, correlationsNaNExtension ), interpolatorFactory );
 
 		final RealTransformRealRandomAccessible< T, InverseRealTransform > transformedCorrelations = RealViews.transformReal( extendedInterpolatedCorrelations, transform );
 
@@ -86,6 +89,7 @@ public abstract class AbstractCorrelationFit
 
 	protected abstract void init( int size );
 
+	// TODO change return type to RandomAccessibleInterval< RealComposite< DoubleType > >
 	protected abstract RandomAccessibleInterval< double[] > estimate( int size );
 
 }

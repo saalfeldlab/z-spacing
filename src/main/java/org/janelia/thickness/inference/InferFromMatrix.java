@@ -22,10 +22,13 @@ import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
+import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.util.ConstantUtils;
+import net.imglib2.util.Util;
 import net.imglib2.view.IntervalView;
 import net.imglib2.view.TransformView;
 import net.imglib2.view.Views;
@@ -47,9 +50,9 @@ public class InferFromMatrix
 		BORDER
 	}
 
-	public static interface Regularizer
+	public interface Regularizer
 	{
-		public void regularize( double[] coordinates, Options options ) throws Exception;
+		void regularize(double[] coordinates, Options options) throws Exception;
 	}
 
 	public static class NoRegularization implements Regularizer
@@ -198,16 +201,20 @@ public class InferFromMatrix
 		final int[] permutationLut = new int[ n ];
 		final int[] inverse = permutationLut.clone();
 		final int nMatrixDim = inputMatrix.numDimensions();
+		@SuppressWarnings( "unchecked" )
 		final RandomAccessibleInterval< double[] >[] correlationFitsStore = new RandomAccessibleInterval[] { null };
 
 		double[] permutedLut = lut.clone(); // sorted lut
 		final double[] scalingFactorsPrevious = scalingFactors.clone();
 		ArraySortedIndices.sort( permutedLut, permutationLut, inverse );
 
-		final ArrayImg< T, ? > inputScaledStrip = new ArrayImgFactory< T >().create( new long[] { 2 * options.comparisonRange + 1, n }, inputMatrix.randomAccess().get() );
+		T nanExtension = Util.getTypeFromInterval( inputMatrix ).createVariable();
+		nanExtension.setReal( Double.NaN );
 
-		final RandomAccessibleInterval< T > inputScaledMatrix = MatrixStripConversion.stripToMatrix( inputScaledStrip, inputMatrix.randomAccess().get() );
-		for ( Cursor< T > source = Views.flatIterable( inputMatrix ).cursor(), target = Views.flatIterable( inputScaledMatrix ).cursor(); source.hasNext(); )
+		final ArrayImg< T, ? > inputScaledStrip = new ArrayImgFactory<>( nanExtension.createVariable() ).create( 2 * options.comparisonRange + 1, n );
+		
+		final RandomAccessibleInterval< T > inputScaledMatrix = MatrixStripConversion.stripToMatrix( inputScaledStrip, nanExtension.copy() );
+		for ( Cursor< T > source = Views.flatIterable( MatrixStripConversion.matrixToStrip( inputMatrix, options.comparisonRange, nanExtension.copy() ) ).cursor(), target = Views.flatIterable( inputScaledStrip ).cursor(); source.hasNext(); )
 			target.next().set( source.next() );
 
 		final Regularizer regularizer;
@@ -257,7 +264,7 @@ public class InferFromMatrix
 				visitor.act( iteration, matrix, scaledMatrix, lut, permutationLut, inverse, scalingFactors, correlationFitsStore[ 0 ] );
 
 			Arrays.fill( shiftsArray, 0.0 );
-			Arrays.fill( weightSums, 0.0 );;
+			Arrays.fill( weightSums, 0.0 );
 
 			final double[] shifts = this.getMediatedShifts(
 					matrix,
@@ -322,8 +329,9 @@ public class InferFromMatrix
 
 		// use scaled matrix
 		// TODO about 1/4 of runtime happens here
+		boolean isIdentity = isIdentity( lut );
 		final RandomAccessibleInterval< double[] > fits =
-				correlationFit.estimateFromMatrix( scaledMatrix, lut, transform, estimateWeightMatrix, options );
+				correlationFit.estimateFromMatrix( scaledMatrix, lut, transform, estimateWeightMatrix, options, isIdentity ? new NearestNeighborInterpolatorFactory<>() : new NLinearInterpolatorFactory<>() );
 		correlationFitsStore[ 0 ] = fits;
 
 		// use original matrix to estimate scaling factors
@@ -385,9 +393,12 @@ public class InferFromMatrix
 		for ( int i = 0; i < coordinates.length; ++i )
 		{
 			double val = coordinates[ i ];
-			val += options.shiftProportion * shifts[ i ];
-			val = options.coordinateUpdateRegularizerWeight * regularizerCoordinates[ permutation.applyInverse( i ) ] + inverseCoordinateUpdateRegularizerWeight * val;
-			coordinates[ i ] = val;
+			double shift = shifts[ i ];
+			if ( Double.isFinite( shift ) ) {
+				val += options.shiftProportion * shifts[ i ];
+				val = options.coordinateUpdateRegularizerWeight * regularizerCoordinates[ permutation.applyInverse( i ) ] + inverseCoordinateUpdateRegularizerWeight * val;
+				coordinates[ i ] = val;
+			}
 		}
 
 	}
@@ -445,5 +456,15 @@ public class InferFromMatrix
 				}
 			}
 		}
+	}
+	
+	public static boolean isIdentity( double[] mapping ) {
+		for ( int i = 0; i < mapping.length; ++i )
+		{
+			double v = mapping[ i ];
+			if ( Math.round( v ) != v || i != v )
+				return false;
+		}
+		return true;
 	}
 }

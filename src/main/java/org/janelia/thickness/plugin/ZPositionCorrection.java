@@ -1,7 +1,8 @@
 package org.janelia.thickness.plugin;
 
 import java.awt.Checkbox;
-import java.io.File;
+import java.io.*;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -268,6 +269,7 @@ public class ZPositionCorrection implements PlugIn
 			boolean showTransformedStack = false;
 
 			final double[] sortedTransform = transform.clone();
+
 			final int[] forward = new int[ sortedTransform.length ];
 			final int[] backward = new int[ sortedTransform.length ];
 
@@ -289,6 +291,45 @@ public class ZPositionCorrection implements PlugIn
 			final RandomAccessibleInterval< DoubleType > transformedMatrix = isStrip ? MatrixStripConversion.matrixToStrip( transformedStripOrMatrix, options.comparisonRange, new DoubleType() ) : transformedStripOrMatrix;
 
 			ImageJFunctions.show( transformedMatrix, "Warped matrix" );
+
+			final GenericDialogPlus saveAsCsvDialog = new GenericDialogPlus( "Save transform" );
+			saveAsCsvDialog.addFileField( "Store transform as CSV", null );
+			saveAsCsvDialog.showDialog();
+
+			if ( saveAsCsvDialog.wasOKed() )
+			{
+				final String csvPath = saveAsCsvDialog.getNextString();
+				final File f = new File(csvPath);
+				try {
+					f.createNewFile();
+					try (
+							final FileOutputStream fos = new FileOutputStream( f );
+							final BufferedOutputStream bos = new BufferedOutputStream( fos );
+							final DataOutputStream dos = new DataOutputStream( bos ) ) {
+						final StringBuilder sb = new StringBuilder( "z-index,mapping,sorted mapping,forward permutation,backward permutation" );
+						for ( int i = 0; i < forward.length; ++i )
+						{
+							sb
+									.append( "\n" )
+									.append( i )
+									.append( "," )
+									.append( transform[ i ] )
+									.append( "," )
+									.append( sortedTransform[ i ] )
+									.append( "," )
+									.append( forward[ i ] )
+									.append( "," )
+									.append( backward[ i ] )
+									;
+						}
+						dos.writeBytes( sb.toString() );
+					}
+				}
+				catch( Exception e ) {
+					IJ.log( "Unable to save transform at: " + csvPath );
+					IJ.handleException(new IOException( "Unable to save transform at: " + csvPath, e ) );
+				}
+			}
 
 			double stackZScale = 1.0;
 			final GenericDialogPlus renderDialog = new GenericDialogPlus( "Show result." );

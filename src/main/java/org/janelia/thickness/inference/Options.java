@@ -3,14 +3,13 @@
  */
 package org.janelia.thickness.inference;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.Field;
-
-import org.apache.commons.io.FileUtils;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
@@ -40,11 +39,9 @@ public class Options implements Serializable
 		result.regularizationType = InferFromMatrix.RegularizationType.BORDER;
 		result.scalingFactorEstimationIterations = 10;
 		result.withReorder = true;
-		result.nThreads = Runtime.getRuntime().availableProcessors();
 		result.forceMonotonicity = false;
 		result.estimateWindowRadius = -1;
 		result.minimumCorrelationValue = 0.0;
-		result.estimateRegularizer = 0.0;
 		return result;
 	}
 
@@ -69,15 +66,11 @@ public class Options implements Serializable
 
 	public Boolean withReorder;
 
-	public Integer nThreads;
-
 	public Boolean forceMonotonicity;
 
 	public Integer estimateWindowRadius;
 
 	public Double minimumCorrelationValue;
-
-	public Double estimateRegularizer;
 
 	public static Options read( final String filename ) throws JsonSyntaxException, JsonIOException, FileNotFoundException
 	{
@@ -149,7 +142,7 @@ public class Options implements Serializable
 	{
 		final Gson gson = new Gson();
 		final String json = gson.toJson( this );
-		FileUtils.writeStringToFile( new File( filename ), json );
+		Files.write( Paths.get( filename), json.getBytes() );
 	}
 
 	@Override
@@ -183,14 +176,6 @@ public class Options implements Serializable
 		}
 		else
 			return false;
-	}
-
-	public static void main( final String[] args ) throws JsonSyntaxException, JsonIOException, FileNotFoundException
-	{
-		final String fn = "/data/hanslovskyp/khaled_2014_10_24/range=5_2014-10-27 11:22:17.651999/options";
-		final Options options = Options.read( fn );
-		System.out.println( options.toString() );
-		System.out.println( Options.generateDefaultOptions().toString() );
 	}
 
 }
