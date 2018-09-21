@@ -272,7 +272,7 @@ public class ZPositionCorrection implements PlugIn
 		{
 			e.printStackTrace();
 		}
-		System.out.println( options.toString() );
+		IJ.log( options.toString() );
 
 		if ( estimatedSuccessfully )
 		{
