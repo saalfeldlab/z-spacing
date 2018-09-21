@@ -1,18 +1,49 @@
 package org.janelia.thickness.plugin;
 
-import java.awt.Checkbox;
-import java.io.*;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Vector;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
+import bdv.tools.brightness.MinMaxGroup;
+import bdv.util.AxisOrder;
+import bdv.util.Bdv;
+import bdv.util.BdvFunctions;
+import fiji.util.gui.GenericDialogPlus;
+import ij.IJ;
+import ij.ImageJ;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.gui.GenericDialog;
 import ij.measure.Calibration;
+import ij.plugin.FolderOpener;
+import ij.plugin.PlugIn;
+import ij.process.FloatProcessor;
+import ij.process.FloatStatistics;
+import ij.process.ImageConverter;
+import ij.process.ImageProcessor;
+import mpicbg.ij.util.Filter;
+import mpicbg.models.IllDefinedDataPointsException;
+import mpicbg.models.NotEnoughDataPointsException;
+import net.imglib2.FinalInterval;
+import net.imglib2.RandomAccess;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.RealRandomAccessible;
+import net.imglib2.converter.Converters;
+import net.imglib2.converter.RealDoubleConverter;
+import net.imglib2.converter.read.ConvertedRandomAccessibleInterval;
+import net.imglib2.img.display.imagej.ImageJFunctions;
+import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
+import net.imglib2.realtransform.InverseRealTransform;
+import net.imglib2.realtransform.InvertibleRealTransform;
+import net.imglib2.realtransform.RealTransformRealRandomAccessible;
+import net.imglib2.realtransform.RealViews;
+import net.imglib2.realtransform.Scale3D;
+import net.imglib2.transform.Transform;
+import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.real.DoubleType;
+import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Pair;
+import net.imglib2.util.Util;
+import net.imglib2.util.ValuePair;
+import net.imglib2.view.IntervalView;
+import net.imglib2.view.TransformView;
+import net.imglib2.view.Views;
 import org.janelia.thickness.inference.InferFromMatrix;
 import org.janelia.thickness.inference.Options;
 import org.janelia.thickness.inference.fits.AbstractCorrelationFit;
@@ -32,44 +63,20 @@ import org.janelia.thickness.lut.SingleDimensionPermutationTransform;
 import org.janelia.utility.MatrixStripConversion;
 import org.janelia.utility.arrays.ArraySortedIndices;
 
-import bdv.tools.brightness.MinMaxGroup;
-import bdv.util.AxisOrder;
-import bdv.util.Bdv;
-import bdv.util.BdvFunctions;
-import fiji.util.gui.GenericDialogPlus;
-import ij.IJ;
-import ij.ImageJ;
-import ij.ImagePlus;
-import ij.ImageStack;
-import ij.gui.GenericDialog;
-import ij.plugin.FolderOpener;
-import ij.plugin.PlugIn;
-import ij.process.FloatProcessor;
-import ij.process.FloatStatistics;
-import ij.process.ImageConverter;
-import mpicbg.ij.util.Filter;
-import mpicbg.models.IllDefinedDataPointsException;
-import mpicbg.models.NotEnoughDataPointsException;
-import net.imglib2.FinalInterval;
-import net.imglib2.RandomAccess;
-import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.RealRandomAccessible;
-import net.imglib2.converter.RealDoubleConverter;
-import net.imglib2.converter.read.ConvertedRandomAccessibleInterval;
-import net.imglib2.img.display.imagej.ImageJFunctions;
-import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
-import net.imglib2.realtransform.InverseRealTransform;
-import net.imglib2.realtransform.InvertibleRealTransform;
-import net.imglib2.realtransform.RealTransformRealRandomAccessible;
-import net.imglib2.realtransform.RealViews;
-import net.imglib2.realtransform.Scale3D;
-import net.imglib2.transform.Transform;
-import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.real.DoubleType;
-import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.view.IntervalView;
-import net.imglib2.view.TransformView;
-import net.imglib2.view.Views;
+import java.awt.Checkbox;
+import java.io.BufferedOutputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Vector;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * @author Philipp Hanslovsky &lt;hanslovskyp@janelia.hhmi.org&gt;
@@ -261,13 +268,12 @@ public class ZPositionCorrection implements PlugIn
 		{
 			e.printStackTrace();
 		}
-		System.out.println( options.toString() );
+		IJ.log( options.toString() );
 
 		if ( estimatedSuccessfully )
 		{
 
 			IJ.log( Arrays.toString( transform ) );
-			boolean showTransformedStack = true;
 
 			final double[] sortedTransform = transform.clone();
 
@@ -300,7 +306,7 @@ public class ZPositionCorrection implements PlugIn
 			if ( saveAsCsvDialog.wasOKed() )
 			{
 				final String csvPath = saveAsCsvDialog.getNextString();
-				final File f = new File(csvPath);
+				final File f = new File( csvPath );
 				try {
 					f.createNewFile();
 					try (
@@ -328,54 +334,22 @@ public class ZPositionCorrection implements PlugIn
 				}
 				catch( Exception e ) {
 					IJ.log( "Unable to save transform at: " + csvPath );
-					IJ.handleException(new IOException( "Unable to save transform at: " + csvPath, e ) );
+					IJ.handleException( new IOException( "Unable to save transform at: " + csvPath, e ) );
 				}
 			}
 
 			double stackXScale = inputIsMatrix ? 1.0 : input.getCalibration().pixelWidth;
-			double stackYSacle = inputIsMatrix ? 1.0 : input.getCalibration().pixelHeight;
+			double stackYScale = inputIsMatrix ? 1.0 : input.getCalibration().pixelHeight;
 			double stackZScale = inputIsMatrix ? 1.0 : input.getCalibration().pixelDepth;
-			final GenericDialogPlus renderDialog = new GenericDialogPlus( "Show result." );
-			renderDialog.addCheckbox( "Show transformed stack?", showTransformedStack );
-			if ( inputIsMatrix )
-				renderDialog.addFileField( "Input path (use current image if empty)", "" );
-			renderDialog.addNumericField( "voxel size: x", stackXScale, 4 );
-			renderDialog.addNumericField( "voxel size: y", stackYSacle, 4 );
-			renderDialog.addNumericField( "voxel size: z", stackZScale, 4 );
-			renderDialog.showDialog();
+			final boolean showTransformedStack = true;
+			final Pair< ImagePlus, double[] > inputAndVoxelSizeBdv = askShowAsBdv( inputIsMatrix ? null : input, permutationArray, sortedTransform, stackXScale, stackYScale, stackZScale, showTransformedStack );
 
-			if ( renderDialog.wasCanceled() )
-				return;
+			stackXScale = inputAndVoxelSizeBdv.getB()[ 0 ];
+			stackYScale = inputAndVoxelSizeBdv.getB()[ 1 ];
+			stackZScale = inputAndVoxelSizeBdv.getB()[ 2 ];
 
-			showTransformedStack = renderDialog.getNextBoolean();
-			stackXScale = renderDialog.getNextNumber();
-			stackYSacle = renderDialog.getNextNumber();
-			stackZScale = renderDialog.getNextNumber();
-
-			if ( showTransformedStack )
-			{
-				final ImagePlus stackImp = inputIsMatrix ? getFileFromOption( renderDialog.getNextString() ) : input;
-				new ImageConverter( stackImp ).convertToGray32();
-				final double displayRangeMin = stackImp.getDisplayRangeMin();
-				final double displayRangeMax = stackImp.getDisplayRangeMax();
-				final RandomAccessibleInterval< FloatType > stack = ImageJFunctions.wrapFloat( stackImp );
-
-				final SingleDimensionPermutationTransform permutation1D = new SingleDimensionPermutationTransform( permutationArray, 3, 3, 2 );
-				final SingleDimensionLUTRealTransform lut1D = new SingleDimensionLUTRealTransform( sortedTransform, 3, 3, 2 );
-
-				final RealRandomAccessible< FloatType > transformed = generateTransformed( stack, permutation1D, lut1D, new FloatType( Float.NaN ) );
-				final Scale3D scaleTransform = new Scale3D( stackXScale, stackYSacle, stackZScale );
-				final RealTransformRealRandomAccessible< FloatType, InverseRealTransform > scaled = RealViews.transformReal( transformed, scaleTransform );
-				final long[] dim = new long[ stack.numDimensions() ];
-				stack.dimensions( dim );
-				dim[ 0 ] *= stackXScale;
-				dim[ 1 ] *= stackYSacle;
-				dim[ 2 ] *= stackZScale;
-				final Bdv bdv = BdvFunctions.show( scaled, new FinalInterval( dim ), "Transformed stack.", Bdv.options().axisOrder( AxisOrder.XYZ ) );
-				for ( final MinMaxGroup minMax : bdv.getBdvHandle().getSetupAssignments().getMinMaxGroups() )
-					minMax.setRange( displayRangeMin, displayRangeMax );
-				IJ.log( "Showing warped image stack." );
-			}
+			final boolean renderIntoImagePlus = true;
+			final Pair< ImagePlus, double[] > inputAndVoxelSizeRenderd = askRenderAsImgPlus( inputIsMatrix ? null : input, permutationArray, sortedTransform, stackXScale, stackYScale, stackZScale, renderIntoImagePlus );
 
 		}
 
@@ -434,12 +408,14 @@ public class ZPositionCorrection implements PlugIn
 		new ImageJ();
 //		final ImagePlus imp = new ImagePlus( "/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/data/data.tif" );
 //		final ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/forPhilipp/substacks/03/data/" );
-		final ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/davi_toy_set/data/seq" );
+//		final ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/davi_toy_set/data/seq" );
+		final ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/seq" );
 		final Calibration calibration = imp.getCalibration().copy();
-		calibration.pixelWidth = 4.0;
-		calibration.pixelHeight = 4.0;
-		calibration.pixelDepth = 40.0;
-		imp.setCalibration(calibration);
+		calibration.pixelWidth = 1.0;
+		calibration.pixelHeight = 1.0;
+		calibration.pixelDepth = 10.0;
+		imp.setCalibration( calibration );
+//		final ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/Chlamy/428x272x1414+20+20+0/data" );
 //		final ImagePlus imp = new ImagePlus( "/data/hanslovskyp/strip-example-small.tif" );
 		imp.show();
 		new ZPositionCorrection().run( "" );
@@ -603,5 +579,202 @@ public class ZPositionCorrection implements PlugIn
 
 		return stack;
 	}
+
+	private static Pair< ImagePlus,double[] > askShowAsBdv(
+			final ImagePlus input,
+			final int[] permutationArray,
+			final double[] sortedTransform,
+			double stackXScale,
+			double stackYScale,
+			double stackZScale,
+			boolean showTransformedStack )
+	{
+
+		final GenericDialogPlus renderDialog = new GenericDialogPlus( "Show result." );
+		renderDialog.addCheckbox( "Show transformed stack?", showTransformedStack );
+		if ( input == null )
+			renderDialog.addFileField( "Input path (use current image if empty)", "" );
+		renderDialog.addNumericField( "voxel size: x", stackXScale, 4 );
+		renderDialog.addNumericField( "voxel size: y", stackYScale, 4 );
+		renderDialog.addNumericField( "voxel size: z", stackZScale, 4 );
+
+		renderDialog.showDialog();
+
+		if ( renderDialog.wasCanceled() )
+			return new ValuePair<>( input, new double[] { stackXScale, stackYScale, stackZScale } );
+
+		showTransformedStack = renderDialog.getNextBoolean();
+		stackXScale = renderDialog.getNextNumber();
+		stackYScale = renderDialog.getNextNumber();
+		stackZScale = renderDialog.getNextNumber();
+
+		if ( showTransformedStack )
+		{
+			final ImagePlus stackImp = input == null ? getFileFromOption( renderDialog.getNextString() ) : input;
+			final double displayRangeMin = stackImp.getDisplayRangeMin();
+			final double displayRangeMax = stackImp.getDisplayRangeMax();
+			final RandomAccessibleInterval< DoubleType > stack = convertImagePlus( stackImp );
+
+			final SingleDimensionPermutationTransform permutation1D = new SingleDimensionPermutationTransform( permutationArray, 3, 3, 2 );
+			final SingleDimensionLUTRealTransform lut1D = new SingleDimensionLUTRealTransform( sortedTransform, 3, 3, 2 );
+
+			final RealRandomAccessible< DoubleType > transformed = generateTransformed( stack, permutation1D, lut1D, new DoubleType( Float.NaN ) );
+			final Scale3D scaleTransform = new Scale3D( stackXScale, stackYScale, stackZScale );
+			final RealTransformRealRandomAccessible< DoubleType, InverseRealTransform > scaled = RealViews.transformReal( transformed, scaleTransform );
+			final long[] dim = new long[ stack.numDimensions() ];
+			stack.dimensions( dim );
+			dim[ 0 ] *= stackXScale;
+			dim[ 1 ] *= stackYScale;
+			dim[ 2 ] *= stackZScale;
+			new Thread( () -> {
+				final Bdv bdv = BdvFunctions.show( scaled, new FinalInterval( dim ), "Transformed stack.", Bdv.options().axisOrder( AxisOrder.XYZ ) );
+				for ( final MinMaxGroup minMax : bdv.getBdvHandle().getSetupAssignments().getMinMaxGroups() )
+					minMax.setRange( displayRangeMin, displayRangeMax );
+				IJ.log( "Showing warped image stack." );
+			} ).start();
+			return new ValuePair<>( stackImp, new double[] { stackXScale, stackYScale, stackZScale } );
+		}
+		return new ValuePair<>( input, new double[] { stackXScale, stackYScale, stackZScale } );
+	}
+
+	private static Pair< ImagePlus, double[] > askRenderAsImgPlus(
+			final ImagePlus input,
+			final int[] permutationArray,
+			final double[] sortedTransform,
+			double stackXScale,
+			double stackYScale,
+			double stackZScale,
+			boolean doRenderIntoImgPlus
+	)
+	{
+
+		final NonBlockingGenericDialogWithFileField renderDialog = new NonBlockingGenericDialogWithFileField("Render stack.");
+		renderDialog.addCheckbox( "Render into img plus?", doRenderIntoImgPlus );
+		if ( input == null )
+			renderDialog.addFileField( "Input path (use current image if empty)", "" );
+		renderDialog.addNumericField( "voxel size: x", stackXScale, 4 );
+		renderDialog.addNumericField( "voxel size: y", stackYScale, 4 );
+		renderDialog.addNumericField( "voxel size: z", stackZScale, 4 );
+
+		renderDialog.showDialog();
+
+		if ( renderDialog.wasCanceled() )
+			return new ValuePair<>( input, new double[] { stackXScale, stackYScale, stackZScale } );
+
+		doRenderIntoImgPlus = renderDialog.getNextBoolean();
+		stackXScale = renderDialog.getNextNumber();
+		stackYScale = renderDialog.getNextNumber();
+		stackZScale = renderDialog.getNextNumber();
+
+		if ( doRenderIntoImgPlus )
+		{
+			final ImagePlus stackImp = input == null ? getFileFromOption( renderDialog.getNextString() ) : input;
+			final double displayRangeMin = stackImp.getDisplayRangeMin();
+			final double displayRangeMax = stackImp.getDisplayRangeMax();
+			final RandomAccessibleInterval< DoubleType > stack = convertImagePlus( stackImp );
+			// TODO use more appropriate img type
+			final RandomAccessibleInterval< FloatType > result = Util.getSuitableImgFactory( stack, new FloatType() ).create( stack );
+
+			final SingleDimensionPermutationTransform permutation1D = new SingleDimensionPermutationTransform( permutationArray, 1, 1, 0 );
+			final SingleDimensionLUTRealTransform lut1D = new SingleDimensionLUTRealTransform( sortedTransform, 1, 1, 0 );
+
+			final int width = stackImp.getWidth();
+			final int height = stackImp.getHeight();
+			final int depth = stackImp.getStackSize();
+
+			ImageStack resultStack = new ImageStack( width, height );
+
+			double[] zSource = new double[ 1 ];
+			for ( int z = 0; z < depth; ++z )
+			{
+				zSource[ 0 ] = z;
+				lut1D.applyInverse( zSource, zSource );
+				final double zMapped = zSource[ 0 ];
+				int z1 = Math.min( Math.max( ( int ) Math.floor( zMapped ), 0 ), depth - 1 );
+				int z2 = Math.min( Math.max( ( int ) Math.ceil( zMapped ), 0 ), depth - 1 );
+				int z1Perm = permutation1D.apply( z1 );
+				int z2Perm = permutation1D.apply( z2 );
+
+				if ( z1 == z2 )
+				{
+					resultStack.addSlice( stackImp.getStack().getProcessor( z1Perm + 1 ).duplicate() );
+				}
+				else
+				{
+					final double w1 = z2 - zMapped;
+					final double w2 = zMapped - z1;
+					ImageProcessor ip1 = stackImp.getStack().getProcessor( z1Perm + 1 );
+					ImageProcessor ip2 = stackImp.getStack().getProcessor( z2Perm + 1 );
+					final ImageProcessor target = ip1.createProcessor( ip1.getWidth(), ip1.getHeight() );
+					interpolate( ip1, ip2, w1, w2, target );
+					resultStack.addSlice( target );
+				}
+
+			}
+
+
+			IJ.log( "Rendering warped image into stack." );
+
+			final ImagePlus imp = new ImagePlus("Z-Spacing: " + input.getTitle(), resultStack );
+			imp.show();
+			imp.setDisplayRange( displayRangeMin, displayRangeMax );
+			final Calibration calibration = stackImp.getCalibration().copy();
+			calibration.pixelWidth = stackXScale;
+			calibration.pixelHeight = stackYScale;
+			calibration.pixelDepth = stackZScale;
+			imp.setDimensions( 1, ( int ) stack.dimension( 2 ), 1 );
+			imp.setCalibration( calibration );
+
+			IJ.log( "Rendered warped image stack." );
+			return new ValuePair<>( imp, new double[] { stackXScale, stackYScale, stackXScale } );
+		}
+		return new ValuePair<>( input, new double[] { stackXScale, stackYScale, stackZScale } );
+	}
+
+	private static < T extends RealType< T > > RandomAccessibleInterval< DoubleType > convertImagePlus( ImagePlus imp )
+	{
+		return Converters.convert(
+				( RandomAccessibleInterval< T > ) ImageJFunctions.< T >wrapReal( imp ),
+				new RealDoubleConverter<>(),
+				new DoubleType() );
+	}
+
+	private static void interpolate(
+			ImageProcessor ip1,
+			ImageProcessor ip2,
+			double w1,
+			double w2,
+			ImageProcessor target
+			)
+	{
+		interpolate(
+				SourcePixelReader.forImageProcessor( ip1 ),
+				SourcePixelReader.forImageProcessor( ip2 ),
+				w1,
+				w2,
+				TargetPixelWriter.forImageProcessor( target ),
+				target.getWidth() * target.getHeight()
+		);
+	}
+
+	private static void interpolate(
+			SourcePixelReader r1,
+			SourcePixelReader r2,
+			double w1,
+			double w2,
+			TargetPixelWriter t,
+			int size
+			)
+	{
+		double norm = 1.0 / ( w1 + w2 );
+		for ( int i = 0; i < size; ++i )
+		{
+			final double v1 = w1 * r1.valueAt( i );
+			final double v2 = w2 * r2.valueAt( i );
+			t.setValueAt( i, ( v1 + v2 ) * norm );
+		}
+	}
+
+
 
 }
