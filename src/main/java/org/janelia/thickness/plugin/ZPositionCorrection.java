@@ -625,10 +625,12 @@ public class ZPositionCorrection implements PlugIn
 			dim[ 0 ] *= stackXScale;
 			dim[ 1 ] *= stackYScale;
 			dim[ 2 ] *= stackZScale;
-			final Bdv bdv = BdvFunctions.show( scaled, new FinalInterval( dim ), "Transformed stack.", Bdv.options().axisOrder( AxisOrder.XYZ ) );
-			for ( final MinMaxGroup minMax : bdv.getBdvHandle().getSetupAssignments().getMinMaxGroups() )
-				minMax.setRange( displayRangeMin, displayRangeMax );
-			IJ.log( "Showing warped image stack." );
+			new Thread( () -> {
+				final Bdv bdv = BdvFunctions.show( scaled, new FinalInterval( dim ), "Transformed stack.", Bdv.options().axisOrder( AxisOrder.XYZ ) );
+				for ( final MinMaxGroup minMax : bdv.getBdvHandle().getSetupAssignments().getMinMaxGroups() )
+					minMax.setRange( displayRangeMin, displayRangeMax );
+				IJ.log( "Showing warped image stack." );
+			} ).start();
 			return new ValuePair<>( stackImp, new double[] { stackXScale, stackYScale, stackZScale } );
 		}
 		return new ValuePair<>( input, new double[] { stackXScale, stackYScale, stackZScale } );
