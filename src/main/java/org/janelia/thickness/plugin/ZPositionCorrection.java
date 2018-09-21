@@ -13,12 +13,10 @@ import ij.gui.GenericDialog;
 import ij.measure.Calibration;
 import ij.plugin.FolderOpener;
 import ij.plugin.PlugIn;
-import ij.process.ByteProcessor;
 import ij.process.FloatProcessor;
 import ij.process.FloatStatistics;
 import ij.process.ImageConverter;
 import ij.process.ImageProcessor;
-import ij.process.ShortProcessor;
 import mpicbg.ij.util.Filter;
 import mpicbg.models.IllDefinedDataPointsException;
 import mpicbg.models.NotEnoughDataPointsException;
@@ -64,7 +62,6 @@ import org.janelia.thickness.lut.SingleDimensionLUTRealTransform;
 import org.janelia.thickness.lut.SingleDimensionPermutationTransform;
 import org.janelia.utility.MatrixStripConversion;
 import org.janelia.utility.arrays.ArraySortedIndices;
-import org.python.core.imp;
 
 import java.awt.Checkbox;
 import java.io.BufferedOutputStream;
@@ -80,7 +77,6 @@ import java.util.Vector;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.function.ToDoubleFunction;
 
 /**
  * @author Philipp Hanslovsky &lt;hanslovskyp@janelia.hhmi.org&gt;
@@ -738,135 +734,6 @@ public class ZPositionCorrection implements PlugIn
 				( RandomAccessibleInterval< T > ) ImageJFunctions.< T >wrapReal( imp ),
 				new RealDoubleConverter<>(),
 				new DoubleType() );
-	}
-
-	private interface SourcePixelReader {
-
-		double valueAt( int index );
-
-		static SourcePixelReader forImageProcessor( ImageProcessor ip )
-		{
-			if ( ip instanceof ByteProcessor )
-				return new ByteProcessorReader( ( ByteProcessor ) ip );
-			if ( ip instanceof ShortProcessor )
-				return new ShortProcessorReader( ( ShortProcessor ) ip );
-			if ( ip instanceof FloatProcessor )
-				return new FloatProcessorReader( ( FloatProcessor ) ip );
-
-			throw new IllegalArgumentException("Image processor type not supported: " + ip.getClass().getName());
-		}
-
-		class ByteProcessorReader implements SourcePixelReader
-		{
-			private final byte[] data;
-
-			public ByteProcessorReader( ByteProcessor p )
-			{
-				this.data = ( byte[] ) p.getPixels();
-			}
-
-			@Override
-			public double valueAt( int index )
-			{
-				return this.data[ index ];
-			}
-		}
-
-		class FloatProcessorReader implements SourcePixelReader
-		{
-			private final float[] data;
-
-			public FloatProcessorReader( FloatProcessor p )
-			{
-				this.data = ( float[] ) p.getPixels();
-			}
-
-			@Override
-			public double valueAt( int index )
-			{
-				return this.data[ index ];
-			}
-		}
-
-		class ShortProcessorReader implements SourcePixelReader
-		{
-			private final short[] data;
-
-			public ShortProcessorReader( ShortProcessor p )
-			{
-				this.data = ( short[] ) p.getPixels();
-			}
-
-			@Override
-			public double valueAt( int index )
-			{
-				return this.data[ index ];
-			}
-		}
-	}
-
-	private interface TargetPixelWriter {
-		void setValueAt( int index, double value );
-
-		static TargetPixelWriter forImageProcessor( ImageProcessor ip )
-		{
-			if ( ip instanceof ByteProcessor )
-				return new TargetPixelWriter.ByteProcessorWriter( ( ByteProcessor ) ip );
-			if ( ip instanceof ShortProcessor )
-				return new TargetPixelWriter.ShortProcessorWriter( ( ShortProcessor ) ip );
-			if ( ip instanceof FloatProcessor )
-				return new TargetPixelWriter.FloatProcessorWriter( ( FloatProcessor ) ip );
-
-			throw new IllegalArgumentException( "Image processor type not supported: " + ip.getClass().getName() );
-		}
-
-		class ByteProcessorWriter implements TargetPixelWriter
-		{
-			private final byte[] data;
-
-			public ByteProcessorWriter( ByteProcessor p )
-			{
-				this.data = ( byte[] ) p.getPixels();
-			}
-
-			@Override
-			public void setValueAt( int index, double value )
-			{
-				this.data[ index ] = ( byte ) ( value + 0.5 );
-			}
-		}
-
-		class FloatProcessorWriter implements TargetPixelWriter
-		{
-			private final float[] data;
-
-			public FloatProcessorWriter( FloatProcessor p )
-			{
-				this.data = ( float[] ) p.getPixels();
-			}
-
-			@Override
-			public void setValueAt( int index, double value )
-			{
-				this.data[ index ] = ( float ) value;
-			}
-		}
-
-		class ShortProcessorWriter implements TargetPixelWriter
-		{
-			private final short[] data;
-
-			public ShortProcessorWriter( ShortProcessor p )
-			{
-				this.data = ( short[] ) p.getPixels();
-			}
-
-			@Override
-			public void setValueAt( int index, double value )
-			{
-				this.data[ index ] = ( short ) ( value + 0.5 );
-			}
-		}
 	}
 
 	private static void interpolate(
