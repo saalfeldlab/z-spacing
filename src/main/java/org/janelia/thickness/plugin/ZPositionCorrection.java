@@ -409,12 +409,13 @@ public class ZPositionCorrection implements PlugIn
 //		final ImagePlus imp = new ImagePlus( "/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/data/data.tif" );
 //		final ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/forPhilipp/substacks/03/data/" );
 //		final ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/davi_toy_set/data/seq" );
-		final ImagePlus imp = new FolderOpener().openFolder("/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/seq");
+		final ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/seq" );
 		final Calibration calibration = imp.getCalibration().copy();
 		calibration.pixelWidth = 1.0;
 		calibration.pixelHeight = 1.0;
 		calibration.pixelDepth = 10.0;
 		imp.setCalibration( calibration );
+//		final ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/Chlamy/428x272x1414+20+20+0/data" );
 //		final ImagePlus imp = new ImagePlus( "/data/hanslovskyp/strip-example-small.tif" );
 		imp.show();
 		new ZPositionCorrection().run( "" );
