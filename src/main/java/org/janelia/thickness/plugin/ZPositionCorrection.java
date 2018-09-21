@@ -13,9 +13,12 @@ import ij.gui.GenericDialog;
 import ij.measure.Calibration;
 import ij.plugin.FolderOpener;
 import ij.plugin.PlugIn;
+import ij.process.ByteProcessor;
 import ij.process.FloatProcessor;
 import ij.process.FloatStatistics;
 import ij.process.ImageConverter;
+import ij.process.ImageProcessor;
+import ij.process.ShortProcessor;
 import mpicbg.ij.util.Filter;
 import mpicbg.models.IllDefinedDataPointsException;
 import mpicbg.models.NotEnoughDataPointsException;
@@ -61,6 +64,7 @@ import org.janelia.thickness.lut.SingleDimensionLUTRealTransform;
 import org.janelia.thickness.lut.SingleDimensionPermutationTransform;
 import org.janelia.utility.MatrixStripConversion;
 import org.janelia.utility.arrays.ArraySortedIndices;
+import org.python.core.imp;
 
 import java.awt.Checkbox;
 import java.io.BufferedOutputStream;
@@ -76,6 +80,7 @@ import java.util.Vector;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.ToDoubleFunction;
 
 /**
  * @author Philipp Hanslovsky &lt;hanslovskyp@janelia.hhmi.org&gt;
@@ -305,7 +310,7 @@ public class ZPositionCorrection implements PlugIn
 			if ( saveAsCsvDialog.wasOKed() )
 			{
 				final String csvPath = saveAsCsvDialog.getNextString();
-				final File f = new File(csvPath);
+				final File f = new File( csvPath );
 				try {
 					f.createNewFile();
 					try (
@@ -333,7 +338,7 @@ public class ZPositionCorrection implements PlugIn
 				}
 				catch( Exception e ) {
 					IJ.log( "Unable to save transform at: " + csvPath );
-					IJ.handleException(new IOException( "Unable to save transform at: " + csvPath, e ) );
+					IJ.handleException( new IOException( "Unable to save transform at: " + csvPath, e ) );
 				}
 			}
 
@@ -341,14 +346,14 @@ public class ZPositionCorrection implements PlugIn
 			double stackYScale = inputIsMatrix ? 1.0 : input.getCalibration().pixelHeight;
 			double stackZScale = inputIsMatrix ? 1.0 : input.getCalibration().pixelDepth;
 			final boolean showTransformedStack = true;
-			final Pair<ImagePlus, double[]> inputAndVoxelSizeBdv = askShowAsBdv(inputIsMatrix ? null : input, permutationArray, sortedTransform, stackXScale, stackYScale, stackZScale, showTransformedStack);
+			final Pair< ImagePlus, double[] > inputAndVoxelSizeBdv = askShowAsBdv( inputIsMatrix ? null : input, permutationArray, sortedTransform, stackXScale, stackYScale, stackZScale, showTransformedStack );
 
-			stackXScale = inputAndVoxelSizeBdv.getB()[0];
-			stackYScale = inputAndVoxelSizeBdv.getB()[1];
-			stackZScale = inputAndVoxelSizeBdv.getB()[2];
+			stackXScale = inputAndVoxelSizeBdv.getB()[ 0 ];
+			stackYScale = inputAndVoxelSizeBdv.getB()[ 1 ];
+			stackZScale = inputAndVoxelSizeBdv.getB()[ 2 ];
 
 			final boolean renderIntoImagePlus = true;
-			final Pair<ImagePlus, double[]> inputAndVoxelSizeRenderd = askRenderAsImgPlus(inputIsMatrix ? null : input, permutationArray, sortedTransform, stackXScale, stackYScale, stackZScale, renderIntoImagePlus);
+			final Pair< ImagePlus, double[] > inputAndVoxelSizeRenderd = askRenderAsImgPlus( inputIsMatrix ? null : input, permutationArray, sortedTransform, stackXScale, stackYScale, stackZScale, renderIntoImagePlus );
 
 		}
 
@@ -407,12 +412,13 @@ public class ZPositionCorrection implements PlugIn
 		new ImageJ();
 //		final ImagePlus imp = new ImagePlus( "/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/data/data.tif" );
 //		final ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/forPhilipp/substacks/03/data/" );
-		final ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/davi_toy_set/data/seq" );
+//		final ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/davi_toy_set/data/seq" );
+		final ImagePlus imp = new FolderOpener().openFolder("/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/seq");
 		final Calibration calibration = imp.getCalibration().copy();
-		calibration.pixelWidth = 4.0;
-		calibration.pixelHeight = 4.0;
-		calibration.pixelDepth = 40.0;
-		imp.setCalibration(calibration);
+		calibration.pixelWidth = 1.0;
+		calibration.pixelHeight = 1.0;
+		calibration.pixelDepth = 10.0;
+		imp.setCalibration( calibration );
 //		final ImagePlus imp = new ImagePlus( "/data/hanslovskyp/strip-example-small.tif" );
 		imp.show();
 		new ZPositionCorrection().run( "" );
@@ -577,14 +583,14 @@ public class ZPositionCorrection implements PlugIn
 		return stack;
 	}
 
-	private static Pair<ImagePlus,double[]> askShowAsBdv(
+	private static Pair< ImagePlus,double[] > askShowAsBdv(
 			final ImagePlus input,
 			final int[] permutationArray,
 			final double[] sortedTransform,
 			double stackXScale,
 			double stackYScale,
 			double stackZScale,
-			boolean showTransformedStack)
+			boolean showTransformedStack )
 	{
 
 		final GenericDialogPlus renderDialog = new GenericDialogPlus( "Show result." );
@@ -594,10 +600,11 @@ public class ZPositionCorrection implements PlugIn
 		renderDialog.addNumericField( "voxel size: x", stackXScale, 4 );
 		renderDialog.addNumericField( "voxel size: y", stackYScale, 4 );
 		renderDialog.addNumericField( "voxel size: z", stackZScale, 4 );
+
 		renderDialog.showDialog();
 
 		if ( renderDialog.wasCanceled() )
-			return new ValuePair<>(input, new double[] {stackXScale, stackYScale, stackZScale});
+			return new ValuePair<>( input, new double[] { stackXScale, stackYScale, stackZScale } );
 
 		showTransformedStack = renderDialog.getNextBoolean();
 		stackXScale = renderDialog.getNextNumber();
@@ -626,12 +633,12 @@ public class ZPositionCorrection implements PlugIn
 			for ( final MinMaxGroup minMax : bdv.getBdvHandle().getSetupAssignments().getMinMaxGroups() )
 				minMax.setRange( displayRangeMin, displayRangeMax );
 			IJ.log( "Showing warped image stack." );
-			return new ValuePair<>(stackImp, new double[] {stackXScale, stackYScale, stackZScale});
+			return new ValuePair<>( stackImp, new double[] { stackXScale, stackYScale, stackZScale } );
 		}
-		return new ValuePair<>(input, new double[] {stackXScale, stackYScale, stackZScale});
+		return new ValuePair<>( input, new double[] { stackXScale, stackYScale, stackZScale } );
 	}
 
-	private static Pair<ImagePlus, double[]> askRenderAsImgPlus(
+	private static Pair< ImagePlus, double[] > askRenderAsImgPlus(
 			final ImagePlus input,
 			final int[] permutationArray,
 			final double[] sortedTransform,
@@ -649,10 +656,11 @@ public class ZPositionCorrection implements PlugIn
 		renderDialog.addNumericField( "voxel size: x", stackXScale, 4 );
 		renderDialog.addNumericField( "voxel size: y", stackYScale, 4 );
 		renderDialog.addNumericField( "voxel size: z", stackZScale, 4 );
+
 		renderDialog.showDialog();
 
 		if ( renderDialog.wasCanceled() )
-			return new ValuePair<>(input, new double[] {stackXScale, stackYScale, stackZScale});
+			return new ValuePair<>( input, new double[] { stackXScale, stackYScale, stackZScale } );
 
 		doRenderIntoImgPlus = renderDialog.getNextBoolean();
 		stackXScale = renderDialog.getNextNumber();
@@ -666,42 +674,237 @@ public class ZPositionCorrection implements PlugIn
 			final double displayRangeMax = stackImp.getDisplayRangeMax();
 			final RandomAccessibleInterval< DoubleType > stack = convertImagePlus( stackImp );
 			// TODO use more appropriate img type
-			final RandomAccessibleInterval< FloatType > result = Util.getSuitableImgFactory(stack, new FloatType()).create( stack );
+			final RandomAccessibleInterval< FloatType > result = Util.getSuitableImgFactory( stack, new FloatType() ).create( stack );
 
-			final SingleDimensionPermutationTransform permutation1D = new SingleDimensionPermutationTransform( permutationArray, 3, 3, 2 );
-			final SingleDimensionLUTRealTransform lut1D = new SingleDimensionLUTRealTransform( sortedTransform, 3, 3, 2 );
+			final SingleDimensionPermutationTransform permutation1D = new SingleDimensionPermutationTransform( permutationArray, 1, 1, 0 );
+			final SingleDimensionLUTRealTransform lut1D = new SingleDimensionLUTRealTransform( sortedTransform, 1, 1, 0 );
 
-			final RealRandomAccessible< DoubleType > transformed = generateTransformed( stack, permutation1D, lut1D, new DoubleType( Float.NaN ) );
+			final int width = stackImp.getWidth();
+			final int height = stackImp.getHeight();
+			final int depth = stackImp.getStackSize();
+
+			ImageStack resultStack = new ImageStack( width, height );
+
+			double[] zSource = new double[ 1 ];
+			for ( int z = 0; z < depth; ++z )
+			{
+				zSource[ 0 ] = z;
+				lut1D.applyInverse( zSource, zSource );
+				final double zMapped = zSource[ 0 ];
+				int z1 = Math.min( Math.max( ( int ) Math.floor( zMapped ), 0 ), depth - 1 );
+				int z2 = Math.min( Math.max( ( int ) Math.ceil( zMapped ), 0 ), depth - 1 );
+				int z1Perm = permutation1D.apply( z1 );
+				int z2Perm = permutation1D.apply( z2 );
+
+				if ( z1 == z2 )
+				{
+					resultStack.addSlice( stackImp.getStack().getProcessor( z1Perm + 1 ).duplicate() );
+				}
+				else
+				{
+					final double w1 = z2 - zMapped;
+					final double w2 = zMapped - z1;
+					ImageProcessor ip1 = stackImp.getStack().getProcessor( z1Perm + 1 );
+					ImageProcessor ip2 = stackImp.getStack().getProcessor( z2Perm + 1 );
+					final ImageProcessor target = ip1.createProcessor( ip1.getWidth(), ip1.getHeight() );
+					interpolate( ip1, ip2, w1, w2, target );
+					resultStack.addSlice( target );
+				}
+
+			}
+
 
 			IJ.log( "Rendering warped image into stack." );
 
-			Views.interval(Views.pair(Views.raster(transformed), result), result).forEach(p -> p.getB().setReal(p.getA().getRealDouble()));
-
-			// TODO how can we avoid duplicate yet still set dimensions?
-			// TODO ImageJFunctions.wrap(...).setDimensions throws NPE
-			final ImagePlus imp = ImageJFunctions.wrap(result, "z-spacing warped stack").duplicate();
+			final ImagePlus imp = new ImagePlus("Z-Spacing: " + input.getTitle(), resultStack );
 			imp.show();
-			imp.setDisplayRange(displayRangeMin, displayRangeMax);
+			imp.setDisplayRange( displayRangeMin, displayRangeMax );
 			final Calibration calibration = stackImp.getCalibration().copy();
 			calibration.pixelWidth = stackXScale;
 			calibration.pixelHeight = stackYScale;
 			calibration.pixelDepth = stackZScale;
-			imp.setDimensions(1, (int) stack.dimension(2), 1);
-			imp.setCalibration(calibration);
+			imp.setDimensions( 1, ( int ) stack.dimension( 2 ), 1 );
+			imp.setCalibration( calibration );
 
 			IJ.log( "Rendered warped image stack." );
-			return new ValuePair<>(imp, new double[] {stackXScale, stackYScale, stackXScale});
+			return new ValuePair<>( imp, new double[] { stackXScale, stackYScale, stackXScale } );
 		}
-		return new ValuePair<>(input, new double[] {stackXScale, stackYScale, stackZScale});
+		return new ValuePair<>( input, new double[] { stackXScale, stackYScale, stackZScale } );
 	}
 
-	private static <T extends RealType<T>> RandomAccessibleInterval<DoubleType> convertImagePlus(ImagePlus imp)
+	private static < T extends RealType< T > > RandomAccessibleInterval< DoubleType > convertImagePlus( ImagePlus imp )
 	{
 		return Converters.convert(
-				(RandomAccessibleInterval<T>) ImageJFunctions.<T>wrapReal(imp),
+				( RandomAccessibleInterval< T > ) ImageJFunctions.< T >wrapReal( imp ),
 				new RealDoubleConverter<>(),
-				new DoubleType());
+				new DoubleType() );
 	}
+
+	private interface SourcePixelReader {
+
+		double valueAt( int index );
+
+		static SourcePixelReader forImageProcessor( ImageProcessor ip )
+		{
+			if ( ip instanceof ByteProcessor )
+				return new ByteProcessorReader( ( ByteProcessor ) ip );
+			if ( ip instanceof ShortProcessor )
+				return new ShortProcessorReader( ( ShortProcessor ) ip );
+			if ( ip instanceof FloatProcessor )
+				return new FloatProcessorReader( ( FloatProcessor ) ip );
+
+			throw new IllegalArgumentException("Image processor type not supported: " + ip.getClass().getName());
+		}
+
+		class ByteProcessorReader implements SourcePixelReader
+		{
+			private final byte[] data;
+
+			public ByteProcessorReader( ByteProcessor p )
+			{
+				this.data = ( byte[] ) p.getPixels();
+			}
+
+			@Override
+			public double valueAt( int index )
+			{
+				return this.data[ index ];
+			}
+		}
+
+		class FloatProcessorReader implements SourcePixelReader
+		{
+			private final float[] data;
+
+			public FloatProcessorReader( FloatProcessor p )
+			{
+				this.data = ( float[] ) p.getPixels();
+			}
+
+			@Override
+			public double valueAt( int index )
+			{
+				return this.data[ index ];
+			}
+		}
+
+		class ShortProcessorReader implements SourcePixelReader
+		{
+			private final short[] data;
+
+			public ShortProcessorReader( ShortProcessor p )
+			{
+				this.data = ( short[] ) p.getPixels();
+			}
+
+			@Override
+			public double valueAt( int index )
+			{
+				return this.data[ index ];
+			}
+		}
+	}
+
+	private interface TargetPixelWriter {
+		void setValueAt( int index, double value );
+
+		static TargetPixelWriter forImageProcessor( ImageProcessor ip )
+		{
+			if ( ip instanceof ByteProcessor )
+				return new TargetPixelWriter.ByteProcessorWriter( ( ByteProcessor ) ip );
+			if ( ip instanceof ShortProcessor )
+				return new TargetPixelWriter.ShortProcessorWriter( ( ShortProcessor ) ip );
+			if ( ip instanceof FloatProcessor )
+				return new TargetPixelWriter.FloatProcessorWriter( ( FloatProcessor ) ip );
+
+			throw new IllegalArgumentException( "Image processor type not supported: " + ip.getClass().getName() );
+		}
+
+		class ByteProcessorWriter implements TargetPixelWriter
+		{
+			private final byte[] data;
+
+			public ByteProcessorWriter( ByteProcessor p )
+			{
+				this.data = ( byte[] ) p.getPixels();
+			}
+
+			@Override
+			public void setValueAt( int index, double value )
+			{
+				this.data[ index ] = ( byte ) ( value + 0.5 );
+			}
+		}
+
+		class FloatProcessorWriter implements TargetPixelWriter
+		{
+			private final float[] data;
+
+			public FloatProcessorWriter( FloatProcessor p )
+			{
+				this.data = ( float[] ) p.getPixels();
+			}
+
+			@Override
+			public void setValueAt( int index, double value )
+			{
+				this.data[ index ] = ( float ) value;
+			}
+		}
+
+		class ShortProcessorWriter implements TargetPixelWriter
+		{
+			private final short[] data;
+
+			public ShortProcessorWriter( ShortProcessor p )
+			{
+				this.data = ( short[] ) p.getPixels();
+			}
+
+			@Override
+			public void setValueAt( int index, double value )
+			{
+				this.data[ index ] = ( short ) ( value + 0.5 );
+			}
+		}
+	}
+
+	private static void interpolate(
+			ImageProcessor ip1,
+			ImageProcessor ip2,
+			double w1,
+			double w2,
+			ImageProcessor target
+			)
+	{
+		interpolate(
+				SourcePixelReader.forImageProcessor( ip1 ),
+				SourcePixelReader.forImageProcessor( ip2 ),
+				w1,
+				w2,
+				TargetPixelWriter.forImageProcessor( target ),
+				target.getWidth() * target.getHeight()
+		);
+	}
+
+	private static void interpolate(
+			SourcePixelReader r1,
+			SourcePixelReader r2,
+			double w1,
+			double w2,
+			TargetPixelWriter t,
+			int size
+			)
+	{
+		double norm = 1.0 / ( w1 + w2 );
+		for ( int i = 0; i < size; ++i )
+		{
+			final double v1 = w1 * r1.valueAt( i );
+			final double v2 = w2 * r2.valueAt( i );
+			t.setValueAt( i, ( v1 + v2 ) * norm );
+		}
+	}
+
 
 
 }
