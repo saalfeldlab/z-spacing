@@ -13,6 +13,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import ij.measure.Calibration;
+import net.imglib2.converter.Converters;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.FloatArray;
@@ -608,17 +609,16 @@ public class ZPositionCorrection implements PlugIn
 		if ( showTransformedStack )
 		{
 			final ImagePlus stackImp = input == null ? getFileFromOption( renderDialog.getNextString() ) : input;
-			new ImageConverter( stackImp ).convertToGray32();
 			final double displayRangeMin = stackImp.getDisplayRangeMin();
 			final double displayRangeMax = stackImp.getDisplayRangeMax();
-			final RandomAccessibleInterval< FloatType > stack = ImageJFunctions.wrapFloat( stackImp );
+			final RandomAccessibleInterval< DoubleType > stack = convertImagePlus( stackImp );
 
 			final SingleDimensionPermutationTransform permutation1D = new SingleDimensionPermutationTransform( permutationArray, 3, 3, 2 );
 			final SingleDimensionLUTRealTransform lut1D = new SingleDimensionLUTRealTransform( sortedTransform, 3, 3, 2 );
 
-			final RealRandomAccessible< FloatType > transformed = generateTransformed( stack, permutation1D, lut1D, new FloatType( Float.NaN ) );
+			final RealRandomAccessible< DoubleType > transformed = generateTransformed( stack, permutation1D, lut1D, new DoubleType( Float.NaN ) );
 			final Scale3D scaleTransform = new Scale3D( stackXScale, stackYScale, stackZScale );
-			final RealTransformRealRandomAccessible< FloatType, InverseRealTransform > scaled = RealViews.transformReal( transformed, scaleTransform );
+			final RealTransformRealRandomAccessible< DoubleType, InverseRealTransform > scaled = RealViews.transformReal( transformed, scaleTransform );
 			final long[] dim = new long[ stack.numDimensions() ];
 			stack.dimensions( dim );
 			dim[ 0 ] *= stackXScale;
@@ -664,21 +664,20 @@ public class ZPositionCorrection implements PlugIn
 		if ( doRenderIntoImgPlus )
 		{
 			final ImagePlus stackImp = input == null ? getFileFromOption( renderDialog.getNextString() ) : input;
-			new ImageConverter( stackImp ).convertToGray32();
 			final double displayRangeMin = stackImp.getDisplayRangeMin();
 			final double displayRangeMax = stackImp.getDisplayRangeMax();
-			final RandomAccessibleInterval< FloatType > stack = ImageJFunctions.wrapFloat( stackImp );
+			final RandomAccessibleInterval< DoubleType > stack = convertImagePlus( stackImp );
 			// TODO use more appropriate img type
-			final RandomAccessibleInterval<FloatType> result = Util.getSuitableImgFactory(stack, new FloatType()).create(stack);
+			final RandomAccessibleInterval< FloatType > result = Util.getSuitableImgFactory(stack, new FloatType()).create( stack );
 
 			final SingleDimensionPermutationTransform permutation1D = new SingleDimensionPermutationTransform( permutationArray, 3, 3, 2 );
 			final SingleDimensionLUTRealTransform lut1D = new SingleDimensionLUTRealTransform( sortedTransform, 3, 3, 2 );
 
-			final RealRandomAccessible< FloatType > transformed = generateTransformed( stack, permutation1D, lut1D, new FloatType( Float.NaN ) );
+			final RealRandomAccessible< DoubleType > transformed = generateTransformed( stack, permutation1D, lut1D, new DoubleType( Float.NaN ) );
 
 			IJ.log( "Rendering warped image into stack." );
 
-			Views.interval(Views.pair(Views.raster(transformed), result), result).forEach(p -> p.getB().set(p.getA()));
+			Views.interval(Views.pair(Views.raster(transformed), result), result).forEach(p -> p.getB().setReal(p.getA().getRealDouble()));
 
 			// TODO how can we avoid duplicate yet still set dimensions?
 			// TODO ImageJFunctions.wrap(...).setDimensions throws NPE
@@ -697,5 +696,14 @@ public class ZPositionCorrection implements PlugIn
 		}
 		return new ValuePair<>(input, new double[] {stackXScale, stackYScale, stackZScale});
 	}
+
+	private static <T extends RealType<T>> RandomAccessibleInterval<DoubleType> convertImagePlus(ImagePlus imp)
+	{
+		return Converters.convert(
+				(RandomAccessibleInterval<T>) ImageJFunctions.<T>wrapReal(imp),
+				new RealDoubleConverter<>(),
+				new DoubleType());
+	}
+
 
 }
