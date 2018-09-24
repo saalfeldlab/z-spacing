@@ -11,7 +11,7 @@
 
 	<groupId>sc.fiji</groupId>
 	<artifactId>z_spacing</artifactId>
-	<version>1.1.1-SNAPSHOT</version>
+	<version>1.1.1</version>
 
 	<name>Z spacing</name>
 	<description>Z spacing plugin for Fiji.</description>
@@ -72,7 +72,7 @@
 	<scm>
 		<connection>scm:git:git://github.com/saalfeldlab/z-spacing</connection>
 		<developerConnection>scm:git:git@github.com:saalfeldlab/z-spacing</developerConnection>
-		<tag>HEAD</tag>
+		<tag>z_spacing-1.1.1</tag>
 		<url>https://github.com/saalfeldlab/z-spacing</url>
 	</scm>
 	<issueManagement>
