@@ -33,6 +33,7 @@ import net.imglib2.realtransform.InverseRealTransform;
 import net.imglib2.realtransform.InvertibleRealTransform;
 import net.imglib2.realtransform.RealTransformRealRandomAccessible;
 import net.imglib2.realtransform.RealViews;
+import net.imglib2.realtransform.Scale;
 import net.imglib2.realtransform.Scale3D;
 import net.imglib2.transform.Transform;
 import net.imglib2.type.numeric.RealType;
@@ -408,8 +409,8 @@ public class ZPositionCorrection implements PlugIn
 		new ImageJ();
 //		final ImagePlus imp = new ImagePlus( "/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/data/data.tif" );
 //		final ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/forPhilipp/substacks/03/data/" );
-//		final ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/davi_toy_set/data/seq" );
-		final ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/seq" );
+		final ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/davi_toy_set/data/seq" );
+//		final ImagePlus imp = new FolderOpener().openFolder( "/data/hanslovskyp/davi_toy_set/substacks/shuffle/03/seq" );
 		final Calibration calibration = imp.getCalibration().copy();
 		calibration.pixelWidth = 1.0;
 		calibration.pixelHeight = 1.0;
@@ -655,6 +656,7 @@ public class ZPositionCorrection implements PlugIn
 		renderDialog.addNumericField( "voxel size: x", stackXScale, 4 );
 		renderDialog.addNumericField( "voxel size: y", stackYScale, 4 );
 		renderDialog.addNumericField( "voxel size: z", stackZScale, 4 );
+		renderDialog.addNumericField( "Upsample z by", 1, 0 );
 
 		renderDialog.showDialog();
 
@@ -665,6 +667,7 @@ public class ZPositionCorrection implements PlugIn
 		stackXScale = renderDialog.getNextNumber();
 		stackYScale = renderDialog.getNextNumber();
 		stackZScale = renderDialog.getNextNumber();
+		int upsampleBy = Math.max( ( int ) renderDialog.getNextNumber(), 1 );
 
 		if ( doRenderIntoImgPlus )
 		{
@@ -673,7 +676,6 @@ public class ZPositionCorrection implements PlugIn
 			final double displayRangeMax = stackImp.getDisplayRangeMax();
 			final RandomAccessibleInterval< DoubleType > stack = convertImagePlus( stackImp );
 			// TODO use more appropriate img type
-			final RandomAccessibleInterval< FloatType > result = Util.getSuitableImgFactory( stack, new FloatType() ).create( stack );
 
 			final SingleDimensionPermutationTransform permutation1D = new SingleDimensionPermutationTransform( permutationArray, 1, 1, 0 );
 			final SingleDimensionLUTRealTransform lut1D = new SingleDimensionLUTRealTransform( sortedTransform, 1, 1, 0 );
@@ -685,35 +687,53 @@ public class ZPositionCorrection implements PlugIn
 			ImageStack resultStack = new ImageStack( width, height );
 
 			double[] zSource = new double[ 1 ];
-			for ( int z = 0; z < depth; ++z )
-			{
-				zSource[ 0 ] = z;
-				lut1D.applyInverse( zSource, zSource );
-				final double zMapped = zSource[ 0 ];
-				int z1 = Math.min( Math.max( ( int ) Math.floor( zMapped ), 0 ), depth - 1 );
-				int z2 = Math.min( Math.max( ( int ) Math.ceil( zMapped ), 0 ), depth - 1 );
-				int z1Perm = permutation1D.apply( z1 );
-				int z2Perm = permutation1D.apply( z2 );
-
-				if ( z1 == z2 )
-				{
-					resultStack.addSlice( stackImp.getStack().getProcessor( z1Perm + 1 ).duplicate() );
-				}
-				else
-				{
-					final double w1 = z2 - zMapped;
-					final double w2 = zMapped - z1;
-					ImageProcessor ip1 = stackImp.getStack().getProcessor( z1Perm + 1 );
-					ImageProcessor ip2 = stackImp.getStack().getProcessor( z2Perm + 1 );
-					final ImageProcessor target = ip1.createProcessor( ip1.getWidth(), ip1.getHeight() );
-					interpolate( ip1, ip2, w1, w2, target );
-					resultStack.addSlice( target );
-				}
-
-			}
-
 
 			IJ.log( "Rendering warped image into stack." );
+
+			if ( upsampleBy == 1 ) {
+				for ( int z = 0; z < depth; ++z ) {
+					zSource[ 0 ] = z;
+					lut1D.applyInverse( zSource, zSource );
+					final double zMapped = zSource[ 0 ];
+					int z1 = Math.min( Math.max( ( int ) Math.floor( zMapped ), 0 ), depth - 1 );
+					int z2 = Math.min( Math.max( ( int ) Math.ceil( zMapped ), 0 ), depth - 1 );
+					int z1Perm = permutation1D.apply( z1 );
+					int z2Perm = permutation1D.apply( z2 );
+
+					if ( z1 == z2 ) {
+						resultStack.addSlice( stackImp.getStack().getProcessor(z1Perm + 1 ).duplicate() );
+					} else {
+						final double w1 = z2 - zMapped;
+						final double w2 = zMapped - z1;
+						ImageProcessor ip1 = stackImp.getStack().getProcessor( z1Perm + 1 );
+						ImageProcessor ip2 = stackImp.getStack().getProcessor( z2Perm + 1 );
+						final ImageProcessor target = ip1.createProcessor( ip1.getWidth(), ip1.getHeight() );
+						interpolate( ip1, ip2, w1, w2, target );
+						resultStack.addSlice( target );
+					}
+
+				}
+			}
+			else
+			{
+				final Scale scale = new Scale( upsampleBy );
+				final FloatProcessor nanProcessor = new FloatProcessor( width, height );
+				Arrays.fill( ( float[] ) nanProcessor.getPixels(), Float.NaN );
+
+				// only add slices between existing sections, not outside
+				final int scaledDepth = depth * upsampleBy - ( upsampleBy - 1 );
+
+				for ( int z = 0; z < scaledDepth; ++z )
+				{
+					zSource[ 0 ] = z;
+					scale.applyInverse( zSource, zSource );
+					lut1D.applyInverse( zSource, zSource );
+					final double zMapped = zSource[ 0 ];
+					resultStack.addSlice( generateInterpolatedProcessor( zMapped, permutation1D, stackImp.getStack(), nanProcessor ) );
+				}
+
+
+			}
 
 			final ImagePlus imp = new ImagePlus("Z-Spacing: " + input.getTitle(), resultStack );
 			imp.show();
@@ -721,7 +741,7 @@ public class ZPositionCorrection implements PlugIn
 			final Calibration calibration = stackImp.getCalibration().copy();
 			calibration.pixelWidth = stackXScale;
 			calibration.pixelHeight = stackYScale;
-			calibration.pixelDepth = stackZScale;
+			calibration.pixelDepth = stackZScale / upsampleBy;
 			imp.setDimensions( 1, ( int ) stack.dimension( 2 ), 1 );
 			imp.setCalibration( calibration );
 
@@ -737,6 +757,47 @@ public class ZPositionCorrection implements PlugIn
 				( RandomAccessibleInterval< T > ) ImageJFunctions.< T >wrapReal( imp ),
 				new RealDoubleConverter<>(),
 				new DoubleType() );
+	}
+
+	private static ImageProcessor generateInterpolatedProcessor(
+			final double zMapped,
+			final SingleDimensionPermutationTransform permutation1D,
+			final ImageStack stack,
+			final FloatProcessor nanProcessor
+	)
+	{
+		final int depth = stack.getSize();
+		int z1 = ( int ) Math.floor( zMapped );
+		int z2 = ( int ) Math.ceil( zMapped );
+		final double w1 = z2 - zMapped;
+		final double w2 = zMapped - z1;
+
+		final int width = nanProcessor.getWidth();
+		final int height = nanProcessor.getHeight();
+		final int size = width * height;
+
+		if ( z1 == z2 && z1 >= 0 && z1 < depth )
+		{
+			int z1Perm = permutation1D.apply( z1 );
+			return stack.getProcessor(z1Perm + 1 ).duplicate();
+		}
+
+		if ( z1 < 0 || z1 >= depth || z2 < 0 || z2 >= depth )
+		{
+			final ImageProcessor target = stack.getProcessor(1).createProcessor( width, height );
+			for ( int i = 0; i < size; ++i )
+				target.setf( i, nanProcessor.getf( i ) );
+			return target;
+		}
+
+		int z1Perm = permutation1D.apply( z1 );
+		int z2Perm = permutation1D.apply( z2 );
+
+		ImageProcessor ip1 = stack.getProcessor( z1Perm + 1 );
+		ImageProcessor ip2 = stack.getProcessor( z2Perm + 1 );
+		final ImageProcessor target = ip1.createProcessor( ip1.getWidth(), ip1.getHeight() );
+		interpolate( ip1, ip2, w1, w2, target );
+		return target;
 	}
 
 	private static void interpolate(
