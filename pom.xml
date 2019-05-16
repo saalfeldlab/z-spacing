@@ -33,7 +33,7 @@
 		<developer>
 			<id>hanslovsky</id>
 			<name>Philipp Hanslovsky</name>
-			<url>http://imagej.net/User:Hanslovsky</url>
+			<url>https://imagej.net/User:Hanslovsky</url>
 			<roles>
 				<role>founder</role>
 				<role>lead</role>
@@ -47,7 +47,7 @@
 		<developer>
 			<id>axtimwalde</id>
 			<name>Stephan Saalfeld</name>
-			<url>http://imagej.net/User:Saalfeld</url>
+			<url>https://imagej.net/User:Saalfeld</url>
 			<roles>
 				<role>founder</role>
 				<role>maintainer</role>
@@ -57,7 +57,7 @@
 	<contributors>
 		<contributor>
 			<name>Curtis Rueden</name>
-			<url>http://imagej.net/User:Rueden</url>
+			<url>https://imagej.net/User:Rueden</url>
 			<properties><id>ctrueden</id></properties>
 		</contributor>
 	</contributors>
