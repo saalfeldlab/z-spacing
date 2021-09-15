@@ -1,4 +1,4 @@
-[![](https://travis-ci.org/saalfeldlab/z-spacing.svg?branch=master)](https://travis-ci.org/saalfeldlab/z-spacing)
+[![](https://github.com/saalfeldlab/z-spacing/actions/workflows/build-main.yml/badge.svg)](https://github.com/saalfeldlab/z-spacing/actions/workflows/build-main.yml)
 [![](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/saalfeldlab/z-spacing?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 # Z-Spacing Correction
