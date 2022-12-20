@@ -358,7 +358,7 @@ public class ZPositionCorrection implements PlugIn
 
 	public static RandomAccessibleInterval< DoubleType > wrapDouble( final ImagePlus input )
 	{
-		return new ConvertedRandomAccessibleInterval< FloatType, DoubleType >( ImageJFunctions.wrapFloat( input ), new RealDoubleConverter< FloatType >(), new DoubleType() );
+		return new ConvertedRandomAccessibleInterval< FloatType, DoubleType >( ImageJFunctions.wrapFloat( input ), new RealDoubleConverter< FloatType >(), DoubleType::new );
 	}
 
 	public static ImagePlus normalize( final ImagePlus input )
