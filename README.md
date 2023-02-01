@@ -47,12 +47,15 @@ Serial section Microscopy, using either optical or physical sectioning, is an es
  where the &lt;root&gt; directory is specified by the user, and n is the minimum number of digits necessary for displaying the specified number of iterations.
  </dd>
 </dl>
+
 ### Adding Visitors
+
 Users can add their own visitors by calling one of
 ```java
 org.janelia.thickness.plugin.ZPositionCorrection.addVisitor( final String name, final Visitor visitor )
 org.janelia.thickness.plugin.ZPositionCorrection.addVisitor( final String name, final VisitorFactory factory )
 ```
+
 from the script editor or the beanshell interpreter. The first option is the go-to choice for simple visitors. If the visitor needs specific information from the input matrix or options, the second option should be used. To that end, the user needs to implement the [VisitorFactory](https://github.com/saalfeldlab/z-spacing/blob/master/src/main/java/org/janelia/thickness/plugin/ZPositionCorrection.java#L138) interface. The following simple examples demonstrate how to add a visitor using both methods and can be easily extended for more specific tasks:
 
 - Simple Visitor
