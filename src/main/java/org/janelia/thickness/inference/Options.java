@@ -2,7 +2,7 @@
  * #%L
  * Z spacing plugin for Fiji.
  * %%
- * Copyright (C) 2014 - 2022 Howard Hughes Medical Institute.
+ * Copyright (C) 2014 - 2023 Howard Hughes Medical Institute.
  * %%
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as
