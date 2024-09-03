@@ -80,6 +80,12 @@ public class OuterProductView< T, U, V extends NumericType< V > > extends Abstra
 		return randomAccess();
 	}
 
+	@Override
+	public V getType()
+	{
+		return v;
+	}
+
 	// implementing Point is inefficient, create custom RA
 	public class OuterProductAccess extends Point implements RandomAccess< V >
 	{
